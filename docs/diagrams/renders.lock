@@ -41,7 +41,7 @@ docs/diagrams/seq-uc12-budget-consumption.drawio:
   source_sha: 469c4369b82967d9bb03681ca2e405836513957d2ac36660f514c3ff4d5a2c3b
 docs/diagrams/seq-uc13-categories.drawio:
   render: seq-uc13-categories.png
-  source_sha: a49c0d7ab7e76abc57b74fe2da6a88300ad517ad3c44e54fbbc0dce7045587c8
+  source_sha: e57cf2196cdd352caba113201cbd5ac5de22f6d60b3d3b46dfc895c68e45da59
 docs/diagrams/seq-uc14-choose-currency.drawio:
   render: seq-uc14-choose-currency.png
   source_sha: b3c8e03ebf4bec119d3fcc11b114145e4db0a43767b346d25fbcf59f34ec9d91

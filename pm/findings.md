@@ -68,7 +68,7 @@ looks like once DAO tests exist, which is not visible from one issue's diff.
 *F2 and F3 were filed at `UC13-categories`' close, by `issue-qa`, for the same reason as F1
 — and because `issue-qa` may not edit a `.drawio` itself.*
 
-## F2 — `seq-uc13-categories.drawio` does not draw the read path the code has   [OPEN]
+## F2 — `seq-uc13-categories.drawio` does not draw the read path the code has   [FIXED]
 **Scope:** TRAIL          **Severity:** defect
 **Where:** `docs/diagrams/seq-uc13-categories.drawio` (and its render at
 `pm/issues/uc13-categories/seq-uc13-categories.png`)
@@ -88,10 +88,23 @@ Mermaid and converted by `diagram-drawio-author`, never as hand-written XML
 being a reviewer. **Dispatch `diagram-drawio-author`.**
 **Confidence:** certain — verified by extracting every label from the file at close; the six
 lifelines and twenty-three messages are as the plan describes and the read path is absent.
+**FIXED 2026-08-22**, in the main session rather than by `diagram-drawio-author` — the owner
+directed mid-run that diagram work and QA stop going to subagents. Re-authored in Mermaid and
+converted with the draw.io CLI per `sequence-conventions.md`; **not** hand-edited XML. The
+read path is now **five** messages, not the four this entry predicted: `seq-uc14` also draws
+`Screen → provider: watch()`, which the first draft omitted, so matching that chain honestly
+needed the fifth. All twenty-three original messages and both fragment guards survive
+unchanged; the diagram now numbers 1–28. The isolate note on **this** diagram was corrected
+in the same pass (F3's scope drops from fourteen copies to thirteen). Render re-exported,
+`grep -c '<!--'` = 0, `audit.py` 13/0/0, `renders.lock` refreshed via
+`audit.py --record-renders`. **The PNG was looked at** at full-diagram zoom and at two tight
+crops: the `opt` box's top border was checked to fall *below* message 13 rather than
+enclosing it, and the note was checked pixel-wise at the right margin for clipping — the last
+two pixel columns are blank, so it is complete.
 
 ## F3 — every sequence diagram's isolate note names a mechanism one wrapper stale   [OPEN]
 **Scope:** TRAIL          **Severity:** risk
-**Where:** all fourteen `docs/diagrams/seq-uc*.drawio` — the note reading *"DAO to
+**Where:** thirteen of the fourteen `docs/diagrams/seq-uc*.drawio` — the note reading *"DAO to
 AppDatabase crosses the isolate boundary (NativeDatabase.createInBackground, 2026-08-20)"*
 **Violates:** nothing stated; it is `lessons.md` §1's half-true label, in fourteen copies.
 **What it is:** the code opens the database through `drift_flutter`'s `driftDatabase()`,
@@ -101,7 +114,13 @@ right place, and the guarantee is unchanged** — only the mechanism's name is s
 UC-13 and UC-14 plans recorded it against their own diagram before noticing it is on all
 fourteen, i.e. it is a repo-wide nit and not one issue's defect. Fixing it inside UC-13
 would have meant editing thirteen diagrams UC-13 does not own, so it is filed instead.
-**Confidence:** certain — `grep -rl createInBackground docs/diagrams/` returns all fourteen.
+**Confidence:** certain — `grep -rl createInBackground docs/diagrams/` returned all fourteen
+when this was filed.
+**Narrowed 2026-08-22:** `seq-uc13-categories.drawio` was corrected as part of F2's as-built
+pass, because UC-13 owns that diagram. **Thirteen remain**, and they stay filed rather than
+fixed — the run does not repair findings, and each belongs to an issue that has not been
+built yet, so each will be corrected by its own as-built pass at close. Anything still stale
+when the backlog finishes is a real leftover; anything fixed before then costs nothing.
 
 ## F4 — the NFR-4 enabled-controls test can pass vacuously for the rename control   [OPEN]
 **Scope:** APP          **Severity:** risk

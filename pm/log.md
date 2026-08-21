@@ -74,9 +74,10 @@ CRUD moved from UC-13 to UC-11, and `note` appears on every recording screen. Re
 run.
 
 **Open, non-blocking:** one `fr-nfr.md` §4 item — where the data lives, narrowed to
-phone-only but not closed. **Four findings on file** (`pm/findings.md` F1–F4); F2 is the one
-that is a real defect — `seq-uc13-categories.drawio` does not draw the read path the code
-now has, and needs `diagram-drawio-author`.
+phone-only but not closed. **Five findings on file** (`pm/findings.md` F1–F5). F2, the only
+one that was a real defect, is **FIXED** (2026-08-22) — `seq-uc13-categories.drawio` now
+draws the read path, re-exported and looked at. F3 narrowed from fourteen diagrams to
+thirteen in the same pass. F1, F4 and F5 stand, recorded and not fixed.
 
 **Unattended mode is live, and has now been exercised both ways.** `feat-planner` may mark
 a plan `AUTO-CONFIRMED` when every decision in it cites an already-confirmed artifact, and
@@ -455,7 +456,7 @@ half-true form. `map.yaml` still described `app/lib/src/app.dart` as "(placehold
 "there are no screens and no DAOs yet", named UC14 as the first UI issue and called
 `AUTO-CONFIRMED` untested. All corrected above.
 
-**[TODO]** **The as-built diagram pass is outstanding, not skipped** — `pm/findings.md` **F2**.
+**[TODO → DONE 2026-08-22]** **The as-built diagram pass was outstanding, not skipped** — `pm/findings.md` **F2**, now FIXED; see the 2026-08-22 entry at the foot of this log.
 `seq-uc13-categories.drawio` draws four `categoryTreeProvider` emissions and no
 `watchTree()` read path to produce them; the code has that path (authorised by the plan,
 citing `class-transactions.drawio`). The code is right and the diagram is incomplete, so the
@@ -487,3 +488,39 @@ column to a client-facing sheet is `workbook-xlsx-author`'s call and `audit.py` 
 sheet's shape, so `issue-qa` recorded the gap instead of inventing a column. The workbook's
 UC-13 text itself was checked and needs no correction: it is already re-titled *"Set Up
 Categories and Subcategories"* and already says UC-11 owns budget groups.
+
+---
+
+## 2026-08-22 — UC-13's as-built diagram pass, done in the main session
+
+**[STATUS]** **`pm/findings.md` F2 is FIXED.** `docs/diagrams/seq-uc13-categories.drawio`
+now draws the read path the code has had since `8b6bc0a`. Re-authored in Mermaid and
+converted with the draw.io CLI per `sequence-conventions.md` — not hand-edited XML. All
+twenty-three original messages and both fragment guards survive unchanged; the diagram now
+numbers 1–28. Render re-exported to `pm/issues/uc13-categories/seq-uc13-categories.png`,
+`renders.lock` refreshed with `audit.py --record-renders`, `grep -c '<!--'` = 0, audit
+green at 13/0/0.
+
+**[DISCOVERY]** **The read path is five messages, not the four F2 predicted.** F2 was
+written from the four `CategoryDao ⇄ AppDatabase` / `watchTree()` messages that were
+obviously missing, but `seq-uc14-choose-currency` also draws `Screen → provider: watch()`
+as the first step of the identical chain. A first draft that copied only F2's four left the
+provider emitting a stream nobody subscribed to. *A finding's own count is an estimate made
+before the work; the artifact it points at is what settles the number.* The neighbouring
+diagram, not the finding text, is what caught this.
+
+**[DECISION]** **Diagram work and QA no longer go to subagents** — the owner's call
+mid-run, after two background agents died on a session limit. `context/guide/orchestration.md`
+still describes the three-agent loop, and planning and coding still dispatch; the change is
+that the main session does the as-built diagram passes and the review-and-close itself.
+Recorded here rather than in `decisions.md` because it is how this run is being executed,
+not a durable property of the project — if it outlives the run, promote it.
+
+**[STATUS]** **F3 narrowed from fourteen sequence diagrams to thirteen.** UC-13's copy of
+the stale isolate note (`NativeDatabase.createInBackground`, where the code calls
+`createBackgroundConnection` through `drift_flutter`'s `driftDatabase()`) was corrected in
+the same pass, because UC-13 owns that diagram. The other thirteen stay filed and unfixed —
+each belongs to an issue not yet built, and each will be corrected by its own as-built pass.
+
+**[TODO]** Phase 1 has one runnable row left, `UC11-set-budget`, and its plan is not
+written. UC14 stays halted for the run (`pm/questions.md` Q1), blocking seven issues.

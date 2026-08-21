@@ -1,9 +1,10 @@
 # UC13-categories — Manage categories and subcategories
 
-**Status:** DONE 2026-08-21 — built, reviewed and committed by `issue-qa`. One close step
-is **outstanding and dispatched, not skipped**: the as-built edit to
-`seq-uc13-categories.drawio` (the two findings below) belongs to `diagram-drawio-author`
-and is recorded as `pm/findings.md` F2/F3.
+**Status:** DONE 2026-08-21 — built, reviewed and committed by `issue-qa`. The one close
+step left outstanding at that point, the as-built edit to `seq-uc13-categories.drawio`, was
+**completed 2026-08-22** in the main session (the owner directed mid-run that diagram work
+and QA stop going to subagents). `pm/findings.md` F2 is FIXED; F3 narrowed to the thirteen
+diagrams UC-13 does not own.
 
 Planned as **AUTO-CONFIRMED** 2026-08-21, under the unattended-mode rule in
 `context/general-rules.md` (§Planning gate) and `context/index/decisions.md`

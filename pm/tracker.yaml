@@ -288,8 +288,11 @@ issues:
       CategoryManagerScreen - the first DAO, provider and screen in the app, 14 tests green,
       no schema change. Two toolchain rulings recorded in decisions.md (a DAO drawn with
       update()/delete() cannot be a DatabaseAccessor; riverpod_generator cannot type a
-      provider over a drift row class). The as-built edit to seq-uc13-categories.drawio is
-      OUTSTANDING and belongs to diagram-drawio-author - see findings F2/F3.
+      provider over a drift row class). The as-built edit to seq-uc13-categories.drawio was
+      left outstanding at close and was COMPLETED 2026-08-22 - five read-path messages added
+      (not four: seq-uc14 also draws Screen -> provider watch()), the stale isolate note on
+      this diagram corrected, render re-exported and inspected. findings F2 FIXED, F3
+      narrowed to thirteen diagrams.
 
   - id: UC04-record-money-movement
     slug: record-money-movement
