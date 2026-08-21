@@ -23,7 +23,7 @@ or project-management state.
 | `context/files/` | Published third-party specs the conventions are distilled from (OMG BPMN, UML). |
 | `input/` | Raw client source material, one folder per intake event. The substrate everything else derives from. |
 | `docs/` | The real client deliverables: `workbook.xlsx`, `fr-nfr.md`, `requests.md`, `enums.md`, `statuses.md`, and `diagrams/`. |
-| `pm/` | Project state: `tracker.yaml` (the board), `active.json` (current issue), `log.md` (current state + append-only history), `log-archive-2026-08.md` (sessions 1-15 verbatim). |
+| `pm/` | Project state: `tracker.yaml` (the board), `active.json` (current issue), `log.md` (current state + append-only history), `log-archive-2026-08.md` (sessions 1-15 verbatim), `questions.md` (the unattended run's halt queue). |
 | `.claude/agents/` | Specialist subagents for the artifacts that have repeatable, error-prone rules. |
 | `.claude/skills/` | Tooling skills (`drawio`, `xlsx`, `doc-coauthoring`). |
 
@@ -101,6 +101,11 @@ become use cases. Full rule and the worked correction that produced it:
 These are non-negotiable and live in `CLAUDE.md`:
 
 - No work starts before a `plan.md` exists for the active issue **and** the user has confirmed it.
+  During an unattended run, `AUTO-CONFIRMED` substitutes — but only for a plan whose every
+  decision cites an artifact the owner already approved. Anything else halts that issue and
+  queues the question in `pm/questions.md`. The test is *"does this plan contain anything the
+  owner has not already approved"*, which is the question a human signature was standing in
+  for and the only one of the two that can be checked.
 - A plan's scope *is* its sequence diagram — nothing outside it is in scope, nothing in it gets
   silently skipped.
 - Every use case has an owning workbook row before it becomes a tracked issue.

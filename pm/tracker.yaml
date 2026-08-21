@@ -269,6 +269,10 @@ issues:
       self-FK (FR-10, ERD D6). Independent of the accounts chain, so it can run in parallel
       with UC02/UC01. Ordered before UC04 so the record form is built once with its pickers
       rather than twice.
+      RE-SCOPED 2026-08-21: categories and subcategories ONLY. Budget group CRUD moved to
+      UC11 - Budget_Group is a Budgeting entity and no Transactions class supported it, so
+      seq-uc13 had scoped it out and this issue as drawn did not deliver what the workbook
+      promised. The entity's owning module wins over the workbook's grouping (decisions.md).
 
   - id: UC04-record-money-movement
     slug: record-money-movement
@@ -312,6 +316,10 @@ issues:
       (FR-15); a period is editable for its whole life with no lock and no lifecycle (FR-16,
       ISSUE-004). Needs only the Budget tables, so it can run in parallel with the accounts
       chain.
+      WIDENED 2026-08-21: also carries budget group create/rename/delete, moved here from
+      UC13 because this is the module that owns Budget_Group. BudgetNotifier and BudgetDao
+      gain group methods - the class boxes already existed, only the methods were missing,
+      which is why this cost less than adding a screen to Transactions.
 
   - id: UC12-budget-consumption
     slug: budget-consumption

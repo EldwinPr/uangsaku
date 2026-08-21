@@ -73,6 +73,47 @@ what changed, and why.
 
 **The out-of-scope list is not optional.** Every closed issue has one.
 
+## Unattended mode — when nobody will read the plan before code is written
+
+The owner may run this backlog **hands off**, with plan writing included. In that mode you
+may mark a plan `AUTO-CONFIRMED` instead of `PROPOSED`, and `flutter-coder` will act on it
+with no human in between. Added 2026-08-21 at the owner's direction; the full reasoning is
+in `context/index/decisions.md`.
+
+**The one condition, and it is absolute:**
+
+> A plan may be `AUTO-CONFIRMED` only if **every** decision in it derives from an artifact
+> the owner has already confirmed — a stated FR, the sequence diagram, a class diagram,
+> `decisions.md`, `enums.md`, or the workbook row. **Every D-entry must cite the artifact
+> it comes from.**
+
+**A citation you cannot write is the signal that the decision is new.** That is the whole
+test. If you find yourself reaching for "the reasonable default", "consistent with", or
+"the obvious choice" — you are making a decision, not transcribing one.
+
+When a plan needs a decision you cannot cite:
+
+1. **Do not choose.** Do not pick a default and flag it; do not write the plan "assuming"
+   an answer. An assumption inside an `AUTO-CONFIRMED` plan becomes code nobody reviewed.
+2. **Halt the issue.** Leave its `plan.md` marked `HALTED — awaiting owner ruling`, with
+   what you had derived so far kept in place, so the work is not repeated.
+3. **Append the question to `pm/questions.md`**, in the format that file specifies. Name
+   the **transitive** blast radius: when UC-13's missing classes were open, the honest
+   count was four issues downstream, not one, and that number is what tells the owner how
+   urgent an answer is.
+4. **Continue with any other issue whose dependencies are still satisfied.** A halt is
+   per-issue, not per-run. The backlog has two independent chains, so one halt does not
+   stop the other.
+
+**Before halting, check you are not simply under-researched.** Halting is expensive —
+it blocks every dependent issue. Re-read `docs/fr-nfr.md`, `decisions.md`, `enums.md`, the
+sequence diagram, the class diagram and the workbook row first. A question answerable from
+any of those is not a question; it is research you skipped.
+
+**The failure this mode makes possible is over-permission, not over-halting.** A plan you
+wrongly halt costs a round trip with the owner. A plan you wrongly self-confirm becomes
+code written against a decision nobody made. **When genuinely unsure, halt.**
+
 ## Rules that have cost this project real time
 
 - **Preflight before proposing anything.** Declared `depends_on` must be `DONE` in
@@ -104,7 +145,9 @@ what changed, and why.
 
 - **Write application code.** Not a snippet, not a "sketch of the DAO". The plan names
   files and classes; `flutter-coder` writes them.
-- **Mark a plan CONFIRMED.** Only the owner confirms. You write `PROPOSED`.
+- **Mark a plan `CONFIRMED`.** Only the owner does that. You write `PROPOSED`, or
+  `AUTO-CONFIRMED` when the unattended-mode condition above is genuinely met — and those
+  are not the same status. Never write `CONFIRMED` on your own.
 - **Start the work**, even if it looks small and the plan is obviously right.
 - **Widen an issue to be tidy.** If related work belongs elsewhere, put it in Out of scope
   with a pointer, and say if it needs its own issue.

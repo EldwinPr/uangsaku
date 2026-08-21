@@ -49,6 +49,9 @@ entities:
   Transaction:   {modul: Transactions, erd: docs/diagrams/erd.drawio, ucs: [UC-01, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-09, UC-10, UC-12]}
   Category:      {modul: Transactions, erd: docs/diagrams/erd.drawio, ucs: [UC-04, UC-05, UC-09, UC-13]}
   Subcategory:   {modul: Transactions, erd: docs/diagrams/erd.drawio, ucs: [UC-04, UC-05, UC-09, UC-13]}
-  Budget_Group:  {modul: Budgeting,    erd: docs/diagrams/erd.drawio, ucs: [UC-04, UC-05, UC-09, UC-11, UC-12, UC-13]}
+  # UC-13 dropped 2026-08-21: budget group CRUD moved to UC-11, the module that owns the
+  # entity (decisions.md). UC-04/05/09 remain -- they tag a transaction with a group
+  # rather than managing the group itself.
+  Budget_Group:  {modul: Budgeting,    erd: docs/diagrams/erd.drawio, ucs: [UC-04, UC-05, UC-09, UC-11, UC-12]}
   Budget_Period: {modul: Budgeting,    erd: docs/diagrams/erd.drawio, ucs: [UC-09, UC-11, UC-12]}
   Settings:      {modul: Settings,     erd: docs/diagrams/erd.drawio, ucs: [UC-14]}

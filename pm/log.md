@@ -45,17 +45,19 @@ FEAT01 D7 green locally first.
 artifacts agree with each other; proves nothing about whether they are right
 (`lessons.md` §12).
 
-**Open, needing an owner ruling — neither gates FEAT01, both are about screens:**
-1. **UC-13 step 3, budget group CRUD, has no supporting class** on any class diagram.
-   `seq-uc13` scopes it out with a note rather than inventing a participant, so UC-13 as
-   drawn does not deliver what the workbook promises. Either a class diagram gains the
-   classes or UC-13 is re-sliced.
-2. **Does `note` appear on the transfer / lend-borrow / repayment screens?** `seq-uc04`
-   and `seq-uc05` carry it; `seq-uc06/07/08` do not. The column exists on `Transaction`
-   either way.
+**Open rulings:** none. Both items that stood here were answered 2026-08-21 — budget group
+CRUD moved from UC-13 to UC-11, and `note` appears on every recording screen. Recorded in
+`context/index/decisions.md`; `pm/questions.md` is the queue for any that arise during the
+run.
 
 **Open, non-blocking:** one `fr-nfr.md` §4 item — where the data lives, narrowed to
 phone-only but not closed.
+
+**Unattended mode is live.** `feat-planner` may mark a plan `AUTO-CONFIRMED` when every
+decision in it cites an already-confirmed artifact, and halts the issue to
+`pm/questions.md` when one cannot be cited. FEAT01 itself is `CONFIRMED` by the owner
+directly, and **its step 1 is already done** — `flutter create` ran on 2026-08-21; the run
+starts at step 2.
 
 **Standing caveat.** `context/coding-conventions/` is **provisional**. No `pub get` has run
 for this project, so no version number in `riverpod.md` or `drift.md` is verified. FEAT01
@@ -109,3 +111,67 @@ stale paths in `ALLOWED_DANGLING` with that reason.
 `flutter-coder` (executes a confirmed plan). Neither may cross into the other's job: the
 planner writes no code, and the coder may not widen a plan's scope. Details in
 `.claude/agents/`.
+
+## 2026-08-21 — Both open rulings closed; the gate gets an unattended mode
+
+**[DECISION]** **Budget group CRUD moves from UC-13 to UC-11.** UC-13 promised it, but
+`Budget_Group` is a Budgeting entity and no Transactions class supported it, so `seq-uc13`
+had scoped it out with a note — meaning UC-13 as drawn did not deliver what the workbook
+promised. Moving it to the module that owns the entity cost a workbook edit and two method
+lists; adding a screen to Transactions would have cost a screen and blurred the one
+boundary this system still has. *The general form, and the second time this project has hit
+it: when a use case names work no class diagram supports, the question is which module owns
+the entity — not which screen the workbook happened to mention it on.*
+
+**[DECISION]** **The free-text `note` appears on every recording screen**, not just expense
+and income. `note` was decided as a column on the entity, not on a kind; ERD D1 put all
+seven kinds in one ledger table precisely so there would be one form and one insert path,
+and a per-kind rule about which screens show which fields reintroduces exactly the
+branching that removed. `seq-uc06/07/08` redrawn to match `seq-uc04/05`.
+
+**[DECISION]** **The planning gate gets an unattended mode.** Owner: *"the plan writing is
+part of the hands off."* `feat-planner` may mark a plan `AUTO-CONFIRMED` **only** when every
+decision in it cites an artifact the owner already confirmed; anything else halts that issue
+and queues the question in `pm/questions.md`. Halting is per-issue, so the two independent
+chains do not block each other.
+
+This narrows the gate rather than removing it. Read as ceremony, *"confirmed by the user"*
+stops any unattended run at the first stub; read for its purpose — don't build on
+unconfirmed assumptions — it permits a plan that is a transcription of decisions already
+made. **The test moves from "did a human sign this" to "does this contain anything a human
+has not already approved", which is the question the signature was standing in for and the
+only one of the two that can be checked.** The accepted cost is real and worth watching:
+the judgement of what counts as already-decided is now the agent's, so the planner is told
+to halt on doubt rather than reason toward a default, and every D-entry must carry a
+citation — *a citation that cannot be written is the signal that the decision is new.*
+
+**[DISCOVERY]** **Two more stale registers, making six**, and both had survived over a day.
+UC-11's `Output` still promised budgets were "editable during the first week and locked
+thereafter"; UC-09's `Deskripsi` still justified itself with *"a budget is a commitment made
+in advance, so it locks (FR-16)"*. Both rest on the lock ISSUE-004 removed on 2026-08-20 —
+the same reversal already chased through nine other files that day. **A sweep that catches
+nine of eleven feels complete and is not.** Found only because an agent was sent into the
+workbook for an unrelated edit and told to look while it was there.
+
+**[DISCOVERY]** The same pass produced the refinement that makes the fix repeatable:
+*only claims still asserted in the present tense go stale.* UC-11's `Deskripsi` also
+mentions the lock — as history, marked as history — and that is correct and must not be
+edited, because deleting it would erase why `statuses.md` lists nothing. So grepping the
+reversed decision's vocabulary ("lock", "lifecycle") finds candidates; **the tense tells you
+which are defects.** Both written into `lessons.md` §1.
+
+**[STATUS]** Applied by the two specialist agents. `workbook-xlsx-author`: UC-13 re-scoped,
+UC-11 widened, `note` added to the Input of UC-04..UC-08, plus the two stale cells above.
+`diagram-drawio-author`: `class-budgeting.drawio` gained group methods on `BudgetNotifier`
+and `BudgetDao` (boxes grew, edges recomputed), `seq-uc11` rebuilt with the group-CRUD
+fragments, `seq-uc13`'s out-of-scope note removed, `note` added to `seq-uc06/07/08`. All
+renders re-exported, visually verified, and `renders.lock` refreshed. Audit green at 13/0/0.
+
+**[TODO]** One possible future gap, raised by the diagram agent and not a defect today: the
+group-list *read* path is not drawn on `seq-uc11`. `BudgetNotifier` re-emits only after its
+own writes, so drawing a `watchGroups()` stream to the screen would need a dedicated
+`StreamProvider` participant on `class-budgeting.drawio` first. Flagged rather than invented.
+
+**[TODO]** `map.yaml` had `UC-13` under `Budget_Group`'s `ucs` and it is now removed. Note
+that UC-13 correctly **stays** under the Transactions class diagram — categories and
+subcategories are Transactions entities, and only the budget-group half moved.

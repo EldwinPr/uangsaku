@@ -50,7 +50,10 @@ the close checklist below apply regardless of which issue you're on.
 
 ## Hard gates — never skip these
 
-- No code before `plan.md` exists for the active issue and is user-confirmed.
+- No code before `plan.md` exists for the active issue and is user-confirmed. During an
+  unattended run, `AUTO-CONFIRMED` substitutes — but only for a plan whose every decision
+  cites an already-confirmed artifact; anything else halts the issue and goes to
+  `pm/questions.md`. See the planning gate in `context/general-rules.md`.
 - No implementation starts before preflight passes: declared dependencies are
   Done in `pm/tracker.yaml`, and no scope overlap with another active issue.
 - A `plan.md`'s scope IS whatever its sequence diagram shows — nothing outside

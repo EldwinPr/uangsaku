@@ -1,7 +1,8 @@
 # FEAT01-foundation — Flutter scaffold, drift on a background isolate, first migration
 
-**Status:** PROPOSED — awaiting owner confirmation. No code may be written until this is
-confirmed (`general-rules.md` planning gate, `CLAUDE.md` hard gates).
+**Status:** CONFIRMED by the owner 2026-08-21. Step 1 already done (see Steps); the
+unattended run starts at step 2. All nine decisions below are confirmed as written —
+D1 and D4 were answered by the owner directly, the rest by confirming this plan.
 
 **Traces to:** no use case (FEAT)
 **Depends on:** ISSUE-007 (DONE), ISSUE-008 (DONE), ISSUE-009 (DONE) — preflight passes.
@@ -175,8 +176,17 @@ drifts — `tooling.md` says bump both together, never one.
 
 ## Steps
 
-1. From the repository root:
+1. ~~From the repository root:~~ **DONE 2026-08-21 by the owner. Do not re-run.**
    `flutter create --project-name uangsaku --org com.eldwinpr --platforms=android,ios app`
+
+   Verified on disk: `app/pubspec.yaml` has `name: uangsaku`, `app/android/app/build.gradle.kts`
+   has `applicationId = "com.eldwinpr.uangsaku"` and the matching `namespace`, and both
+   `app/android/` and `app/ios/` exist. **`app/` is deliberately untracked** — it has no
+   `build_runner` or `drift` dependency yet, and CI's `app` job is guarded on
+   `app/pubspec.yaml`, so committing it before step 2 would activate the job and fail it.
+   Start at step 2; commit `app/` only once step 10's four commands are green.
+
+   *Original step text, kept because its reasoning still applies to any re-scaffold:*
 
    Naming the target directory explicitly rather than `.` is deliberate — it makes the
    command independent of which directory the shell happens to be in. *This was run into

@@ -16,12 +16,20 @@ Read this before starting work. Every entry is short on purpose; the full narrat
 
 ## 1. A decision is not finished until every register that listed it as open is updated
 
-**Hit four times in a single day.** The credit/debit naming collision sat in
+**Hit six times, four of them in a single day.** The credit/debit naming collision sat in
 `fr-nfr.md` §4 as "undecided, blocking schema and UI naming" for a full day after it was
 closed by the schema decision. "What a month means" was still described as open in three
 separate passages hours after the owner decided it. The workbook's Budgeting module
 description still described a lifecycle that had been deleted. The ERD's `Budget_Period`
 note still called the calendar-month question undecided.
+
+**Two more surfaced on 2026-08-21, and both had survived over a day undetected** — found
+only because an agent was sent into the workbook for an unrelated edit and told to look.
+UC-11's `Output` still promised budgets were "editable during the first week and locked
+thereafter", and UC-09's `Deskripsi` still justified itself with *"a budget is a commitment
+made in advance, so it locks (FR-16)"*. Both rest on the lock ISSUE-004 removed on
+2026-08-20 — the same reversal that had already been chased through nine other files that
+day. **A sweep that catches nine of eleven feels complete and is not.**
 
 **The mirror image is just as expensive.** The failure this project guards against is a
 document claiming something is settled when it is not. Three of these four were the
@@ -33,8 +41,20 @@ these passages was internally consistent prose. This is a known limit, deliberat
 papered over with a fake check.
 
 **The narrower form, which is the actual mechanism:** *a rationale attached to a decision
-does not get re-read when the decision it justifies is reversed.* All four were rationales.
-When you reverse a decision, grep for its reasoning, not just its statement.
+does not get re-read when the decision it justifies is reversed.* Five of the six were
+rationales — the sentence explaining *why* a rule existed, sitting somewhere the rule
+itself did not. When you reverse a decision, **grep for its reasoning, not just its
+statement.** "lock", "locked", "lifecycle" would have found all of these in one pass.
+
+**The distinction that makes the grep usable**, drawn while fixing the 2026-08-21 pair:
+*only claims still asserted in the present tense go stale.* UC-11's `Deskripsi` also
+mentions the lock — "this use case previously carried the app's only lifecycle (open →
+locked → closed); removing the lock collapsed it" — and that is **correct as written and
+must not be edited.** It is history, marked as history. This project deliberately keeps
+superseded reasoning on file (the Kotlin stack entry, ISSUE-003's whole plan), because a
+record of what changed is what makes a reversal auditable. Deleting it would erase the
+reason `statuses.md` lists nothing. So the grep finds candidates; the tense tells you which
+are defects.
 
 ## 2. Changing how a value is *obtained* silently invalidates everything built on it
 

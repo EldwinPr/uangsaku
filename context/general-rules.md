@@ -28,6 +28,23 @@ Structural/technical terms (class names, framework conventions, code-level scaff
 
 A `plan.md` must exist under `pm/issues/{id}-{slug}/` and be reviewed/confirmed by the user before work starts on that issue — a documentation issue (drafting a diagram, filling the workbook) or, once this project reaches implementation, a code change. Don't bypass the plan to make a quick fix — if the fix changes what was planned, update `plan.md` first, then do the work against the updated plan. This keeps `plan.md` the actual source of truth instead of drifting from what was really done.
 
+**Unattended mode** (added 2026-08-21, owner's call — see `context/index/decisions.md`).
+During an unattended run the `feat-planner` agent may mark a plan `AUTO-CONFIRMED` and
+`flutter-coder` may act on it, **but only when every decision in that plan derives from an
+artifact the owner has already confirmed** — a stated FR, the sequence diagram, a class
+diagram, `decisions.md`, or `enums.md`. Each D-entry must cite the artifact it comes from.
+
+If a plan needs a decision that cannot be cited, the issue **halts** and the question goes
+to `pm/questions.md`. Halting is per-issue: the run continues on any issue whose
+dependencies are still satisfied.
+
+This narrows the gate rather than removing it. Its purpose is *don't build on unconfirmed
+assumptions*, and the test becomes "does this plan contain anything the owner has not
+already approved" instead of "did a human sign it" — the question the signature was
+standing in for, and the only one of the two that can be checked. **A citation that cannot
+be written is the signal that the decision is new.** When the owner is present, the gate is
+unchanged.
+
 ## Definition of "done"
 
 An issue is not done until all of the following happened, in order:

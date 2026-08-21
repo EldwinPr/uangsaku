@@ -12,5 +12,7 @@ Read these before doing anything else:
   behind something, not routinely.
 - `context/index/map.yaml` — UC/FEAT → code index, so you don't re-discover where something lives.
 - The active issue's `pm/issues/{id}-{slug}/plan.md`, if `active.json` points to one.
+- `pm/questions.md` — the unattended run's halt queue. If anything in it is OPEN, an issue
+  is blocked on an owner ruling and the answer is not in the repo yet.
 
 That's it — no procedure detail here. How to actually do the work lives in `CLAUDE.md` (root) and `context/guide/*.md`, loaded on demand per task type.

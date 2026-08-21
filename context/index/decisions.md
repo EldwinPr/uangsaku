@@ -735,3 +735,103 @@ carries `working-directory: app`.
 `app/` prefix; `FEAT01`'s D2 file manifest is rewritten against it; `map.yaml`'s future
 UC → code entries are `app/lib/src/<module>/`. `audit.py` is unaffected — it reads
 documentation paths, none of which moved.
+
+## 2026-08-21 — Budget group CRUD belongs to UC-11, not UC-13
+
+**Decision.** Creating, renaming and deleting a **budget group** moves from UC-13 ("Set Up
+Categories and Budget Groups", Transactions) to UC-11 ("Set a monthly budget amount",
+Budgeting). UC-13 is re-scoped to categories and subcategories only.
+
+**The gap that forced it.** The fourteen sequence diagrams were drawn against the class
+diagrams, and `seq-uc13` could not draw step 3: `class-budgeting.drawio` had the
+`BudgetGroups` table but no screen, notifier method or DAO method for managing a group,
+and the screen that would have done it (`CategoryManagerScreen`) lives in Transactions.
+Rather than invent a participant, the diagram scoped the step out with a note — correct
+per `sequence-conventions.md`, but it meant **UC-13 as drawn did not deliver what the
+workbook promised.**
+
+**Why moving it beats adding the classes to Transactions.** `Budget_Group` is a Budgeting
+entity. ISSUE-005 D1 permits a module to reach another's data by SQL join, so a
+Transactions screen writing `BudgetGroups` would have been *allowed* — but D1 argues its
+case in terms of reads, and its own text concedes that table ownership is enforced by
+nothing. Putting group CRUD in the module that owns the entity keeps the one boundary this
+system still has legible, and costs a workbook edit rather than a new screen.
+
+**What it costs.** `BudgetNotifier` and `BudgetDao` gain group methods — the class *boxes*
+already existed, only the methods were missing, which is why this reads as smaller than the
+alternative. `seq-uc11` gains the interaction, `seq-uc13` loses its out-of-scope note, and
+both workbook rows are rewritten.
+
+**The general form, and this project has now hit it twice** (the first was UC-03's
+adjustment writing through `AccountDao`): *when a use case names work no class diagram
+supports, the question is which module owns the entity — not which screen the workbook
+happened to mention it on.* A workbook row groups things by what the owner sets up in one
+sitting; a class diagram groups them by what owns the data. They disagree sometimes, and
+the entity wins.
+
+## 2026-08-21 — The free-text note appears on every recording screen
+
+**Decision.** `Transaction.note` is offered on all of them — expense, income, transfer,
+lend, borrow and repayment — not only expense and income.
+
+**The question existed because the diagrams disagreed.** `seq-uc04` and `seq-uc05` carried
+`note` in the recording signature; `seq-uc06`, `seq-uc07` and `seq-uc08` did not. The
+column exists on `Transaction` either way, so this was never a schema question — only
+whether three screens offer the field.
+
+**Why all of them.** `note` was decided as a column on the **entity**, not on a kind
+(2026-08-21). ERD D1 put all seven kinds in one ledger table precisely so there would be
+one insert path and one form; a per-kind rule about which screens show which fields
+reintroduces exactly the branching that decision removed. *"Lent Budi 500k for his
+motorbike"* is the clearest case for a note in the whole app, and it sits on one of the
+three screens that lacked it.
+
+**The cost, stated because it is real:** FR-6 wants the recording path to be the fastest in
+the app, and every field on a form is friction. Accepted on the grounds that the field is
+optional and empty by default — a nullable column, so "wrote nothing" and "wrote an empty
+note" stay one fact with one representation.
+
+## 2026-08-21 — The planning gate gets an unattended mode, with a hard halt condition
+
+**Decision.** For the unattended implementation run, `feat-planner` may mark a plan
+`AUTO-CONFIRMED` and `flutter-coder` may act on it — **but only when every decision in that
+plan is derived from an artifact the owner has already confirmed.** A plan that must make a
+genuinely new choice **halts the issue** and queues the question in `pm/questions.md`.
+
+Owner's call: *"the plan writing is part of the hands off."*
+
+**What this changes and what it deliberately does not.** The gate reads *"a `plan.md` must
+exist and be reviewed/confirmed by the user before work starts."* Read as ceremony, that
+blocks any unattended run at the first stub. Read for its purpose — **do not build on
+unconfirmed assumptions** — it says something narrower, and the narrower reading is the one
+worth keeping.
+
+A plan whose every D-entry traces to a confirmed FR, the sequence diagram, a class diagram,
+`decisions.md` or `enums.md` is a **transcription of decisions already made**. Nothing in
+it is unconfirmed; asking a human to click yes adds a signature, not a check. A plan that
+must choose — a name, a boundary, a trade-off nobody has ruled on — is the case the gate
+was written for, and it still stops.
+
+**So the gate is not weakened; it is made specific.** The test moves from *"did a human
+approve this document"* to *"does this document contain anything a human has not already
+approved."* The second is the question the first was standing in for, and unlike the first
+it can be checked.
+
+**The halt is per-issue, not per-run.** A halted issue blocks only what depends on it. The
+backlog has two independent chains (UC14 → UC02 → UC01/UC03/UC10, and UC13/UC11 → UC04 →
+UC09/UC12), so a halt on one leaves the other runnable. The run continues wherever
+dependencies are still satisfied and reports every halt at the end.
+
+**Accepted cost, and it is the real one.** *The judgement of what counts as "already
+decided" is now the agent's.* An agent that is wrong in the permissive direction will
+self-confirm a plan containing a genuine choice, and no human sees it before code is
+written against it. That is the failure this mode makes possible and attention should go
+there — not to the plans that halt, which are the mode working. This is why the planner is
+instructed to halt on doubt rather than to reason its way to a default, and why every
+`AUTO-CONFIRMED` plan must cite, per D-entry, the artifact it derives from: **a citation
+that cannot be written is the signal that the decision is new.**
+
+**Not a precedent for attended work.** When the owner is present, the gate is unchanged.
+This mode exists because the owner deliberately removed themselves to test how the pipeline
+holds up unattended — plan quality being the variable under test — and a mode that only
+applies while nobody is watching should be recorded as exactly that.

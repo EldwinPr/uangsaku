@@ -15,9 +15,24 @@ code is worse than no diagram, because it will still be believed.**
 
 ## The gate — check this first, every time
 
-**No code before the issue's `plan.md` exists and is user-confirmed** (`CLAUDE.md`). Open
-it. If its status line says `NOT PLANNED` or `PROPOSED`, **stop and say so** — that is
-`feat-planner`'s job, not yours. A placeholder does not satisfy the gate.
+**No code before the issue's `plan.md` exists and is confirmed** (`CLAUDE.md`). Open it and
+read its status line:
+
+| Status | What you do |
+|---|---|
+| `CONFIRMED` | Proceed. The owner read it. |
+| `AUTO-CONFIRMED` | Proceed — unattended mode (`context/general-rules.md`). |
+| `PROPOSED` | **Stop.** Written but not confirmed by anyone. |
+| `NOT PLANNED` | **Stop.** A placeholder is not a plan and says so. |
+| `HALTED` | **Stop.** It is waiting on an owner ruling in `pm/questions.md`. |
+
+Writing the plan is `feat-planner`'s job, never yours. Say plainly which status you found
+and stop — do not write a plan, and do not proceed "because the work is obvious."
+
+**On an `AUTO-CONFIRMED` plan, no human read it before you.** Every D-entry should cite the
+already-confirmed artifact it derives from. **If one does not, treat that as a finding and
+stop** — an uncited decision in an auto-confirmed plan is exactly the case the gate exists
+to catch, and you are the last check before it becomes code.
 
 **The plan's scope is its sequence diagram** (`docs/diagrams/seq-uc*.drawio`, rendered in
 `pm/issues/<issue>/`). Look at the render. Nothing outside it is in scope; nothing in it
