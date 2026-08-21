@@ -146,11 +146,18 @@ Delegate rather than hand-authoring; each one already knows which conventions to
 | `diagram-drawio-author` | Every other `.drawio`: ERD, class, state, component, sequence |
 | `workbook-xlsx-author` | Deriving UCs, promoting requests, refreshing the Entities dedup |
 | `feat-planner` | Writing and revising an issue's `plan.md` — never code |
-| `flutter-coder` | Dart/Flutter code under `app/` — never without a confirmed plan |
+| `flutter-coder` | Dart/Flutter code under `app/` — never without a confirmed plan, never commits |
+| `issue-qa` | Reviewing, reconciling, closing and committing a finished issue |
 
-The last two encode the planning gate as a boundary between agents rather than a rule
-someone has to remember: the planner cannot write code, and the coder stops at a
-`NOT PLANNED` placeholder and at the edge of the sequence diagram.
+The last three encode the planning gate as a boundary between agents rather than a rule
+someone has to remember: the planner cannot write code, the coder stops at a `NOT PLANNED`
+placeholder and at the edge of the sequence diagram, and only QA can call an issue Done.
+QA reviews with fresh context because a worker's judgement of its own output is the weakest
+link in the chain — this project has a recorded case of an agent inspecting its own diagram
+and passing a real defect as harmless.
+
+The unattended loop that drives them is `context/guide/orchestration.md`: the main session
+selects and dispatches, and does no planning, coding or reviewing itself.
 
 ## Environment notes
 

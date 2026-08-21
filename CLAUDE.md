@@ -24,10 +24,13 @@ the close checklist below apply regardless of which issue you're on.
   `workbook-xlsx-author` agent, or read
   `context/document-writer-only/workbook-conventions.md` directly for the
   UC-derivation rule and the `openpyxl` editing gotchas.
-- Writing or revising an issue's `plan.md` → delegate to the `feat-planner` agent.
-  Writing Dart/Flutter code under `app/` → delegate to the `flutter-coder` agent. The
-  split is the planning gate itself: the planner never writes code, and the coder
-  never starts without a confirmed plan and never widens one.
+- Writing or revising an issue's `plan.md` → delegate to `feat-planner`. Writing
+  Dart/Flutter code under `app/` → delegate to `flutter-coder`. Reviewing, closing and
+  committing a finished issue → delegate to `issue-qa`. The split is the planning gate
+  itself: the planner never writes code, the coder never starts without a confirmed plan
+  and never commits, and QA is the only one that can call an issue Done.
+- Running the backlog unattended → `context/guide/orchestration.md`. The main session
+  orchestrates and dispatches; it does not plan, code or review itself.
 - About to start any task → skim `context/index/lessons.md`. It is the distilled
   record of how this project has actually gone wrong, and every entry in it happened
   more than once.

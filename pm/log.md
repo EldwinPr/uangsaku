@@ -175,3 +175,43 @@ own writes, so drawing a `watchGroups()` stream to the screen would need a dedic
 **[TODO]** `map.yaml` had `UC-13` under `Budget_Group`'s `ucs` and it is now removed. Note
 that UC-13 correctly **stays** under the Transactions class diagram — categories and
 subcategories are Transactions entities, and only the budget-group half moved.
+
+## 2026-08-21 — The orchestration loop
+
+**[DECISION]** **One new agent, not three.** The loop is
+`select → feat-planner → flutter-coder → issue-qa → select`, with the **main session as
+orchestrator** — it selects and dispatches and does no planning, coding or reviewing itself.
+Owner's constraint: *"i dont want too many agents"*, and `issue-qa` carries review through
+reconcile, close, commit and push rather than splitting into a reviewer and a closer.
+
+**[DECISION]** **The coder no longer commits; QA does.** A commit made before review puts
+unreviewed code in history, and the run's git log stops being a record of verified work.
+
+**[DISCOVERY]** The reason a separate reviewer earns its keep at all is already on file:
+`lessons.md` §10, where a delegated agent exported its own diagram, inspected it, and
+reported a real UML notation error as "harmless, not a correctness issue." **A worker's
+judgement of its own output is the weakest link in the chain.** The four verification
+commands answer *"does this compile and pass its own tests"*; they cannot answer *"does this
+match the plan and the diagrams"* — a `double` in a DTO, a `kind IN (...)` list where
+`to_account_id IS NULL` belonged, or a disabled button all compile and pass.
+
+**[DECISION]** The tension in bundling review with commit is named in the agent's own brief
+rather than left implicit: **an agent that finishes by committing has a standing pull toward
+passing.** Its instruction is that rejecting is the expected outcome, not the exception —
+one round trip against every issue built on bad code. It may fix trivia only; anything
+touching behaviour, naming or scope goes back to `flutter-coder`, because *a check that
+repairs what it is checking has stopped being one.*
+
+**[DECISION]** **Retry budget is two attempts, then halt** — a third try on the same failure
+is a loop burning budget, and a repeated failure is itself a finding. Halts are per-issue;
+the backlog has two independent chains, so one halt never stops the run. Recorded with the
+dependency graph in `context/guide/orchestration.md`.
+
+**[DECISION]** **CI is checked at the next `select`, not waited on.** Its only new
+information over the local four commands is clean-checkout behaviour — genuinely real
+(`lessons.md` §5's CRLF hash is exactly that class of bug) but not worth minutes per issue.
+
+**[TODO]** The orchestrator's own failure mode is drift, not a crash: it holds loop state
+across twenty issues, and a loosening notion of "done" would affect everything after it with
+nothing reporting so. The defence written into the guide is that `pm/tracker.yaml` is re-read
+at every `select` and is the source of truth — never what the orchestrator remembers.

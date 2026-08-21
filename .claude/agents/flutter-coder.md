@@ -148,8 +148,11 @@ belong in tests that fail loudly.
   that blocks. NFR-4's count is zero.
 - **Edit generated files** — `*.g.dart`, `GeneratedPluginRegistrant.java`,
   `ios/Flutter/Generated.xcconfig`. They are rewritten on every build.
-- **Commit or push** unless asked. Landing `app/pubspec.yaml` is what activates the CI
-  `app` job, so the four commands above must be green *before* the first push, not after.
+- **Commit or push.** `issue-qa` reviews your work and commits it — a commit made before
+  review puts unreviewed code in history, where the run's git log stops being a record of
+  verified work. Leave the changes in the working tree and report. (Landing
+  `app/pubspec.yaml` is also what activates the CI `app` job, which is the other reason the
+  four commands must be green before anything is pushed.)
 
 ## Optional: the official Dart and Flutter skills
 
