@@ -18,14 +18,11 @@ before starting work.
 
 **Active issue.** `FEAT01-foundation` — plan `CONFIRMED`, **step 1 done, steps 2-12 not
 started.** `app/` holds the `flutter create` scaffold (`name: uangsaku`,
-`applicationId com.eldwinpr.uangsaku`, android + ios) and is **deliberately untracked**:
-no `build_runner` or `drift` yet, and CI's `app` job is guarded on `app/pubspec.yaml`, so
-committing it before step 2 activates the job and fails it. `issue-qa` commits it once
-step 10's four commands are green.
+`applicationId com.eldwinpr.uangsaku`, android + ios) and is **committed and pushed** as of
+2026-08-21. It carries no `build_runner` or `drift` dependency yet — that is step 2.
 
-**Committed:** several commits on `main`, **none pushed** — so CI has not yet run against
-any of them, including the `app`-job probe fix. *(Deliberately not a count: a number here
-goes stale on the next commit, which is the §1 failure this block keeps demonstrating.)*
+**Pushed.** CI has run. The `app` job failed once on the scaffold and the guard was fixed
+rather than the commit reverted — see the entry below.
 
 **Orchestration.** Two phases, `context/guide/orchestration.md`. Phase 1 loops
 `select → feat-planner → flutter-coder → issue-qa`. When nothing is runnable, phase 2 runs
@@ -49,10 +46,11 @@ needs `working-directory: app`.
 server 1.1.1. *A session started before the PATH edit cannot see `flutter` — restart the
 process, do not re-edit PATH.*
 
-**CI.** `.github/workflows/ci.yml`, two jobs. `docs` runs `audit.py` and works today.
-`app` is guarded on `app/pubspec.yaml` and stays inert until FEAT01 lands one — **which
-means the first push after FEAT01 is the first real CI run.** Get the four commands in
-FEAT01 D7 green locally first.
+**CI.** `.github/workflows/ci.yml`, two jobs, **both live and doing real work on every
+push.** `docs` runs `audit.py`. `app` runs pub get / format / analyze / test against `app/`,
+with `build_runner` gated separately on the dependency actually being present. All five
+verified green on the current scaffold — **so from here a red `app` job means a real
+regression**, not an artefact of the project being half-built.
 
 **Audit.** `python audit.py` — green at 13 passed / 0 warnings / 0 failures. Proves the
 artifacts agree with each other; proves nothing about whether they are right
@@ -72,9 +70,10 @@ decision in it cites an already-confirmed artifact, and halts the issue to
 directly, and **its step 1 is already done** — `flutter create` ran on 2026-08-21; the run
 starts at step 2.
 
-**Standing caveat.** `context/coding-conventions/` is **provisional**. No `pub get` has run
-for this project, so no version number in `riverpod.md` or `drift.md` is verified. FEAT01
-is expected to correct them and say so here.
+**Standing caveat.** `context/coding-conventions/` is still **provisional**. `pub get` has
+now run and resolved, but no `drift` / `riverpod` / `build_runner` version is pinned or
+compiled, so no version number in `riverpod.md` or `drift.md` is verified. FEAT01 step 2 is
+where that changes, and it is expected to correct those files and say so here.
 
 ---
 
@@ -271,3 +270,39 @@ in work **already done**, and a finding gates nothing.
 plan, or mark it WONTFIX with a reason. *A defect resolved by a decision rather than a change
 is still resolved* — record which. And if a finding is another occurrence of something
 already in `lessons.md`, it belongs there as evidence; the pattern is worth more than the fix.
+
+## 2026-08-21 — First CI failure: the guard was wrong, not the commit
+
+**[STATUS]** The owner pushed, including `app/`, and CI's `app` job went red on
+`Could not find package build_runner`. Reproduced locally step by step: `flutter pub get`
+succeeds, `dart run build_runner build` fails, and **`dart format`, `flutter analyze` and
+`flutter test` all pass on the bare scaffold** (exit 0, "No issues found!", counter smoke
+test green).
+
+**[DECISION]** **Fixed the guard rather than reverting the commit.** One probe was gating
+all five steps, so `build_runner` ran on a project that has no builder dependency — that
+dependency is FEAT01 step 2, which has not run. Now two probes: `exists` gates pub get /
+format / analyze / test, `builders` gates `build_runner` on
+`grep -qE '^[[:space:]]+build_runner:' app/pubspec.yaml`.
+
+**[DISCOVERY]** **Fifth instance of `lessons.md` §5, and the second in this same CI job.**
+The guard checked a **proxy** — does a pubspec exist — for what it actually cared about:
+are there builders to run. Those two facts are identical in the steady state and diverge for
+exactly as long as a scaffold exists before its dependencies do, which is precisely the
+window this project was in. The previous instance of this defect in the same job was the
+opposite failure (a probe that could never fire, reporting success having run nothing), which
+makes the pair a nice illustration: *a proxy check fails in whichever direction the proxy and
+the real subject happen to disagree, and being right once says nothing about the other
+direction.*
+
+**[STATUS]** **The advice this file was giving was right about the symptom and wrong about
+the cause.** Four documents told the owner to keep `app/` untracked until FEAT01's four
+commands were green, on the reasoning that committing it would activate the job and fail it.
+Committing it did fail the job — but the correct response was to fix a guard that was
+describing the wrong thing, not to keep a legitimate scaffold out of version control for a
+week. All four corrected (`plan.md` step 1, `log.md`'s current-state block, `active.json`,
+and this entry).
+
+**[STATUS]** Net effect is better than before the failure: **CI now does real work on every
+push** instead of passing trivially until FEAT01 lands. All five app steps are verified green
+against the current scaffold, so from here a red `app` job means a real regression.

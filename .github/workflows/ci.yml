@@ -42,10 +42,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Inert until FEAT01 lands app/pubspec.yaml. Every step below is guarded on it, so this
-      # job passes trivially in the meantime rather than failing red for months.
+      # Two probes, because "a Flutter project exists" and "it has code generators" are
+      # different facts and the steps below need different ones.
+      #
+      # `exists` gates pub get / format / analyze / test -- all of which work on a bare
+      # `flutter create` scaffold. `builders` gates build_runner, which does NOT: running it
+      # on a project with no builder dependency fails with "Could not find package
+      # build_runner". That is exactly what happened on the first push after app/ was
+      # committed, and the guard was at fault rather than the commit -- it checked a proxy
+      # (does a pubspec exist) for the thing it actually cared about (are there builders to
+      # run). Same defect shape as the root-path probe this file already carried once.
       - id: probe
-        run: echo "exists=$([ -f app/pubspec.yaml ] && echo yes || echo no)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "exists=$([ -f app/pubspec.yaml ] && echo yes || echo no)" >> "$GITHUB_OUTPUT"
+          echo "builders=$(grep -qE '^[[:space:]]+build_runner:' app/pubspec.yaml 2>/dev/null && echo yes || echo no)" >> "$GITHUB_OUTPUT"
       - uses: subosito/flutter-action@v2
         if: steps.probe.outputs.exists == 'yes'
         with:
@@ -57,7 +67,8 @@ jobs:
         working-directory: app
       # build_runner first: drift_dev and riverpod_generator both emit code that analyze,
       # format and test all read. Running it after them checks the previous commit's output.
-      - if: steps.probe.outputs.exists == 'yes'
+      # Guarded on `builders`, not `exists` -- see the probe comment above.
+      - if: steps.probe.outputs.builders == 'yes'
         run: dart run build_runner build --delete-conflicting-outputs
         working-directory: app
       - if: steps.probe.outputs.exists == 'yes'

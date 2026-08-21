@@ -124,6 +124,14 @@ a *green* result, which is why none of them announced itself.
 - CI's `app` job probed for `pubspec.yaml` at the repository root after the package moved
   to `app/`. It would not have failed — it would have **reported success having run
   nothing**, permanently.
+- **The same job, fixed, then failed the opposite way.** Once repointed at
+  `app/pubspec.yaml`, that one probe gated all five steps — including `build_runner`, which
+  cannot run on a project with no builder dependency. Committing the bare `flutter create`
+  scaffold turned the job red on `Could not find package build_runner`. The commit was not
+  the fault: **the guard checked a proxy (does a pubspec exist) for what it actually cared
+  about (are there builders to run)**, and those two facts diverge for exactly as long as a
+  scaffold exists before its dependencies do. Split into two probes; the other four steps
+  turned out to pass on the scaffold, so the job now does real work instead of staying inert.
 
 **The general form:** *a guard that succeeds when it cannot find its subject is worse than
 one that fails.* A red build gets fixed; a green one gets trusted. Any check written

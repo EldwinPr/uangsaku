@@ -181,10 +181,16 @@ drifts — `tooling.md` says bump both together, never one.
 
    Verified on disk: `app/pubspec.yaml` has `name: uangsaku`, `app/android/app/build.gradle.kts`
    has `applicationId = "com.eldwinpr.uangsaku"` and the matching `namespace`, and both
-   `app/android/` and `app/ios/` exist. **`app/` is deliberately untracked** — it has no
-   `build_runner` or `drift` dependency yet, and CI's `app` job is guarded on
-   `app/pubspec.yaml`, so committing it before step 2 would activate the job and fail it.
-   Start at step 2; commit `app/` only once step 10's four commands are green.
+   `app/android/` and `app/ios/` exist. **`app/` is committed and pushed** (owner, 2026-08-21).
+
+   *This plan previously said to keep `app/` untracked until step 10, because committing it
+   would activate CI's `app` job and fail it on the missing `build_runner`. The owner
+   committed it, CI failed exactly there, and the guard was fixed instead — `build_runner` is
+   now gated on the dependency actually being present, so the scaffold builds green and CI
+   does real work from now on rather than staying inert. The advice was right about the
+   symptom and wrong about the cause.*
+
+   Start at step 2.
 
    *Original step text, kept because its reasoning still applies to any re-scaffold:*
 
