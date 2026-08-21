@@ -14,12 +14,16 @@ before starting work.
 
 ## Current state — 2026-08-21
 
-**Phase.** Documentation complete; implementation not started. No Dart code exists.
+**Phase.** Documentation complete; **implementation under way.** The app compiles and its
+test suite is green. There are no screens and no DAOs yet — the first of each belongs to
+UC14.
 
-**Active issue.** `FEAT01-foundation` — plan `CONFIRMED`, **step 1 done, steps 2-12 not
-started.** `app/` holds the `flutter create` scaffold (`name: uangsaku`,
-`applicationId com.eldwinpr.uangsaku`, android + ios) and is **committed and pushed** as of
-2026-08-21. It carries no `build_runner` or `drift` dependency yet — that is step 2.
+**Active issue.** `UC14-choose-currency` — **not planned yet.** `FEAT01-foundation` is
+**DONE 2026-08-21**: all twelve steps, reviewed and committed by `issue-qa`. `app/` now
+holds the seven ERD tables at `schemaVersion 1` (`app/lib/src/{accounts,transactions,
+budgeting,settings}`), `AppDatabase` on a background isolate, the committed v1 schema
+snapshot, one seeded `Settings` row at `IDR`, and four passing tests. Package `uangsaku`,
+`applicationId com.eldwinpr.uangsaku`, android + ios.
 
 **Pushed.** CI has run. The `app` job failed once on the scaffold and the guard was fixed
 rather than the commit reverted — see the entry below.
@@ -35,8 +39,9 @@ and it was confirmed 2026-08-21.
 
 **Targets.** Android and iOS. Neither is runnable on this machine: no Android SDK
 (install before UC14, the first UI issue), and no Mac, so `app/ios/` is versioned but
-never compiled. Web is not a fallback — `NativeDatabase.createInBackground` is
-native-only. `flutter test` is headless and works, which is where `testing.md` puts the
+never compiled. Web is not a fallback — the database opens through `drift_flutter`'s
+`driftDatabase()`, whose native path is `NativeDatabase.createBackgroundConnection`; a web
+build would need drift's wasm backend and its assets, so it would not be testing this app. `flutter test` is headless and works, which is where `testing.md` puts the
 correctness surface.
 
 **Layout.** The Dart package is `app/`, not the repository root. Every Flutter command
@@ -49,8 +54,8 @@ process, do not re-edit PATH.*
 **CI.** `.github/workflows/ci.yml`, two jobs, **both live and doing real work on every
 push.** `docs` runs `audit.py`. `app` runs pub get / format / analyze / test against `app/`,
 with `build_runner` gated separately on the dependency actually being present. All five
-verified green on the current scaffold — **so from here a red `app` job means a real
-regression**, not an artefact of the project being half-built.
+now run against real code and were green at FEAT01's commit — **so a red `app` job means a
+real regression**, not an artefact of the project being half-built.
 
 **Audit.** `python audit.py` — green at 13 passed / 0 warnings / 0 failures. Proves the
 artifacts agree with each other; proves nothing about whether they are right
@@ -66,14 +71,17 @@ phone-only but not closed.
 
 **Unattended mode is live.** `feat-planner` may mark a plan `AUTO-CONFIRMED` when every
 decision in it cites an already-confirmed artifact, and halts the issue to
-`pm/questions.md` when one cannot be cited. FEAT01 itself is `CONFIRMED` by the owner
-directly, and **its step 1 is already done** — `flutter create` ran on 2026-08-21; the run
-starts at step 2.
+`pm/questions.md` when one cannot be cited. FEAT01 was `CONFIRMED` by the owner directly
+and is now DONE; **every remaining issue is unplanned**, so the next one to run is the
+first real test of `AUTO-CONFIRMED`.
 
-**Standing caveat.** `context/coding-conventions/` is still **provisional**. `pub get` has
-now run and resolved, but no `drift` / `riverpod` / `build_runner` version is pinned or
-compiled, so no version number in `riverpod.md` or `drift.md` is verified. FEAT01 step 2 is
-where that changes, and it is expected to correct those files and say so here.
+**Standing caveat, now half-lifted.** `context/coding-conventions/` was written provisional.
+FEAT01 tested part of it against a real toolchain and corrected what lost: **versions,
+`analysis_options.yaml`, the database-open call and the provider shapes are now verified**
+(`riverpod.md`, `drift.md`, `dart-and-flutter.md`, marked in place). **Everything above the
+database is still unverified** — no DAO, notifier, screen or widget test has been written,
+so `testing.md`, the DAO and provider sections of `drift.md`/`riverpod.md`, and every claim
+about the Screen → provider → DAO chain remain shape rather than fact until UC14 runs.
 
 ---
 
@@ -306,3 +314,80 @@ and this entry).
 **[STATUS]** Net effect is better than before the failure: **CI now does real work on every
 push** instead of passing trivially until FEAT01 lands. All five app steps are verified green
 against the current scaffold, so from here a red `app` job means a real regression.
+
+## 2026-08-21 — FEAT01-foundation DONE: the repo is a Dart project
+
+**[STATUS]** **First code in history.** Twelve steps, reviewed by `issue-qa` before the
+commit. What landed, against D2's file manifest — which stood in for the sequence diagram
+this issue could not have, and which the as-built pass was run against:
+
+- Seven table declarations in four module files, `schemaVersion = 1`. Column names read
+  against `erd.drawio` one by one: they match, in `snake_case`, including
+  `Transaction.note` nullable. Declaration names match the class diagrams exactly.
+- **Every amount is an `IntColumn`** — `opening_amount`, `Transaction.amount`,
+  `Budget_Period.amount`. No `RealColumn` anywhere, in tables or generated code (NFR-2).
+- All three enums stored by text: the generated snapshot shows `EnumNameConverter`, not an
+  index (`drift.md`).
+- `AppDatabase` on a background isolate, one seeded `Settings` row at `IDR` guarded on
+  `details.wasCreated`, nothing else seeded (D6).
+- `appDatabaseProvider` and nothing else — no screens, no DAOs, no other providers (D5).
+- v1 schema snapshot committed. **No generated migration test, and that is correct**:
+  `drift_dev make-migrations` generates step tests *between* versions, and re-running it at
+  close produced no files. Verified rather than taken on report.
+- `app/test/widget_test.dart` deleted — the `flutter create` smoke test asserted against a
+  `MyApp` that `main.dart` no longer defines. A consequence of a manifest file, not scope
+  creep.
+
+Four commands re-run by the reviewer, not trusted from the report: `build_runner` green,
+`dart format` 0 changed of 9, `flutter analyze` "No issues found!", `flutter test` 4/4.
+`.github/workflows/ci.yml` untouched (D8) and nothing renamed `moneytracker` → `uangsaku`
+(D1).
+
+**[DECISION]** **Three conventions corrections, per step 11**, all in
+`context/index/decisions.md` in full: `constant_identifier_names: false` so the enum values
+stay spelled as `docs/enums.md` spells them (under `.textEnum<T>()` those identifiers *are*
+the stored text); `driftDatabase()` in place of a raw `NativeDatabase.createInBackground`;
+and `appDatabaseProvider` as a plain `Provider` rather than `@riverpod`. `riverpod.md` also
+gained the real resolved versions — `riverpod_annotation`/`riverpod_generator` are at major
+**4**, where the file had guessed 3.
+
+**[DISCOVERY]** **The background-isolate guarantee was checked in the package source, not
+inferred.** `driftDatabase()` is a wrapper, and a wrapper is exactly the kind of claim that
+gets accepted because it sounds right. `drift_flutter-0.3.1/lib/src/native.dart` calls
+`NativeDatabase.createBackgroundConnection`, and `createInBackground` is itself a thin
+wrapper on that same call — so the substitution keeps the one real boundary in this system
+(ISSUE-005). Same for "a plain `Provider` is kept alive": `riverpod-3.4.2` defaults
+`isAutoDispose: false`. Both were the coder's judgement calls and both survived being
+checked; neither would have been safe to accept on the argument alone.
+
+**[DISCOVERY]** **`--delete-conflicting-outputs` no longer exists.** `build_runner` 2.16
+prints *"These options have been removed and were ignored"* and continues. Harmless — the
+command still succeeds, in CI too — but `testing.md`, `plan.md` D7 and `ci.yml` all name
+the flag. `testing.md` corrected at close; the CI file is left alone (D8) and the flag is a
+no-op there.
+
+**[DISCOVERY]** **Two more `lessons.md` §1 stale registers, both found by grepping the
+vocabulary rather than the statement.** `docs/enums.md`'s closing line still said the one
+open `fr-nfr.md` §4 item was *"whether a transaction carries a free-text note"* — decided
+2026-08-21; the actual remaining item is where the data lives. And
+`coding-conventions/README.md` still carried a blanket **provisional** banner over six
+files, half of which this issue verified. Both corrected. **A half-true label is the §1
+failure in its most durable form**: it is not wrong enough to be noticed and not right
+enough to be trusted, so it survives sweeps. Added to `lessons.md` as evidence.
+
+**[TODO]** The plan's **two open questions are still unanswered** and were not answered at
+close, because they are the owner's: is `com.eldwinpr.uangsaku` the right application id,
+and does the `moneytracker` / `uangsaku` split bother you. Neither blocked the work.
+Neither is cheap forever — the application id is the one identifier here that is genuinely
+expensive to change once an app is installed.
+
+**[TODO]** One reviewer note filed in `pm/findings.md` (F1) rather than sent back: the
+"all seven tables exist" test reads drift's declared `allTables`, not the SQLite schema.
+It catches the failure that can actually happen and it is not worth a round trip, but it is
+the shape `lessons.md` §5 warns about, and the final `repo-qa` sweep can judge it against
+the whole suite.
+
+**[STATUS]** **Next: `UC14-choose-currency`** — the first screen, the first DAO, the first
+notifier, and the first issue to be `AUTO-CONFIRMED` rather than confirmed by the owner.
+**Install the Android SDK before it if the app is to be launched**; `flutter test` is
+headless and does not need it.

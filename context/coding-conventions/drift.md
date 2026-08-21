@@ -8,8 +8,16 @@ Source: [drift documentation](https://drift.simonbinder.eu/).
 **On a background isolate, always:**
 
 ```dart
-AppDatabase() : super(NativeDatabase.createInBackground(_dbFile()));
+AppDatabase() : super(driftDatabase(name: 'app_database'));
 ```
+
+**Corrected `FEAT01`, 2026-08-21** — this file previously showed
+`NativeDatabase.createInBackground(_dbFile())` directly. That still works, but the `drift_flutter`
+package (pinned alongside `drift`/`drift_dev`, `tooling.md`) wraps it: `driftDatabase()` calls
+`NativeDatabase.createBackgroundConnection` internally, so the background-isolate guarantee below
+is unchanged, and it additionally resolves a platform-appropriate file location via
+`path_provider` instead of a hand-written `_dbFile()` helper. Use it rather than the raw
+`NativeDatabase` call.
 
 Decided 2026-08-20. The reason, restated because the shorthand for it is wrong: this is **not**
 concurrent access — drift still serialises statements, and nothing here makes writes parallel

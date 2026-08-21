@@ -16,7 +16,7 @@ Read this before starting work. Every entry is short on purpose; the full narrat
 
 ## 1. A decision is not finished until every register that listed it as open is updated
 
-**Hit six times, four of them in a single day.** The credit/debit naming collision sat in
+**Hit eight times, four of them in a single day.** The credit/debit naming collision sat in
 `fr-nfr.md` §4 as "undecided, blocking schema and UI naming" for a full day after it was
 closed by the schema decision. "What a month means" was still described as open in three
 separate passages hours after the owner decided it. The workbook's Budgeting module
@@ -35,6 +35,17 @@ day. **A sweep that catches nine of eleven feels complete and is not.**
 document claiming something is settled when it is not. Three of these four were the
 reverse — a document claiming something was **open when it was settled** — which makes a
 finished decision look like a blocker and invites re-arguing it from memory.
+
+**Two more on 2026-08-21, at FEAT01's close, and both are the *half-true* form.**
+`docs/enums.md` closed by naming the next candidate for the file — *"whether a transaction
+carries a free-text note"* — as the one `fr-nfr.md` §4 item still open, a day after it was
+decided; the item actually still open is where the data lives, so the sentence was wrong
+about the fact and right about the shape. And `coding-conventions/README.md` carried a
+blanket **provisional** banner over six files after FEAT01 verified three of them.
+**A half-true label is the most durable version of this failure:** it is not wrong enough
+to be noticed and not right enough to be trusted, so it survives every sweep and quietly
+devalues the files it covers. When a label stops applying to part of its subject, split it
+— do not leave it whole.
 
 **Why no check catches it:** `audit.py` compares documents to each other, and every one of
 these passages was internally consistent prose. This is a known limit, deliberately not

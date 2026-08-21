@@ -49,11 +49,22 @@ analyzer:
 
 linter:
   rules:
-    - directives_ordering
-    - prefer_final_locals
-    - unawaited_futures
-    - avoid_print
+    directives_ordering: true
+    prefer_final_locals: true
+    unawaited_futures: true
+    avoid_print: true
+    constant_identifier_names: false
 ```
+
+**`constant_identifier_names: false`, added `FEAT01`.** `AccountGroup` (`HOLDING` /
+`RECEIVABLE` / `PAYABLE`) and `Currency` (`IDR` / `USD`) are spelled exactly as `docs/enums.md`
+and the class diagrams spell them — domain vocabulary outranks Effective Dart's lowerCamelCase
+preference for constants here, per this file's own "Domain terms stay in English and stay
+spelled as the artifacts spell them." `TransactionKind`'s values are already lowerCamelCase
+and untouched by this. **Also note the `rules` block switched from list to map form** — YAML's
+list syntax (`- rule_name`) can only enable rules from the included `flutter_lints` set, not
+disable one; disabling `constant_identifier_names` needs the `rule_name: false` map form for
+the whole block.
 
 **Decision: `flutter_lints` plus the three strict analyzer modes, not `very_good_analysis`.**
 `very_good_analysis` enables far more rules (~86% of all available lints) and is the stricter

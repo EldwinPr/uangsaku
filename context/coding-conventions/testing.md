@@ -69,8 +69,13 @@ create-only because no screen ever offered a delete.
 flutter analyze          # must be clean; strict-casts etc. are in analysis_options.yaml
 dart format --set-exit-if-changed .
 flutter test
-dart run build_runner build --delete-conflicting-outputs   # after schema or provider changes
+dart run build_runner build   # after schema or provider changes
 ```
+
+*Corrected `FEAT01`, 2026-08-21:* `--delete-conflicting-outputs` **no longer exists** —
+`build_runner` 2.16 prints *"These options have been removed and were ignored"* and carries
+on, so commands still naming it (including `ci.yml` and `FEAT01`'s plan) succeed with a
+warning rather than failing.
 
 All four before an issue closes. `flutter analyze` counts as verification in the
 definition-of-done sense — a warning left in place is a decision to leave it, and should be
@@ -78,10 +83,11 @@ argued in the plan rather than ignored.
 
 **These four now run in CI** (`.github/workflows/ci.yml`, added 2026-08-21), in that order but
 with `build_runner` first — generated code has to exist before `analyze`, `format` and `test`
-read it, and running it last only checks the previous commit's output. The Flutter job is
-guarded on `pubspec.yaml` existing, so it passes trivially until `FEAT01` creates the project
-rather than failing red for months. A second job runs `python audit.py`, which guards the
-documentation the same way.
+read it, and running it last only checks the previous commit's output. The Flutter job carries
+two probes: one on `app/pubspec.yaml` existing, and a separate one gating `build_runner` on the
+dependency actually being listed. **Since `FEAT01` landed on 2026-08-21 both fire and all five
+steps do real work on every push**, so a red job is a real regression. A second job runs
+`python audit.py`, which guards the documentation the same way.
 
 Running them locally before pushing is still the faster loop; CI is there because an
 unattended implementation run has nothing else checking it.

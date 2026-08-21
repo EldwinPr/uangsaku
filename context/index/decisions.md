@@ -835,3 +835,41 @@ that cannot be written is the signal that the decision is new.**
 This mode exists because the owner deliberately removed themselves to test how the pipeline
 holds up unattended — plan quality being the variable under test — and a mode that only
 applies while nobody is watching should be recorded as exactly that.
+
+## 2026-08-21 — FEAT01: three rulings the real toolchain forced
+
+The scaffold issue was the first to run `pub get`, `build_runner`, the analyzer and the
+test suite against `context/coding-conventions/`, which had been written provisionally.
+Three things in it lost to the toolchain or to the vocabulary, and all three are durable.
+
+**1. `constant_identifier_names` is off, project-wide.** `docs/enums.md` and the class
+diagrams spell `AccountGroup` as `HOLDING` / `RECEIVABLE` / `PAYABLE` and `Currency` as
+`IDR` / `USD`. Under `.textEnum<T>()` those identifiers are **the literal text stored in
+every row**, so renaming them to Effective Dart's `lowerCamelCase` would either change the
+stored vocabulary or split it from the documents that define it. `coding-conventions/README.md`'s
+own rule — domain terms stay spelled as the artifacts spell them — outranks the lint here.
+`TransactionKind`'s seven values were already `lowerCamelCase` and are unaffected, which is
+the shape to expect: **the exception is the vocabulary, not the language.** Recorded rather
+than left as an inline `ignore` because it applies wherever a documented enum lands, and
+because disabling a whole rule is a decision that should be findable. *Reviewed at close:
+the narrower fix is a per-file `ignore_for_file`; the project-wide form was kept because
+the same two enums are read from four modules and a per-file pragma would have to be
+repeated in each, but this is the one ruling here that a later pass may legitimately
+narrow.*
+
+**2. The database is opened with `drift_flutter`'s `driftDatabase()`, not a raw
+`NativeDatabase.createInBackground`.** Verified at close by reading `drift_flutter-0.3.1`:
+its default native path calls `NativeDatabase.createBackgroundConnection`, and
+`createInBackground` is itself a thin wrapper around that same call. **The background
+isolate — the only real boundary in this system (ISSUE-005) — is therefore unchanged**,
+and what is gained is a `path_provider`-resolved database file instead of a hand-written
+path helper. `drift.md` updated. The substitution is only safe because the guarantee was
+checked in the package source rather than inferred from the package's description.
+
+**3. `appDatabaseProvider` is a plain hand-written `Provider`, not `@riverpod`.** The
+conventions allow two provider shapes — `StreamProvider` for reads, `Notifier` for writes —
+and this is neither; it is plumbing (FEAT01 D5). A plain `Provider` in `riverpod` 3.4.2
+defaults to `isAutoDispose: false` (verified in `providers/provider.dart`), so it is kept
+alive without the annotation, which is exactly what "outlives every screen" asked for. It
+also keeps one generator per `part` file: `AppDatabase` already owns `app_database.g.dart`
+via `@DriftDatabase`.

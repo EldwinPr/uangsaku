@@ -1,0 +1,10 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          # Required by `dart run drift_dev make-migrations` (drift.md).
+          databases:
+            app_database: lib/src/database/app_database.dart
+          # schema_dir and test_dir left at their defaults:
+          # drift_schemas/ and test/drift/ — the former is on D2's manifest.

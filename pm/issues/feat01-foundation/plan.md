@@ -1,6 +1,12 @@
 # FEAT01-foundation — Flutter scaffold, drift on a background isolate, first migration
 
-**Status:** CONFIRMED by the owner 2026-08-21. Step 1 already done (see Steps); the
+**Status:** DONE 2026-08-21. All twelve steps complete; reviewed and closed by
+`issue-qa`, which re-ran the four D7 commands itself (build_runner green, `dart format`
+0 changed, `flutter analyze` "No issues found!", `flutter test` 4/4). The two open
+questions at the foot of this file are the owner's and were **still unanswered at close**
+— neither blocked the work, and neither is resolved by it.
+
+*Previously:* CONFIRMED by the owner 2026-08-21. Step 1 already done (see Steps); the
 unattended run starts at step 2. All nine decisions below are confirmed as written —
 D1 and D4 were answered by the owner directly, the rest by confirming this plan.
 

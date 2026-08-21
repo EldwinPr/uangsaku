@@ -158,6 +158,8 @@ plausible-sounding wrong version, and the wrong version costs a migration.
    these enums, and a value list that exists in only one of the three places is the
    drift this file was created to end.
 
-*Currency landed here on 2026-08-20*, which is what this line used to predict. One
-`fr-nfr.md` §4 item still stands and would not land here if decided: whether a
-transaction carries a free-text note — that is a nullable column, not a vocabulary.
+*Currency landed here on 2026-08-20*, which is what this line used to predict. The
+free-text note this line used to name as the next candidate was **decided 2026-08-21 and
+did not land here** — it is a nullable column on `Transaction`, not a vocabulary, and it
+is in the schema as of `FEAT01`. The one `fr-nfr.md` §4 item still open is where the data
+lives, which has no enum in it either.

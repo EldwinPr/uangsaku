@@ -19,15 +19,17 @@ boilerplate that would otherwise be the most-edited, least-interesting code in t
 
 ```yaml
 dependencies:
-  flutter_riverpod: ^3.0.0
-  riverpod_annotation: ^3.0.0
+  flutter_riverpod: ^3.4.2
+  riverpod_annotation: ^4.0.6
 dev_dependencies:
-  build_runner: ^2.4.0
-  riverpod_generator: ^3.0.0
+  build_runner: ^2.16.0
+  riverpod_generator: ^4.0.8
 ```
 
-Pin real versions when `FEAT01` runs — the numbers above are shape, not verified fact, since
-no `pub get` has ever been run for this project.
+**Verified 2026-08-21, `FEAT01-foundation`** — resolved with `dart pub add` against the real
+pub.dev index, alongside `drift: ^2.34.3`, `drift_flutter: ^0.3.1`, `drift_dev: ^2.34.5`. Note
+`riverpod_annotation` and `riverpod_generator` are already at major version 4, not 3 as this
+file previously guessed.
 
 `invalid_annotation_target: ignore` in `analysis_options.yaml` is required by the generator;
 it is in the analyzer block for that reason and no other.
@@ -49,6 +51,16 @@ invent a third:
 
 Use `.family` when a read is keyed — `debtProgressProvider` is a
 `StreamProvider.family` keyed by account, as `class-accounts.drawio` shows.
+
+**One more exception, verified `FEAT01`:** `appDatabaseProvider` is neither shape — it is
+plumbing (ISSUE-001 D5), a plain hand-written `Provider<AppDatabase>`, not `@riverpod`. A
+manual `Provider` is inherently kept alive (only `.autoDispose` variants dispose), which is
+exactly what "outlives every screen" needs, and it sidesteps a real generator conflict:
+`riverpod_generator` and `drift_dev` both target `part '<file>.g.dart'`, and `AppDatabase`
+already owns that part via `@DriftDatabase`. Putting `@riverpod` on a function in the same
+file did not error in testing — `source_gen`'s combining builder merges both generators'
+output into one `.g.dart` — but the plain `Provider` is simpler and was the actual choice
+made in `app_database.dart`.
 
 ## The rule that is easiest to get wrong
 

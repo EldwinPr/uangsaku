@@ -168,28 +168,30 @@ issues:
   # for it) and UC04 (five use cases, one form, one write path - splitting it
   # would fight ERD D1).
   #
-  # All TODO. No plan.md exists for any of them; none may start until its own
-  # plan is written and confirmed.
+  # FEAT01 is DONE (2026-08-21) and is the only row here that has been built. The
+  # remaining ten are TODO and still unplanned; none may start until its own
+  # plan.md is written and confirmed (or AUTO-CONFIRMED under the unattended rule).
   # ---------------------------------------------------------------------------
 
   - id: FEAT01-foundation
     slug: foundation
     title: Flutter scaffold, drift on a background isolate, first migration
-    status: TODO
+    status: DONE
     plan: pm/issues/feat01-foundation/plan.md
     depends_on: [ISSUE-007, ISSUE-008, ISSUE-009]
     traces_to: []
     summary: >-
-      The only issue with no use case, labelled FEAT rather than UC to say so out loud.
-      Flutter project, Riverpod, AppDatabase opened with NativeDatabase.createInBackground,
-      drift codegen, the schema from the ERD, first migration. No longer writes
-      context/coding-conventions/ - ISSUE-009 did that on 2026-08-20 - but it is the issue
-      that first tests those conventions against a real toolchain, and is expected to
-      correct them. UNBLOCKED 2026-08-21: Flutter 3.47.1 / Dart 3.13.1 stable installed at
-      C:/flutter and on the PATH, Dart MCP server connected. The schema this issue migrates
-      now includes Transaction.note (nullable free text, decided 2026-08-21). What still
-      gates it is the pipeline's own rule, not the toolchain - no code before this issue's
-      plan.md exists and is user-confirmed, and it is still a NOT PLANNED placeholder.
+      DONE 2026-08-21. The app compiles: all seven ERD tables at schemaVersion 1 in
+      app/lib/src/{accounts,transactions,budgeting,settings}, AppDatabase on a background
+      isolate via drift_flutter's driftDatabase() (which calls
+      NativeDatabase.createBackgroundConnection, the same isolate guarantee
+      createInBackground gives), the v1 schema snapshot committed, one seeded Settings row
+      at IDR, and four green tests. Every amount is an IntColumn; all three enums stored by
+      text, never index. No screens, no DAOs, no providers beyond appDatabaseProvider (D5).
+      Also the first issue to test context/coding-conventions/ against a real toolchain and
+      correct it: real resolved versions in riverpod.md, the driftDatabase() substitution in
+      drift.md, and constant_identifier_names disabled in dart-and-flutter.md so the enum
+      values stay spelled as docs/enums.md spells them.
 
   - id: UC14-choose-currency
     slug: choose-currency

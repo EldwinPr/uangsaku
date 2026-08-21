@@ -7,17 +7,23 @@ backend** (`context/index/decisions.md`, 2026-08-19).
 It has been written slightly ahead of that, at the owner's request, which is worth stating
 plainly because it changes how much these files are worth:
 
-> **These are provisional until `FEAT01-foundation` runs.** Every rule here is either
-> quoted from an official source or derived from a decision already recorded in
-> `decisions.md`. Nothing here has been checked against code, because no code exists yet:
-> no `pub get` has run, no package version is verified, nothing has been compiled.
-> **Anything that turns out to fight the real toolchain loses** — update the file as part
-> of the issue that hits it, and say so in `pm/log.md`.
+> **Half of this is now verified, half is still shape.** These files were written ahead of
+> any code. **`FEAT01-foundation` ran on 2026-08-21 and tested the database half against a
+> real toolchain**: package versions, `analysis_options.yaml`, the table and enum rules, the
+> money rule, how the database is opened, and the provider shapes are **checked, and the
+> three files that lost were corrected in place** (`riverpod.md`, `drift.md`,
+> `dart-and-flutter.md` — each correction is marked and dated where it sits).
 >
-> *Narrowed 2026-08-21.* This note used to give two reasons, and one of them is gone: the
-> SDK **is** now installed and on the PATH (Flutter 3.47.1 / Dart 3.13.1 — see
-> [`tooling.md`](tooling.md)), and the Dart MCP server is connected. What remains unverified
-> is everything downstream of actually building the project, which is still all of it.
+> **Everything above the database is still unverified.** No DAO, notifier, screen or widget
+> test has been written, so the DAO and provider sections here, all of
+> [`testing.md`](testing.md) beyond the database layer, and every claim about the
+> Screen → provider → DAO chain remain derived from the class diagrams rather than from
+> code. `UC14-choose-currency` is the issue that tests them.
+>
+> **Anything that turns out to fight the real toolchain loses** — update the file as part of
+> the issue that hits it, and say so in `pm/log.md`. *Do not re-broaden this note to a
+> blanket "provisional": a label that is half true is read as false everywhere and stops
+> being read at all (`lessons.md` §1).*
 
 ## The files
 

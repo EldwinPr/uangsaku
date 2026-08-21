@@ -1,6 +1,7 @@
 # UC/FEAT -> artifact index.
-# No code exists yet (Phase 1). Until it does, this maps use cases to the design
-# artifacts that specify them; code paths get added alongside, not instead.
+# Maps use cases to the design artifacts that specify them, and - from FEAT01
+# onward - to the code that implements them. Code paths are added alongside the
+# design artifacts, not instead of them.
 
 # Distilled from pm/log-archive-2026-08.md on 2026-08-21: the failure patterns this
 # project has hit more than once. decisions.md says what was decided; this says how the
@@ -8,6 +9,25 @@
 lessons: context/index/lessons.md
 
 erd: docs/diagrams/erd.drawio
+
+# ---------------------------------------------------------------------------
+# Code. The Dart package lives in app/ (FEAT01 D9), so every path below is
+# relative to the repository root and starts with app/.
+# ---------------------------------------------------------------------------
+code:
+  # FEAT01-foundation, DONE 2026-08-21. No use case - it is the substrate every UC
+  # issue builds on. The seven ERD tables at schemaVersion 1, one file per module,
+  # plus AppDatabase and the committed v1 schema snapshot. Table declaration names
+  # come from the class diagrams; column names from erd.drawio in snake_case.
+  FEAT01:
+    database:     app/lib/src/database/     # AppDatabase, appDatabaseProvider, seeding
+    accounts:     app/lib/src/accounts/     # Accounts, AccountGroup
+    transactions: app/lib/src/transactions/ # Transactions, Categories, Subcategories, TransactionKind
+    budgeting:    app/lib/src/budgeting/    # BudgetGroups, BudgetPeriods
+    settings:     app/lib/src/settings/     # Settings, Currency
+    entrypoint:   app/lib/main.dart         # + app/lib/src/app.dart (placeholder screen)
+    schema:       app/drift_schemas/        # generated snapshots, committed (drift.md)
+    tests:        app/test/database/app_database_test.dart
 
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on

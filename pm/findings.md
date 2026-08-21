@@ -46,4 +46,21 @@ that file, add it there as evidence. The pattern is worth more than the individu
 
 ---
 
-*No findings. The unattended run has not been executed yet.*
+*Phase 2 has not run yet. The entry below was filed during phase 1, by `issue-qa` at an
+issue close, under the third option in its brief: not certain enough to reject, not certain
+enough to wave through silently.*
+
+## F1 — the "all seven tables exist" test reads drift's declared tables, not the database   [OPEN]
+**Scope:** APP          **Severity:** risk
+**Where:** `app/test/database/app_database_test.dart`, the `FEAT01: all seven tables exist` test
+**Violates:** nothing stated. It is the shape `lessons.md` §5 describes — a check whose subject
+is not quite the thing it is named for.
+**What it is:** the test asserts over `database.allTables`, which is generated from the
+`@DriftDatabase(tables: [...])` annotation and never touches SQLite. It does catch the failure
+that can realistically happen — a table declared but left out of the annotation — and a
+sibling test does query real SQL, so the schema is proven to be created. But the assertion as
+named ("the tables exist") would hold even if nothing had been created, and it is the pattern
+that has produced four green-for-the-wrong-reason results on this project. `sqlite_master`
+would answer the question the name asks.
+**Confidence:** worth checking — whether this matters depends on what the rest of the suite
+looks like once DAO tests exist, which is not visible from one issue's diff.
