@@ -16,8 +16,18 @@ before starting work.
 
 **Phase.** Documentation complete; implementation not started. No Dart code exists.
 
-**Active issue.** `FEAT01-foundation` — plan written and confirmed, not yet executed.
-`app/` exists and is empty. Nothing is committed.
+**Active issue.** `FEAT01-foundation` — plan `CONFIRMED`, **step 1 done, steps 2-12 not
+started.** `app/` holds the `flutter create` scaffold (`name: uangsaku`,
+`applicationId com.eldwinpr.uangsaku`, android + ios) and is **deliberately untracked**:
+no `build_runner` or `drift` yet, and CI's `app` job is guarded on `app/pubspec.yaml`, so
+committing it before step 2 activates the job and fails it. `issue-qa` commits it once
+step 10's four commands are green.
+
+**Committed:** three commits on `main`, **none pushed** — so CI has not yet run against any
+of them, including the `app`-job probe fix.
+
+**Orchestration.** `select → feat-planner → flutter-coder → issue-qa → select`, main session
+as orchestrator. Loop, halt paths and retry budget: `context/guide/orchestration.md`.
 
 **Stack.** Flutter/Dart, `drift` over SQLite, Riverpod, no backend, local-first, single
 user. **Settled, no longer provisional** — the choice hinged on iOS being a real target
