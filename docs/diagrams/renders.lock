@@ -35,13 +35,13 @@ docs/diagrams/seq-uc10-debt-progress.drawio:
   source_sha: 798606311d8b569ebea6d8aa28d991a1b7f22ce369518aea752a1d262b62dcdc
 docs/diagrams/seq-uc11-set-budget.drawio:
   render: seq-uc11-set-budget.png
-  source_sha: 57944240e4e1be8b496e679677f4af6017fed0eddc2fefe627b0ed364670ebbb
+  source_sha: 1b67a29e2ae64c782ab945601906e1c3719a9112ac24a3072cd52c91481e3558
 docs/diagrams/seq-uc12-budget-consumption.drawio:
   render: seq-uc12-budget-consumption.png
   source_sha: 469c4369b82967d9bb03681ca2e405836513957d2ac36660f514c3ff4d5a2c3b
 docs/diagrams/seq-uc13-categories.drawio:
   render: seq-uc13-categories.png
-  source_sha: e57cf2196cdd352caba113201cbd5ac5de22f6d60b3d3b46dfc895c68e45da59
+  source_sha: 1a31fa2c5cf6f3255bae5770967a07847db499fcbf4f5a90ef15abb165c426a2
 docs/diagrams/seq-uc14-choose-currency.drawio:
   render: seq-uc14-choose-currency.png
   source_sha: b3c8e03ebf4bec119d3fcc11b114145e4db0a43767b346d25fbcf59f34ec9d91

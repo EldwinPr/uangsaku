@@ -107,6 +107,59 @@ If you find yourself caching a computed total in a provider so a screen renders 
 that is a stored balance with extra steps, and the ERD deliberately has no column for it.
 Fix the query.
 
+## Combining more than one stream: `Notifier` with hand-opened subscriptions, not `StreamNotifier`
+
+**Corrected `UC11`, 2026-08-22.** `BudgetNotifier`'s state is one query derived from three
+drift streams (`BudgetDao.watchGroups()` plus `watchPeriods()` for this month and last —
+`class-budgeting.drawio`'s D3). The first attempt built it as a `StreamNotifier`, with
+`build()` returning a hand-rolled `combineLatest3` (a `StreamController` fed by three
+`.listen()` calls, cancelled from the controller's `onCancel`) — the shape this file
+previously recommended as the fallback's alternative.
+
+**Verified against the real toolchain: that shape's cancellation does not run.** A widget
+test that mounted `SetBudgetScreen`, unmounted it, and flushed the usual drift-cancellation
+timer (`testing.md`) then hung indefinitely on `AppDatabase.close()` — the three drift
+`.listen()` subscriptions inside the combining `StreamController` were still open, because
+nothing ever called the controller's `onCancel`. An isolated `ProviderContainer`
+reproduction (no widget involved) confirmed the same live subscriptions as a *"Timer is
+still pending"* failure rather than a clean close. Isolating the cause required checking
+each layer separately:
+
+- A **minimal** `StreamNotifierProvider.autoDispose` wrapping one drift stream directly
+  (no combining layer) closed cleanly — so the fault is not `StreamNotifier` itself, and
+  not `autoDispose` in general (`categoryTreeProvider` is also `autoDispose` and closes
+  cleanly).
+- The same three-stream merge, watched through a bare `ProviderContainer` with
+  `container.listen()` and no widget, **emitted the correct combined value immediately and
+  every time** — so the combining logic itself is correct.
+- Only the combination of *both* — a `StreamController`-wrapped `Stream` returned from a
+  `StreamNotifier.build()`, under `flutter_riverpod: ^3.4.2` — leaves the controller's
+  `onCancel` uninvoked when the provider's own `autoDispose` fires.
+
+**The fix:** a plain `Notifier<AsyncValue<T>>`, opening every subscription by hand inside
+`build()` and cancelling them from `ref.onDispose` — tying cancellation directly to the
+provider element's own disposal, with no `StreamController` layer in between:
+
+```dart
+class BudgetNotifier extends Notifier<AsyncValue<List<BudgetRow>>> {
+  @override
+  AsyncValue<List<BudgetRow>> build() {
+    final dao = BudgetDao(ref.watch(appDatabaseProvider));
+    // ...open one .listen() per source stream, update `state` from each...
+    ref.onDispose(() {
+      // ...cancel every subscription opened above...
+    });
+    return const AsyncValue.loading();
+  }
+}
+```
+
+This is the fallback this file already named before verification (*"if the real toolchain
+fights that, the fallback is `Notifier` holding the same derived state with a subscription
+opened in `build()`"*) — it turned out to be the only shape that actually closes, not
+merely an alternative. **Any provider combining more than one stream should use this
+shape from the start**, rather than trying `StreamNotifier` first.
+
 ## No refusals
 
 NFR-4's fit criterion is **zero refused user actions**. In this layer that means a notifier

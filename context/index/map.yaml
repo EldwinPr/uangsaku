@@ -26,7 +26,7 @@ code:
     budgeting:    app/lib/src/budgeting/    # BudgetGroups, BudgetPeriods
     settings:     app/lib/src/settings/     # Settings, Currency
     entrypoint:   app/lib/main.dart         # + app/lib/src/app.dart (MaterialApp root;
-                                            # its home is UC-13's screen since 2026-08-21,
+                                            # its home is UC-11's screen since 2026-08-22,
                                             # temporarily - FR-1 gives it to UC-01)
     schema:       app/drift_schemas/        # generated snapshots, committed (drift.md)
     tests:        app/test/database/app_database_test.dart
@@ -43,6 +43,23 @@ code:
     tests:
       - app/test/transactions/category_dao_test.dart
       - app/test/transactions/category_manager_screen_test.dart
+
+  # UC11-set-budget, DONE 2026-08-22. The monthly amount per budget group, plus the
+  # budget group CRUD re-scoped here from UC-13 on 2026-08-21. No schema change -
+  # BudgetGroups and BudgetPeriods landed at FEAT01, so schemaVersion stays 1 and
+  # drift_schema_v1.json is untouched (verified byte-identical at close). FR-15's
+  # pre-fill is a FORM VALUE, not a row written ahead: nothing is written between the
+  # screen opening and the owner saving, so a month never visited holds no row.
+  # BudgetNotifier is a plain Notifier<AsyncValue<...>> with three hand-opened drift
+  # subscriptions, NOT a StreamNotifier - see decisions.md 2026-08-22.
+  UC-11:
+    clock:     app/lib/src/budgeting/clock.dart                # Clock, the injected time source (D5)
+    dao:       app/lib/src/budgeting/budget_dao.dart           # watchGroups/watchPeriods/upsert/delete + group CRUD
+    providers: app/lib/src/budgeting/budgeting_providers.dart  # BudgetNotifier, budgetProvider, BudgetRow
+    screen:    app/lib/src/budgeting/set_budget_screen.dart    # SetBudgetScreen
+    tests:
+      - app/test/budgeting/budget_dao_test.dart
+      - app/test/budgeting/set_budget_screen_test.dart
 
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on

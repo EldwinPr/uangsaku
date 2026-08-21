@@ -909,3 +909,51 @@ also true, and also resolved in the class diagram's favour, the `appDatabaseProv
 precedent). Codegen stays the default for everything that does not touch a row class;
 in practice that will be very little, since every read provider in this app carries drift
 rows. `riverpod.md` corrected in place.
+
+## 2026-08-22 — UC-11: a `Notifier`, not a `StreamNotifier`, for a screen that reads more than one stream
+
+**Decided by the toolchain, recorded because it binds every multi-stream screen after this
+one.** `SetBudgetScreen` needs three drift queries at once — the groups, this month's
+periods, and last month's for FR-15's pre-fill — which is the first screen in this app to
+read more than one.
+
+The obvious shape, and the one UC-11 D3 proposed first, is a `StreamNotifier` returning a
+hand-rolled `combineLatest3` over the three drift streams. **It does not release its
+subscriptions.** When the provider's `autoDispose` fired, the combining `StreamController`'s
+`onCancel` never ran, so the three underlying drift subscriptions stayed open and
+`AppDatabase.close()` hung indefinitely in a widget test after the unmount-and-pump that
+`testing.md` prescribes. Isolated with three probes: a `StreamNotifierProvider` wrapping a
+*single* drift stream closes cleanly; the same three-way merge watched through a bare
+`ProviderContainer` emits the right value every time; only the
+`StreamController`-wrapped-`Stream`-under-`StreamNotifier` combination leaves cancellation
+unrun. So it is not `Notifier`, not auto-dispose in general (`categoryTreeProvider` is also
+`autoDispose` and closes cleanly), and not the merge logic.
+
+**The shape that works, and the default from here:** a plain
+`Notifier<AsyncValue<T>>` whose `build()` opens each drift subscription by hand and
+cancels them in `ref.onDispose`. That ties cancellation to the provider element's own
+disposal with no controller layer in between.
+
+This is the third consecutive issue in which the real toolchain overruled a convention
+written before any code existed (FEAT01's `driftDatabase()`, UC-13's two, now this).
+`riverpod.md` corrected in place. It does **not** disturb the read/write split: the screen
+still never receives a write's result, and `budgetProvider` is still the single source
+`class-budgeting.drawio` draws.
+
+## 2026-08-22 — UC-11 as-built: `BudgetNotifier` does not depend on `Clock`
+
+`class-budgeting.drawio` carried an edge `BudgetNotifier → Clock` alongside
+`BudgetDao → Clock`. **The code has only the second, and the edge was removed at close.**
+
+Two confirmed artifacts already said so and the class diagram was the lone outlier:
+UC-11 D5 injects `Clock` into `BudgetDao`, and `seq-uc11-set-budget.drawio` only ever shows
+`BudgetDao` asking `today()`. In the built code the notifier names its months
+*relatively* — `watchPeriods()` and `watchPeriods(monthsAgo: 1)` — and the DAO turns
+`monthsAgo` into dates, so the notifier has no reason to know today's date and does not
+receive a `Clock`.
+
+Recorded because a dependency drawn on a class diagram is a claim about code, and
+`class-budgeting.drawio` is the diagram UC-12 will build `BudgetOverviewScreen` and
+`budgetConsumptionProvider` from. The diagram's own note already says to drop `Clock`
+"if a later pass finds nothing actually asking it the time" — `BudgetDao` does ask, so
+`Clock` itself stays; only the second edge was wrong.

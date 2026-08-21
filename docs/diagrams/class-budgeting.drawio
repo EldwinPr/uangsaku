@@ -5,10 +5,10 @@
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
 
-        <mxCell id="title" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=16;" value="moneytracker &#8212; Budgeting module classes" vertex="1">
+        <mxCell id="title" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=16;" value="moneytracker — Budgeting module classes" vertex="1">
           <mxGeometry height="30" width="700" x="40" y="30" as="geometry" />
         </mxCell>
-        <mxCell id="subtitle" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#666666;" value="Flutter / Dart &#183; drift &#183; Riverpod. UC-11, UC-12." vertex="1">
+        <mxCell id="subtitle" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#666666;" value="Flutter / Dart · drift · Riverpod. UC-11, UC-12." vertex="1">
           <mxGeometry height="20" width="700" x="40" y="60" as="geometry" />
         </mxCell>
 
@@ -25,28 +25,28 @@
           <mxGeometry height="520" width="520" x="1400" y="130" as="geometry" />
         </mxCell>
 
-        <mxCell id="s1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BudgetOverviewScreen&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;UC-12 &#183; ConsumerWidget&lt;br&gt;spent vs budget, per group&lt;/font&gt;" vertex="1">
+        <mxCell id="s1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BudgetOverviewScreen&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;UC-12 · ConsumerWidget&lt;br&gt;spent vs budget, per group&lt;/font&gt;" vertex="1">
           <mxGeometry height="90" width="260" x="40" y="170" as="geometry" />
         </mxCell>
-        <mxCell id="s2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="SetBudgetScreen&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;UC-11 &#183; ConsumerWidget&lt;br&gt;always saves &#8212; no lock, no refusal&lt;/font&gt;" vertex="1">
+        <mxCell id="s2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="SetBudgetScreen&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;UC-11 · ConsumerWidget&lt;br&gt;always saves — no lock, no refusal&lt;/font&gt;" vertex="1">
           <mxGeometry height="90" width="260" x="40" y="350" as="geometry" />
         </mxCell>
 
-        <mxCell id="p1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="budgetConsumptionProvider&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;StreamProvider &#183; UC-12&lt;/font&gt;" vertex="1">
+        <mxCell id="p1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="budgetConsumptionProvider&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;StreamProvider · UC-12&lt;/font&gt;" vertex="1">
           <mxGeometry height="70" width="260" x="420" y="180" as="geometry" />
         </mxCell>
         <mxCell id="p2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BudgetNotifier&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;Notifier, exposed as budgetProvider&lt;br&gt;&lt;br&gt;setAmount()&lt;br&gt;delete()&lt;br&gt;&lt;br&gt;addGroup()&lt;br&gt;renameGroup()&lt;br&gt;deleteGroup()&lt;/font&gt;" vertex="1">
           <mxGeometry height="180" width="260" x="420" y="340" as="geometry" />
         </mxCell>
 
-        <mxCell id="d1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BudgetDao&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;period + consumption queries&lt;br&gt;&lt;br&gt;watchConsumption()&lt;br&gt;watchPeriods()&lt;br&gt;&lt;br&gt;upsert() &#183; delete()&lt;br&gt;&lt;br&gt;watchGroups()&lt;br&gt;insertGroup() &#183; updateGroup() &#183; deleteGroup()&lt;/font&gt;" vertex="1">
+        <mxCell id="d1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BudgetDao&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;period + consumption queries&lt;br&gt;&lt;br&gt;watchConsumption()&lt;br&gt;watchPeriods()&lt;br&gt;&lt;br&gt;upsert() · delete()&lt;br&gt;&lt;br&gt;watchGroups()&lt;br&gt;insertGroup() · updateGroup() · deleteGroup()&lt;/font&gt;" vertex="1">
           <mxGeometry height="340" width="220" x="780" y="180" as="geometry" />
         </mxCell>
         <mxCell id="d2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Clock&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;injected time source&lt;/font&gt;" vertex="1">
           <mxGeometry height="70" width="220" x="780" y="540" as="geometry" />
         </mxCell>
 
-        <mxCell id="r1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BudgetConsumption&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;query result &#183; amount / spent / remaining&lt;br&gt;includes the null-group &quot;Others&quot; (D5)&lt;/font&gt;" vertex="1">
+        <mxCell id="r1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BudgetConsumption&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;query result · amount / spent / remaining&lt;br&gt;includes the null-group &quot;Others&quot; (D5)&lt;/font&gt;" vertex="1">
           <mxGeometry height="80" width="260" x="1040" y="180" as="geometry" />
         </mxCell>
 
@@ -74,14 +74,6 @@
         <mxCell id="e4" edge="1" parent="1" source="p2" target="d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.662;entryDx=0;entryDy=0;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e5" edge="1" parent="1" source="p2" target="d2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="720" y="430" />
-              <mxPoint x="720" y="575" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
         <mxCell id="e6" edge="1" parent="1" source="d1" target="d2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -103,10 +95,10 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
-        <mxCell id="n1" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="Arrows mean &quot;calls / depends on&quot; and only ever point left to right. A screen never touches the DAO or the database &#8212; it watches a provider." vertex="1">
+        <mxCell id="n1" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="Arrows mean &quot;calls / depends on&quot; and only ever point left to right. A screen never touches the DAO or the database — it watches a provider." vertex="1">
           <mxGeometry height="60" width="660" x="40" y="690" as="geometry" />
         </mxCell>
-        <mxCell id="n2" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="drift also generates a row class and a companion from each table declaration (BudgetPeriod / BudgetPeriodsCompanion). Omitted here by decision &#8212; only hand-written classes get a box." vertex="1">
+        <mxCell id="n2" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="drift also generates a row class and a companion from each table declaration (BudgetPeriod / BudgetPeriodsCompanion). Omitted here by decision — only hand-written classes get a box." vertex="1">
           <mxGeometry height="110" width="440" x="1420" y="690" as="geometry" />
         </mxCell>
         <mxCell id="n3" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="Clock is injected rather than read from the system so that anything date-dependent can be tested without changing the device date. Its original justification was FR-16's lock, which no longer exists; it survives that removal only because deciding which period is the current one is still a question about today's date. That is a weaker reason than before - if a later pass finds nothing actually asking Clock the time, drop it rather than keep it out of habit." vertex="1">

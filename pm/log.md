@@ -14,11 +14,15 @@ before starting work.
 
 ## Current state — 2026-08-21
 
-**Phase.** Documentation complete; **implementation under way.** The app compiles and its
-test suite is green (14 tests). **The first DAO, provider and screen exist** — UC-13's,
-built 2026-08-21; UC14 was to have been first and is halted instead.
+**Phase.** Documentation complete; **implementation under way, and phase 1 of the
+unattended run is over.** The app compiles and its test suite is green (**31 tests**). Two
+modules have a DAO, a provider and a screen — UC-13's and UC-11's; UC14 was to have been
+first and is halted instead.
 
-**Active issue.** `UC11-set-budget` — not planned yet, and **the only runnable row left.**
+**Active issue.** **None — nothing is runnable.** `UC11-set-budget` is **DONE 2026-08-22**
+(`BudgetDao`, `BudgetNotifier`/`budgetProvider`, `Clock`, `SetBudgetScreen`, plus the budget
+group CRUD re-scoped from UC-13; no schema change, and `MaterialApp.home` now points at
+`SetBudgetScreen`). Every remaining row is behind UC14's halt.
 `UC14-choose-currency` is **HALTED** at the planning gate (`pm/questions.md` Q1 — the guard
 on `seq-uc14`'s `opt` fragment cites no confirmed artifact), which blocks **seven** issues
 behind it: UC02, UC03, UC01, UC10, UC04, UC09 and UC12. `UC13-categories` is **DONE
@@ -74,10 +78,12 @@ CRUD moved from UC-13 to UC-11, and `note` appears on every recording screen. Re
 run.
 
 **Open, non-blocking:** one `fr-nfr.md` §4 item — where the data lives, narrowed to
-phone-only but not closed. **Five findings on file** (`pm/findings.md` F1–F5). F2, the only
-one that was a real defect, is **FIXED** (2026-08-22) — `seq-uc13-categories.drawio` now
-draws the read path, re-exported and looked at. F3 narrowed from fourteen diagrams to
-thirteen in the same pass. F1, F4 and F5 stand, recorded and not fixed.
+phone-only but not closed. **Seven findings on file** (`pm/findings.md` F1–F7). Two are
+**FIXED**: F2 (`seq-uc13-categories.drawio` lacked the read path) and F6 (a long `note over`
+rendering outside its own box, on two diagrams). F3 narrowed twice, from fourteen diagrams
+to **twelve**, as UC-13 and UC-11 each corrected their own. **F1, F4, F5 and F7 stand,
+recorded and not fixed** — F7 is the newest: a non-numeric budget amount is silently saved
+as zero, and which non-refusing behaviour is wanted instead is the owner's call.
 
 **Unattended mode is live, and has now been exercised both ways.** `feat-planner` may mark
 a plan `AUTO-CONFIRMED` when every decision in it cites an already-confirmed artifact, and
@@ -524,3 +530,68 @@ each belongs to an issue not yet built, and each will be corrected by its own as
 
 **[TODO]** Phase 1 has one runnable row left, `UC11-set-budget`, and its plan is not
 written. UC14 stays halted for the run (`pm/questions.md` Q1), blocking seven issues.
+
+---
+
+## 2026-08-22 — UC11-set-budget DONE; phase 1 ends with nothing runnable
+
+**[STATUS]** **`UC11-set-budget` is DONE**, reviewed and closed in the main session rather
+than by `issue-qa` (the owner's mid-run direction). `BudgetDao`, `BudgetNotifier` exposed as
+`budgetProvider`, `Clock`, `SetBudgetScreen`, plus the budget group create/rename/delete
+re-scoped here from UC-13 on 2026-08-21. All five verification commands re-run rather than
+taken on report: `build_runner` wrote 0 outputs, `dart format` 20 files 0 changed,
+`flutter analyze` clean, `flutter test` **31 passed**, `audit.py` 13/0/0. No schema change —
+`app_database.g.dart` and `drift_schemas/app_database/drift_schema_v1.json` are both
+byte-identical, so `schemaVersion` stays 1.
+
+**[DECISION]** **FR-15's pre-fill is a form value, not a row written ahead.** Confirmed in
+the built code: `upsert()` is reachable only from the save button, so nothing is written
+between the screen opening and the owner saving, and a month never visited holds no row. A
+current-month row wins over the pre-fill. This was the one place UC-11 could have quietly
+become a writer of rows nobody asked for — `lessons.md` §2's shape exactly — and the plan
+argued it down to a single representable outcome before any code was written.
+
+**[DECISION]** **A screen reading more than one drift stream uses a plain
+`Notifier<AsyncValue<…>>` with hand-opened subscriptions, not a `StreamNotifier`.** The
+`StreamNotifier` + `combineLatest3` shape never released its subscriptions on auto-dispose
+and hung `AppDatabase.close()`. Isolated with three probes. Recorded in `decisions.md` and
+`riverpod.md` — **the third consecutive issue in which the real toolchain overruled a
+convention written before any code existed.**
+
+**[DISCOVERY]** **The as-built pass found five defects on `seq-uc11-set-budget.drawio`,
+three more than the planner had recorded.** The planner caught a missing `watch()` message
+and a read path that named only the previous month. Reading the code against the diagram
+added three: `setAmount`/`upsert` were drawn taking a `month` parameter the code derives
+from `Clock` instead; **every stream emission to the screen was drawn with a filled
+arrowhead**, i.e. as a synchronous call, where `sequence-conventions.md` requires an
+asynchronous message and where `seq-uc13` correctly uses one; and the `deleteGroup` path
+showed a bare `delete(groupId)`, hiding the tag-blanking that is the whole substance of D7.
+The diagram was regenerated from Mermaid with all five corrected. *The planner reads the
+diagram against the artifacts; only the as-built pass reads it against the code, and that is
+where notation errors surface.*
+
+**[DISCOVERY]** **`class-budgeting.drawio` carried a `BudgetNotifier → Clock` edge the code
+does not have**, removed at close with an XML parser rather than a regex (`lessons.md` §6).
+Two confirmed artifacts already agreed against it — D5 injects `Clock` into `BudgetDao`, and
+the sequence diagram only ever shows `BudgetDao` asking the time. The notifier names its
+months relatively (`monthsAgo`) and never needs a date. Recorded in `decisions.md` because
+UC-12 builds from that diagram.
+
+**[DISCOVERY]** **F6: a long `note over` renders outside its own box**, on both
+`seq-uc13-categories` and `seq-uc11-set-budget`. Found on UC-11 and only then recognised on
+UC-13, where the close check had asked whether the note was *clipped at the canvas edge* —
+it was not — and passed without ever asking whether the text had escaped its container.
+**A visual check has a subject too, and "I looked at it" does not say what you looked for.**
+Both fixed by splitting the note across two lines; verified by counting dark pixels to the
+right of the note's own fill, 0 on both. Added to `lessons.md` §5 as its fifth instance and
+its first non-script one.
+
+**[TODO]** **F7, for the owner:** a non-numeric budget amount is silently saved as **0**.
+NFR-4 forbids refusing the save, so the question is which non-refusing behaviour is wanted —
+keep the previous amount, treat empty as "no budget" and delete the row, or write the zero
+and say so. The same parse will be needed by every amount field UC-04 introduces.
+
+**[STATUS]** **Phase 1 is over: no row in `pm/tracker.yaml` is runnable.** UC02, UC03, UC01,
+UC10, UC04, UC09 and UC12 are all behind `UC14-choose-currency`, halted at the planning gate
+since 2026-08-21 (`pm/questions.md` Q1). A halted issue stays halted for the whole run, so
+the run proceeds to phase 2 — the two `repo-qa` sweeps — and then stops.

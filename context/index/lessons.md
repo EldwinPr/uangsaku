@@ -144,6 +144,16 @@ a *green* result, which is why none of them announced itself.
   scaffold exists before its dependencies do. Split into two probes; the other four steps
   turned out to pass on the scaffold, so the job now does real work instead of staying inert.
 
+**A fifth, from 2026-08-22, and it was a *render* check rather than a script.** A
+Mermaid-generated sequence diagram's `note over` was rendering its last characters outside
+its own yellow box. The close check asked whether the note was **clipped at the canvas
+edge** — measured the rightmost pixel columns, found them blank, passed. Nothing was
+clipped; the text had simply escaped its container, which is a different question the check
+never asked. It surfaced one issue later only because the same note was drawn wider and
+looked at up close. The corrected check counts dark pixels to the right of *the note's own
+fill*, not of the canvas. **The lesson generalises past scripts: a visual check has a
+subject too, and "I looked at it" does not say what you looked for.** Recorded as F6.
+
 **The general form:** *a guard that succeeds when it cannot find its subject is worse than
 one that fails.* A red build gets fixed; a green one gets trusted. Any check written
 against a literal count, a hard-coded path, or an exemption list needs to fail loudly when

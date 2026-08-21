@@ -326,7 +326,7 @@ issues:
   - id: UC11-set-budget
     slug: set-budget
     title: Set a monthly budget amount
-    status: TODO
+    status: DONE
     plan: pm/issues/uc11-set-budget/plan.md
     depends_on: [FEAT01-foundation]
     traces_to: [UC-11]
@@ -340,6 +340,19 @@ issues:
       UC13 because this is the module that owns Budget_Group. BudgetNotifier and BudgetDao
       gain group methods - the class boxes already existed, only the methods were missing,
       which is why this cost less than adding a screen to Transactions.
+      DONE 2026-08-22: BudgetDao, BudgetNotifier/budgetProvider, Clock and SetBudgetScreen;
+      31 tests green, no schema change (drift_schema_v1.json byte-identical). FR-15's
+      pre-fill landed as a FORM VALUE, not a row written ahead - nothing is written between
+      opening the screen and saving. Deleting a group nulls budget_group_id on every
+      referencing transaction so the money reappears under Others (FR-17) rather than
+      vanishing, proven by a test that reads the row back. One durable ruling in
+      decisions.md: a screen reading more than one drift stream uses a plain Notifier with
+      hand-opened subscriptions, NOT a StreamNotifier, whose combining controller never
+      released its subscriptions and hung AppDatabase.close(). As-built pass corrected five
+      things on seq-uc11 (a missing watch(), the read path showing only the previous month,
+      a month parameter the code derives from Clock, stream emissions drawn with filled
+      call arrowheads instead of async, and a deleteGroup that hid the tag-blanking) and
+      removed the phantom BudgetNotifier -> Clock edge from class-budgeting.drawio.
 
   - id: UC12-budget-consumption
     slug: budget-consumption

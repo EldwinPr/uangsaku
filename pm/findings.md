@@ -104,7 +104,7 @@ two pixel columns are blank, so it is complete.
 
 ## F3 — every sequence diagram's isolate note names a mechanism one wrapper stale   [OPEN]
 **Scope:** TRAIL          **Severity:** risk
-**Where:** thirteen of the fourteen `docs/diagrams/seq-uc*.drawio` — the note reading *"DAO to
+**Where:** twelve of the fourteen `docs/diagrams/seq-uc*.drawio` — the note reading *"DAO to
 AppDatabase crosses the isolate boundary (NativeDatabase.createInBackground, 2026-08-20)"*
 **Violates:** nothing stated; it is `lessons.md` §1's half-true label, in fourteen copies.
 **What it is:** the code opens the database through `drift_flutter`'s `driftDatabase()`,
@@ -116,6 +116,8 @@ fourteen, i.e. it is a repo-wide nit and not one issue's defect. Fixing it insid
 would have meant editing thirteen diagrams UC-13 does not own, so it is filed instead.
 **Confidence:** certain — `grep -rl createInBackground docs/diagrams/` returned all fourteen
 when this was filed.
+**Narrowed again 2026-08-22:** `seq-uc11-set-budget.drawio` corrected in UC-11's as-built
+pass. **Twelve remain.**
 **Narrowed 2026-08-22:** `seq-uc13-categories.drawio` was corrected as part of F2's as-built
 pass, because UC-13 owns that diagram. **Thirteen remain**, and they stay filed rather than
 fixed — the run does not repair findings, and each belongs to an issue that has not been
@@ -156,3 +158,39 @@ step in the definition of done cannot be performed as written, and a step that s
 cannot be done is the shape `lessons.md` §5 warns about. Either add the column and a
 convention for it, or amend step 4 to name the tracker — **one of the two, not neither.**
 **Confidence:** certain that the column is absent; the right resolution is the owner's.
+
+## F6 — the note on a Mermaid-generated sequence diagram overflows its own box   [FIXED]
+**Scope:** TRAIL          **Severity:** defect
+**Where:** `seq-uc13-categories.drawio` and `seq-uc11-set-budget.drawio` renders
+**Violates:** `lessons.md` §3 — a render defect is only ever found by looking at the render.
+**What it is:** a single-line `note over` whose text is long enough runs **past the right
+edge of its own yellow rectangle** — the closing characters render outside the fill, on
+white. Both isolate notes did this. It is a Mermaid layout quirk: the box is sized slightly
+narrower than the text it holds.
+**How it was found, and the check that missed it first:** the UC-13 render was checked at
+close for *canvas clipping* — whether the rightmost pixel columns were blank — and passed,
+because the text ends inside the canvas. That check was looking at the wrong set: nothing
+was clipped, but the text had still escaped its container. It surfaced only when the same
+note was drawn wider on UC-11 and looked at up close. **This is `lessons.md` §5 in a render
+check rather than in a script** — a check that passes for the wrong reason. Added there as
+evidence.
+**Fixed 2026-08-22** on both diagrams by splitting each note across two lines with `<br/>`,
+re-exporting, and re-checking by counting dark pixels to the right of the note's fill
+rather than at the canvas edge: 0 on both.
+**Confidence:** certain — measured, not eyeballed.
+
+## F7 — a non-numeric budget amount is silently saved as zero   [OPEN]
+**Scope:** APP          **Severity:** risk
+**Where:** `app/lib/src/budgeting/set_budget_screen.dart`, the save button's
+`int.tryParse(_controller.text) ?? 0`
+**Violates:** nothing stated. NFR-4 requires the save to proceed rather than refuse, and it
+does — this is about *what* it proceeds to.
+**What it is:** typing anything unparseable and pressing save writes a budget of **0**, with
+no indication that the typed value was discarded. Zero is a legitimate budget, so nothing
+downstream can tell an intended zero from a discarded "abc", and FR-15 will then pre-fill
+next month from it. Refusing the save is not available (NFR-4's fit criterion is zero
+refusals), so the question is which non-refusing behaviour is wanted — keep the previous
+amount, treat empty as "no budget set" and delete the row, or write the zero and say so.
+**That is the owner's call**, which is why this is filed rather than fixed.
+**Confidence:** certain that it happens; worth checking whether it matters, since the same
+parse will be needed by every amount field UC-04 introduces.
