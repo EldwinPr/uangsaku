@@ -1,0 +1,39 @@
+# Client source material — see input/README.md
+#
+# Text, notes, and small images under input/ are committed: provenance should travel with
+# the repo. Large or confidential binaries are not. When you exclude one, commit a stub
+# beside it (`<name>.<ext>.txt`) naming the file and where it actually lives — a missing
+# file that nothing points at is indistinguishable from a file that never existed.
+
+input/**/*.pdf
+input/**/*.mp4
+input/**/*.mov
+input/**/*.wav
+input/**/*.m4a
+input/**/*.zip
+
+# Stubs are the whole point — always keep them.
+!input/**/*.txt
+
+# External reference standards (specs are large and usually redistribution-restricted).
+# Same stub rule applies: keep a .txt naming the document and where to obtain it.
+context/files/*
+!context/files/*.txt
+!context/files/README.md
+
+# Diagram exports. Renders of the repo-wide diagrams (ERD, class, component) are regenerated on
+# demand and never tracked, along with every debug crop (see the mandatory export-and-verify
+# loop in drawio-general-guide.md). Sequence-diagram renders are the exception: they live in
+# pm/issues/<issue>/ and ARE committed; see the note further down.
+*.drawio.png
+**/examples/**/*.png
+# The ERD, class and component renders live here beside their sources and stay untracked —
+# they are cited repo-wide and regenerated on demand. Only sequence-diagram renders move out,
+# to pm/issues/<issue>/, where they are committed (drawio-general-guide.md, amended 2026-08-21).
+# A seq-uc*.png left in this directory is a stray duplicate — delete it, don't commit it.
+docs/diagrams/*.png
+
+# OS / editor noise
+Thumbs.db
+.DS_Store
+desktop.ini

@@ -1,0 +1,122 @@
+<mxfile host="Electron">
+  <diagram id="moneytracker-class-budgeting" name="Budgeting classes">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1980" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=16;" value="moneytracker &#8212; Budgeting module classes" vertex="1">
+          <mxGeometry height="30" width="700" x="40" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#666666;" value="Flutter / Dart &#183; drift &#183; Riverpod. UC-11, UC-12." vertex="1">
+          <mxGeometry height="20" width="700" x="40" y="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="bandA" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;fontStyle=1;fontColor=#666666;" value="Screen (Flutter widget)" vertex="1">
+          <mxGeometry height="520" width="300" x="20" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="bandB" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;fontStyle=1;fontColor=#666666;" value="Riverpod providers (state + logic)" vertex="1">
+          <mxGeometry height="520" width="300" x="400" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="bandC" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;fontStyle=1;fontColor=#666666;" value="DAO and its query results (data access)" vertex="1">
+          <mxGeometry height="520" width="560" x="760" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="bandD" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;fontStyle=1;fontColor=#666666;" value="drift database and tables" vertex="1">
+          <mxGeometry height="520" width="520" x="1400" y="130" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BudgetOverviewScreen&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;UC-12 &#183; ConsumerWidget&lt;br&gt;spent vs budget, per group&lt;/font&gt;" vertex="1">
+          <mxGeometry height="90" width="260" x="40" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="s2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="SetBudgetScreen&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;UC-11 &#183; ConsumerWidget&lt;br&gt;always saves &#8212; no lock, no refusal&lt;/font&gt;" vertex="1">
+          <mxGeometry height="90" width="260" x="40" y="350" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="budgetConsumptionProvider&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;StreamProvider &#183; UC-12&lt;/font&gt;" vertex="1">
+          <mxGeometry height="70" width="260" x="420" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="p2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BudgetNotifier&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;Notifier, exposed as budgetProvider&lt;br&gt;&lt;br&gt;setAmount()&lt;br&gt;delete()&lt;/font&gt;" vertex="1">
+          <mxGeometry height="130" width="260" x="420" y="340" as="geometry" />
+        </mxCell>
+
+        <mxCell id="d1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BudgetDao&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;period + consumption queries&lt;br&gt;&lt;br&gt;watchConsumption()&lt;br&gt;watchPeriods()&lt;br&gt;&lt;br&gt;upsert() &#183; delete()&lt;/font&gt;" vertex="1">
+          <mxGeometry height="290" width="220" x="780" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="d2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Clock&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;injected time source&lt;/font&gt;" vertex="1">
+          <mxGeometry height="70" width="220" x="780" y="520" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BudgetConsumption&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;query result &#183; amount / spent / remaining&lt;br&gt;includes the null-group &quot;Others&quot; (D5)&lt;/font&gt;" vertex="1">
+          <mxGeometry height="80" width="260" x="1040" y="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="t1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="AppDatabase&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;the single drift database&lt;br&gt;shared by all four modules&lt;/font&gt;" vertex="1">
+          <mxGeometry height="290" width="180" x="1420" y="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="t2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BudgetGroups&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;drift table declaration&lt;/font&gt;" vertex="1">
+          <mxGeometry height="70" width="240" x="1660" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="t3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BudgetPeriods&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;drift table declaration&lt;br&gt;starts_on / ends_on / amount&lt;/font&gt;" vertex="1">
+          <mxGeometry height="70" width="240" x="1660" y="340" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" edge="1" parent="1" source="s1" target="p1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="s2" target="p2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.423;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e3" edge="1" parent="1" source="p1" target="d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.121;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="p2" target="d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.776;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="p2" target="d2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="405" />
+              <mxPoint x="720" y="555" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="d1" target="d2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e7" edge="1" parent="1" source="d1" target="r1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.138;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="d1" target="t1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.379;exitDx=0;exitDy=0;entryX=0;entryY=0.379;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e10" edge="1" parent="1" source="t1" target="t2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.19;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="t1" target="t3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.672;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="t2" target="t3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="n1" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="Arrows mean &quot;calls / depends on&quot; and only ever point left to right. A screen never touches the DAO or the database &#8212; it watches a provider." vertex="1">
+          <mxGeometry height="60" width="660" x="40" y="690" as="geometry" />
+        </mxCell>
+        <mxCell id="n2" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="drift also generates a row class and a companion from each table declaration (BudgetPeriod / BudgetPeriodsCompanion). Omitted here by decision &#8212; only hand-written classes get a box." vertex="1">
+          <mxGeometry height="110" width="440" x="1420" y="690" as="geometry" />
+        </mxCell>
+        <mxCell id="n3" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="Clock is injected rather than read from the system so that anything date-dependent can be tested without changing the device date. Its original justification was FR-16's lock, which no longer exists; it survives that removal only because deciding which period is the current one is still a question about today's date. That is a weaker reason than before - if a later pass finds nothing actually asking Clock the time, drop it rather than keep it out of habit." vertex="1">
+          <mxGeometry height="70" width="1020" x="40" y="770" as="geometry" />
+        </mxCell>
+        <mxCell id="n4" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="There is no budget lifecycle left to draw. A period ran open -&gt; locked -&gt; closed until 2026-08-20, when the owner removed the lock and made budgets full CRUD like every other entity. &quot;Locked&quot; ceased to exist and the remaining pair collapsed into a date comparison that restricts nothing, so BudgetPeriodState is gone from this diagram and the state diagram was deleted with the rule it described. starts_on / ends_on stay - they are what make quarterly and yearly rollups a date-range sum (NFR-3)." vertex="1">
+          <mxGeometry height="70" width="1020" x="40" y="840" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

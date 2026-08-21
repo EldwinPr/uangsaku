@@ -1,0 +1,156 @@
+<mxfile host="Electron">
+  <diagram id="moneytracker-class-accounts" name="Accounts classes">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1840" pageHeight="920" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=16;" value="moneytracker &#8212; Accounts module classes" vertex="1">
+          <mxGeometry height="30" width="700" x="40" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#666666;" value="Flutter / Dart &#183; drift &#183; Riverpod. UC-01, UC-02, UC-03, UC-10." vertex="1">
+          <mxGeometry height="20" width="700" x="40" y="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="bandA" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;fontStyle=1;fontColor=#666666;" value="Screen (Flutter widget)" vertex="1">
+          <mxGeometry height="560" width="320" x="20" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="bandB" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;fontStyle=1;fontColor=#666666;" value="Riverpod providers (state + logic)" vertex="1">
+          <mxGeometry height="560" width="320" x="400" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="bandC" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;fontStyle=1;fontColor=#666666;" value="DAO and its query results (data access)" vertex="1">
+          <mxGeometry height="560" width="620" x="780" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="bandD" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;fontStyle=1;fontColor=#666666;" value="drift tables (the database)" vertex="1">
+          <mxGeometry height="560" width="320" x="1460" y="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BalanceSheetScreen&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;UC-01 &#183; ConsumerWidget&lt;/font&gt;" vertex="1">
+          <mxGeometry height="80" width="280" x="40" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="s2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="AccountFormScreen&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;UC-02, UC-03 &#183; ConsumerWidget&lt;/font&gt;" vertex="1">
+          <mxGeometry height="80" width="280" x="40" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="s3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="DebtDetailScreen&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;UC-10 &#183; ConsumerWidget&lt;/font&gt;" vertex="1">
+          <mxGeometry height="80" width="280" x="40" y="480" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="financialPositionProvider&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;StreamProvider &#183; UC-01&lt;/font&gt;" vertex="1">
+          <mxGeometry height="70" width="280" x="420" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="p2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="accountBalancesProvider&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;StreamProvider&lt;/font&gt;" vertex="1">
+          <mxGeometry height="70" width="280" x="420" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="p3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="debtProgressProvider&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;StreamProvider.family &#183; UC-10&lt;/font&gt;" vertex="1">
+          <mxGeometry height="70" width="280" x="420" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="p4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="AccountsNotifier&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;Notifier, exposed as accountsProvider&lt;br&gt;addAccount() &#183; adjustAccount() &#183; markSettled()&lt;/font&gt;" vertex="1">
+          <mxGeometry height="130" width="280" x="420" y="480" as="geometry" />
+        </mxCell>
+
+        <mxCell id="d1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="AccountDao&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;queries + writes for accounts&lt;br&gt;&lt;br&gt;watchPosition()&lt;br&gt;watchBalances()&lt;br&gt;watchDebtProgress()&lt;br&gt;&lt;br&gt;insert() &#183; update()&lt;br&gt;setSettled()&lt;/font&gt;" vertex="1">
+          <mxGeometry height="300" width="240" x="800" y="150" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="FinancialPosition&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;query result &#183; UC-01's four figures&lt;/font&gt;" vertex="1">
+          <mxGeometry height="70" width="260" x="1100" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="r2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="AccountBalance&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;query result &#183; one account + derived balance&lt;/font&gt;" vertex="1">
+          <mxGeometry height="70" width="260" x="1100" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="r3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="DebtProgress&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;query result &#183; UC-10 paid / remaining&lt;/font&gt;" vertex="1">
+          <mxGeometry height="70" width="260" x="1100" y="390" as="geometry" />
+        </mxCell>
+
+        <mxCell id="t1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="AppDatabase&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;shared by all four modules&lt;/font&gt;" vertex="1">
+          <mxGeometry height="60" width="280" x="1480" y="215" as="geometry" />
+        </mxCell>
+        <mxCell id="t2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Accounts&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;drift table declaration&lt;/font&gt;" vertex="1">
+          <mxGeometry height="60" width="280" x="1480" y="335" as="geometry" />
+        </mxCell>
+        <mxCell id="t3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="AccountGroup&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;enum &#183; HOLDING / RECEIVABLE / PAYABLE&lt;/font&gt;" vertex="1">
+          <mxGeometry height="70" width="280" x="1480" y="455" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" edge="1" parent="1" source="s1" target="p1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.857;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="s1" target="p2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="370" y="200" />
+              <mxPoint x="370" y="285" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="s2" target="p4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.2;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="390" y="380" />
+              <mxPoint x="390" y="506" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="s3" target="p3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="350" y="520" />
+              <mxPoint x="350" y="395" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e5" edge="1" parent="1" source="p1" target="d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.083;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="p2" target="d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.45;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="p3" target="d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.817;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="p4" target="d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="920" y="545" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e9" edge="1" parent="1" source="d1" target="r1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.117;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="d1" target="r2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.517;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="d1" target="r3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.917;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e12" edge="1" parent="1" source="d1" target="t1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.317;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" edge="1" parent="1" source="t1" target="t2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" edge="1" parent="1" source="t2" target="t3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="n1" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="Arrows mean &quot;calls / depends on&quot; and only ever point left to right. A screen never touches the DAO or the database &#8212; it watches a provider." vertex="1">
+          <mxGeometry height="60" width="660" x="40" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="n2" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="drift also generates a row class (Account) and a companion (AccountsCompanion) from the Accounts table declaration. Omitted here by decision &#8212; only hand-written classes get a box." vertex="1">
+          <mxGeometry height="90" width="380" x="1100" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="n3" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="Reads travel back the other way as streams: a row changes, drift pushes a new value up through the DAO and the provider, and every widget watching that provider rebuilds. The screen never receives an answer from the write it triggered &#8212; it sees the result arrive on the read path, the same as any other change. This is why no balance is ever stored (NFR-2)." vertex="1">
+          <mxGeometry height="70" width="1020" x="40" y="800" as="geometry" />
+        </mxCell>
+        <mxCell id="n4" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="Legal values for every enum: docs/enums.md" vertex="1">
+          <mxGeometry height="30" width="280" x="1480" y="545" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

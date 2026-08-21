@@ -1,0 +1,669 @@
+# Decisions
+
+Durable, architectural, or process decisions that aren't captured elsewhere.
+One entry each, dated, with the reasoning — the alternative rejected matters
+more than the option taken.
+
+---
+
+## 2026-08-19 — Project scope: this repo now tracks a personal money tracker
+
+The `bpmn-to-erp` framework is retained as-is and applied to a real (non-ERP,
+solo) project. Artifacts go to real project state — `docs/`, `pm/` — not to
+`context/document-writer-only/examples/`. This is genuine work that also
+exercises the pipeline, not a framework demo, so the demo carve-out in
+`CLAUDE.md` does not apply.
+
+## 2026-08-19 — Requirements enter via the FR route, not BPMN
+
+This project has no existing business process to model as-is, so the BPMN
+route is not used. Requirements are captured in `docs/fr-nfr.md` and promote
+to the **UC FR** sheet, with `UC Non-FR` held for anything arriving later as a
+raw request via `docs/requests.md`.
+
+*Sheet naming (corrected 2026-08-19, same day):* the workbook shipped with the
+framework's default `UC BPMN` / `UC Non-BPMN` pair, and the 13 promoted rows first
+landed on `UC Non-BPMN` as `UC-N01..UC-N13`. That named this project's only real
+output after a route it does not use, and pushed its main sheet into the `UC-N`
+"not from the main route" prefix. Renamed to `UC FR` / `UC Non-FR` and recoded to
+plain `UC-01..UC-13`. The rule is now in `workbook-conventions.md`: the sheet pair
+is named for whichever route actually carries the project's requirements, and the
+primary sheet always takes plain `UC-xx`.
+
+*Consequence:* the BPMN conventions and `bpmn-drawio-author` go unexercised.
+The ERD, class, state, and component conventions still apply downstream and
+are unaffected — the workbook is reached by a different road, not skipped.
+
+## 2026-08-19 — Considered and rejected: replacing the pipeline with a flat 4/5-file system
+
+A critique from a comparable-but-more-mature project argued this framework
+solves problems a solo side project doesn't have (multiple people, live
+customer data, a codebase nobody remembers owning), and proposed replacing it
+with `CLAUDE.md` / `STATE.md` / `DECISIONS.md` / `LOG.md` — optimising purely
+for cold re-entry cost.
+
+This was trialled: the framework was archived and the flat system written out.
+**It was reverted the same day.**
+
+*Why rejected:* the framework is already deliberately flexible, the flat
+system's root-level markdown files were clutter duplicating directories that
+already existed (`pm/log.md` for LOG, `context/index/decisions.md` for
+DECISIONS, `docs/fr-nfr.md` for requirements), and proper documentation is
+wanted here despite the project being solo.
+
+*What was kept from the critique* — genuinely load-bearing and worth carrying:
+
+- **`OPEN DECISION:` as a do-not-proceed marker.** More valuable solo, not
+  less: there is nobody to ask, so a silent guess is never caught by anyone.
+  Used in `docs/fr-nfr.md` §2.
+- **Sources disagree → say so, don't silently pick.** Code, docs, and notes
+  will contradict each other; on a solo project the same person wrote both
+  sides months apart and won't recall which was right.
+- **Stale docs are worse than none**, because an agent trusts them completely
+  and the false premise isn't noticed until something is built on it.
+- **The real risk here is over-production, not stalling** — an agent building
+  faster than one person can read, leaving a codebase the owner has never
+  actually read. The defense: if the one-line *why* can't be written, the
+  decision wasn't made, and the code needs reading.
+
+## 2026-08-19 — `docs/fr-nfr.md` is drafted from assumption, and says so
+
+The FR/NFR draft has **no provenance** — `input/` is empty, no client material
+or elicitation transcript exists, and the requirements were inferred rather
+than elicited. This is precisely the failure `input/` exists to prevent, so it
+is recorded rather than glossed: the document is marked DRAFT/unconfirmed and
+its assumptions are tabled in §1 for rejection.
+
+It must not be promoted to the workbook until confirmed. The hard gate already
+prevents this, but the reason is worth stating: promoting an assumption makes
+it indistinguishable from a requirement within a month.
+
+## 2026-08-19 — Account model: two account types, two-sided transactions, no chart of accounts
+
+Owner's proposal, adopted. Accounts carry a type — money I hold versus money I
+owe — and a debt is simply transactions against an owed-type account. Its
+balance *is* the outstanding amount.
+
+*Why:* it answers three needs with one structure. Outstanding-and-paid (FR-11)
+comes out as a derived balance rather than a field that can drift from reality.
+The balance sheet (FR-1) becomes a sum over account types. And "what did I
+spend" stops being a flag the user sets and becomes *transactions whose other
+end is outside my own accounts* — which excludes transfers, lending, and
+repayments automatically, rather than by remembering to tick something.
+
+*Rejected:* a chart of accounts with numbered codes, journal entries,
+debit/credit columns, equity accounts, and a formal balance-sheet statement.
+Owner considered this explicitly and rejected it as costing usability. Agreed.
+The internal structure is kept because it is free; the ceremony is dropped
+because it is not. See NFR-1.
+
+*Known cost, accepted:* without equity accounts the books do not self-balance,
+so a mistyped amount cannot be detected by reconciliation — it simply stays
+wrong until noticed. Acceptable with no auditor and one user; recorded so it is
+not rediscovered later as a bug.
+
+*Unresolved within this decision:* the owner's terms "credit account" and
+"debit account" collide with debit/credit as entry directions and with credit
+cards. The concept is the standard asset/liability split. Naming still open —
+see `docs/fr-nfr.md` §4.
+
+## 2026-08-19 — The app assists, it does not police
+
+Owner's ruling, when asked whether fully editable transactions (FR-18) conflict
+with the locked budget and the faithful-month requirement (FR-14, FR-16):
+they do not.
+
+The distinction is between a **commitment** and a **record**. A budget is set in
+advance as a target, so allowing it to move afterwards would make it meaningless
+— hence the hard lock. A transaction is a record of something that happened,
+and records legitimately need correcting. Whether the owner tidies their own
+history is the owner's business; there is no auditor and nobody else is misled.
+
+*Generalised as NFR-4.* This settles a class of questions that will keep
+recurring — whether to block a negative balance, warn on over-budget, refuse a
+future-dated entry, and so on. Default answer: record it, show the consequence,
+do not prevent it. ~~FR-16 is the single deliberate exception, and only because it
+guards a target rather than a fact.~~
+
+**Amended 2026-08-20 — there is no exception.** The owner removed the FR-16 lock,
+taking NFR-4 from "one sanctioned refusal" to none. The commitment-versus-record
+distinction this entry draws was the *reason* for that exception, and the owner
+subsequently dissolved it. The entry is kept because the distinction is a real one
+that was genuinely considered; it just no longer decides anything here. See
+"No guardrails" at the end of this file.
+
+## 2026-08-19 — Stack: native Android, Kotlin + Jetpack Compose + Room *(SUPERSEDED same day — see "Stack revisited: Flutter" below)*
+
+**Decision.** Native Android. Kotlin, Jetpack Compose for UI, Room over SQLite
+for storage. No backend. Local-first, single user, single device.
+
+**Why not cross-platform.** Considered and rejected in this order:
+
+- *React Native* — ships a JS runtime and a bridge to render a form and three
+  list screens. Owner's objection ("react is heavy") is correct for this workload.
+- *SvelteKit + Capacitor* — a WebView with native plugins bolted on. That shape
+  earns its keep when a web app already exists and needs to ship as an app; here
+  nothing exists yet, so it is cost without the thing that repays it. Owner:
+  "will turn into pwa bloat... not saying it's bad but wrong use case."
+- *Flutter/Dart* — the serious contender, and dismissing it early would have been
+  wrong. It is neither of the above: AOT-compiled to native ARM, no JS runtime,
+  no WebView. `drift` gives the same reactive-SQL story Room does, and ML Kit is
+  reachable via plugin, so nothing in the requirements rules it out.
+
+**What actually decided it: iOS is a "polite maybe."** Owner's sequence was
+Android, then backup, then "if someone wants it, iOS" — clarified as genuinely
+speculative, for an app being built for the owner's own use. Flutter's entire
+premium buys iOS portability. Paying a permanent cost for an option nobody has
+asked for is the wrong trade, and *this was the single hinge* — had iOS been on
+the roadmap rather than hypothetical, Flutter would have won and was said so at
+the time.
+
+Secondary, in Kotlin's favour once portability stopped counting: lighter install
+(no bundled engine — though Compose bundles its own runtime, so the gap is
+narrower than native-vs-framework folklore claims), lower idle memory (no second
+managed heap alongside ART), and faster cold start (no engine init before first
+frame). Cold start matters disproportionately here because the app is opened to
+record one expense and closed. Runtime throughput and battery are a wash — the
+workload is small SQLite aggregates a few times a day.
+
+Third: ML Kit is first-party on Android, so the OCR deferred in `fr-nfr.md` §3
+stays genuinely deferred rather than quietly dying behind a plugin dependency.
+
+**Why Room specifically — this is NFR-2 enforcement, not preference.** Balances
+are derived and never stored, so every screen is an aggregate query. A Room DAO
+returning a `Flow`, collected by Compose, means the UI re-derives whenever
+transactions change and **there is no balance field in the schema to write to**.
+"Exactly one source per number" stops being a discipline someone maintains and
+becomes the only thing the code can express. UC-09 (correct or delete a
+transaction) then costs nothing: delete the row, everything recomputes. NFR-3
+(later reporting without restructuring) wants real SQL for the same reason.
+
+**Accepted cost, and the cheap hedge.** iOS later means rewriting the UI layer.
+That is the correct price for a maybe. The hedge is free if taken from the start:
+keep the domain and data layer free of Android imports — no `Context`, no Android
+types in entities or derivation logic. That leaves Kotlin Multiplatform available
+later, sharing schema and calculations while only screens are rewritten. Do not
+adopt KMP now; just do not write it out.
+
+**Backup is an export, not sync.** Matches the owner's stated sequence. The app
+writes a JSON dump or the SQLite file itself through the Storage Access Framework;
+the owner saves it wherever they like. No server, no accounts, no conflict
+resolution. This satisfies the backup deferred in §3 without touching the still-open
+§4 question of where the data lives.
+
+**If sync ever happens, the backend is not in the app.** Owner's own position, and
+it is the right architecture: the app stays local-first and never learns about a
+server. Sync would be a separate service in its own stack, and the app would gain
+a sync client — an addition, not a rewrite. This is what keeps §4 genuinely open
+instead of pretending to be.
+
+*Consequence for FR-16:* the budget lock ("after the first week") is the only
+time-dependent behaviour in the app, and it depends on the still-undecided meaning
+of "a month" (§4). Inject the clock rather than calling the system clock directly,
+or the lock cannot be tested without changing the device date.
+
+## 2026-08-19 — Stack revisited: Flutter + Dart (supersedes the Kotlin entry above)
+
+**Decision.** Flutter/Dart, `drift` over SQLite, no backend. Local-first, single
+user. Supersedes the Kotlin + Compose + Room decision recorded earlier the same
+day. The earlier entry is left intact rather than edited — it names the exact
+assumption that changed, which is the only reason this reversal is cheap to audit.
+
+**Provisional, and why that matters.** Owner: *"still not sure to be honest, okay
+for now just assume will be used in ios."* This rests on an **assumption, not a
+confirmed requirement** — the premise is that iOS is in scope. That is a deliberate
+placeholder so downstream work (ERD, class diagrams) can proceed, not a settled
+fact. If iOS is later dropped for good, this entry should be re-opened, because
+the Kotlin case above becomes correct again on its own terms.
+
+**What changed.** Exactly one thing, and it is the hinge the earlier entry named in
+advance: iOS moved from *"polite maybe"* to an assumed target. That entry stated
+outright that Flutter would win if iOS were real rather than hypothetical. It is now
+assumed real, so the earlier reasoning applies unchanged and points the other way.
+No new argument was needed — the premise flipped, and the recorded logic did the rest.
+
+A second factor, raised by the owner after the first decision and never weighed in
+it: **the owner has never built a mobile app and has no existing stack.** Flutter is
+faster to a first working screen — hot reload is the tightest feedback loop in mobile
+development, and there is one widget model to learn rather than a UI toolkit plus the
+Android platform plus Gradle. This was acknowledged as a gap in the earlier entry and
+is recorded here as a genuine contributing factor, not a rationalisation after the fact.
+
+**Hard constraint carried over: must not be heavy on old Android phones.** Owner's
+explicit requirement, and it is the one place where this choice is objectively worse
+than the superseded one — Flutter carries its engine and runs a second managed heap.
+Non-negotiable consequences, to be treated as build requirements rather than advice:
+
+- Ship **per-ABI split APKs or an App Bundle**, never a universal APK. This is the
+  single largest install-size lever available.
+- **Test on an actual low-end device**, not just an emulator. Cold start and memory
+  pressure are the two figures that matter, and neither shows up honestly on a fast
+  emulator.
+- Keep the dependency list short. Every plugin is engine weight the owner did not
+  ask for, on a device that cannot absorb it.
+- Cold start is the metric to watch — the app is opened to record one expense and
+  closed, so startup *is* the user experience. If it degrades on the target device,
+  that is a stack-level regression and this decision should be re-opened, not
+  papered over.
+
+**What carries over unchanged from the superseded entry:**
+
+- **No backend.** Local-first, single user, single device.
+- **Backup is an export file**, not sync. If sync ever happens the backend lives
+  outside the app in its own stack (owner's position); the app gains a sync client
+  rather than being restructured.
+- **NFR-2 enforcement is still the storage story, and `drift` provides it.** DAOs
+  return reactive streams, the UI re-derives on change, and no balance field exists
+  in the schema to write to. "Exactly one source per number" remains a property of
+  the code rather than a discipline someone maintains, and UC-09 stays cheap.
+  `drift` is the direct analogue of Room here; this requirement did not weaken.
+- **FR-16's clock must be injected.** Still the only time-dependent behaviour, still
+  blocked on what "a month" means (`fr-nfr.md` §4).
+  *(Both halves have since expired: FR-16's lock was removed 2026-08-20, so the clock's
+  original justification went with it — it survives only because deciding which period
+  is current still asks the date; and "a month" was answered the same day, calendar.)*
+
+**What is genuinely lost, recorded so it is not rediscovered as a surprise:**
+
+- **OCR moves from first-party to plugin.** ML Kit was a Google library on the target
+  platform under the old decision; under this one it is reached through a Flutter
+  plugin. The OCR deferred in `fr-nfr.md` §3 is still open, but now carries a
+  maintainer dependency it did not have before.
+- **Footprint and cold start get worse**, permanently. This is the cost of the iOS
+  assumption, and it collides directly with the old-phone constraint above. That
+  tension is the thing to watch on this project, not a rounding error.
+
+**Replaces the KMP hedge.** The old entry's "keep the domain layer free of Android
+imports" TODO is void — Flutter covers iOS directly. The analogous discipline still
+applies and is worth keeping for the same reason: **keep entities and derivation
+logic in pure Dart, free of Flutter widget imports**, so the domain stays testable
+without a widget harness and portable if the UI layer is ever replaced.
+
+**Deliberately not decided here: state management.** *(RESOLVED 2026-08-20 —
+Riverpod. See "State management: Riverpod" at the end of this file.)* Flutter has no
+official answer (Provider, Riverpod, Bloc, plain setState) and it is a known place
+for a first-time Flutter developer to stall. Not choosing now is intentional — it is
+a UI-layer decision, it does not touch the schema or the ERD, and it should be made
+against a real screen rather than in the abstract.
+
+## 2026-08-19 — Schema shape (ISSUE-001, ERD)
+
+Full reasoning in `pm/issues/001-erd/plan.md` (D1-D8). The three that are durable
+and would be expensive to reverse:
+
+**One `Transaction` ledger table with nullable `from_account_id` / `to_account_id`.**
+Every movement in UC-04..UC-09 is "money left somewhere and/or arrived somewhere",
+so expense/income/transfer/lend/borrow/repayment/adjustment are all one table with
+a `kind` discriminator. Two consequences worth the choice: **"is this spending?"
+becomes `to_account_id IS NULL`**, so FR-8 and FR-9's "must not count as spending"
+is enforced by the shape of the data rather than by a rule every future query has
+to remember; and a balance is one expression over one table. This is internal
+double-entry without the name, which NFR-1 explicitly permits ("accounting
+structure may be used internally... but it may not surface") — the user still sees
+one amount, one form, and is never asked to pick two sides.
+
+**`Account.group` is `HOLDING` / `RECEIVABLE` / `PAYABLE`, and "credit"/"debit"
+appear nowhere.** This closes the `fr-nfr.md` §4 naming collision by constraint
+rather than preference: NFR-1's fit criterion forbids a debit/credit column
+outright, so those words were never available. FR-4 and FR-5 make a credit card
+and a person both ordinary accounts, so one table with a discriminator is right —
+no subtype tables, and no separate `Debt` entity (owner re-confirmed: a debt is an
+account).
+
+**`Budget` splits into `Budget_Group` + `Budget_Period`.** `fr-nfr.md` §4 deferred
+this to the ERD by name. Three requirements force it independently: trend reporting
+needs a stable handle on "Food" that survives a rename; FR-14 makes the amount
+per-month data rather than a property of the group; FR-16 gives a month a lifecycle,
+and a lifecycle needs a row to live on. `Budget_Period` carries explicit start/end
+dates rather than a `YYYY-MM` key, which kept §4's then-unresolved "what a month means"
+open instead of silently committing to calendar months. *(Answered 2026-08-20: calendar
+month. The columns do not change — the start/end pair is also what a payday-to-payday
+model would have needed, so holding the question open cost nothing.)*
+
+*Also settled:* "Others" (FR-17) is the null `budget_group_id`, not a row that could
+be renamed or deleted; `Category`/`Subcategory` are two tables rather than a self-FK,
+making FR-10's "exactly two levels" structural; and no balance is stored anywhere
+(NFR-2), annotated directly on the diagram.
+
+## 2026-08-19 — RESOLVED 2026-08-20: `Budget_Period.state` is derived, not stored
+
+Recorded here rather than in `docs/fr-nfr.md` §4 because it is not a requirements
+question — no requirement cares, and no answer changes what the app does. It is a
+schema decision, and it is open.
+
+The ERD gives `Budget_Period` a `state` column. D4 also gave it `starts_on` and
+`ends_on`, which makes the state fully computable: before `starts_on` + 7 days it is
+open, after `ends_on` it is closed, otherwise locked.
+
+**Recommendation: derive it and drop the column.** Two reasons, the second stronger
+than the first. It is the same argument NFR-2 already makes about balances — one
+source per fact, so nothing can disagree with anything else. And more concretely, a
+stored state needs something to write it; on a local-only app with no backend,
+nothing runs while the app is closed, so a stored state would sit stale until the
+next launch and would be wrong exactly when the user opens the app expecting it to
+be right.
+
+The state diagram (`docs/diagrams/state-budget-period.drawio`) is unaffected either
+way — it documents the lifecycle, not the storage. If this lands on "derive",
+ISSUE-001's ERD gets re-opened to drop the column rather than letting the two
+artifacts disagree.
+
+### Resolved 2026-08-20 — derived, and the column is dropped
+
+Owner: *"maybe just active month, that way it's easier if we want to make a yearly
+or quarterly report."*
+
+The reasoning arrives from a different direction than the recommendation above and
+lands in the same place, which is worth recording because the owner's angle is the
+stronger one. A three-value enum answers only "what is this period's status right
+now" — it cannot be aggregated. The `starts_on` / `ends_on` pair can: any report
+that sums a date range gets quarterly and yearly rollups for free, and neither
+needs a new column or a migration. That is **NFR-3** ("the data must support later
+reporting without restructuring") satisfied by removing something rather than
+adding it.
+
+So `Budget_Period` keeps `starts_on`, `ends_on`, `amount` and drops `state`. The
+lifecycle in `docs/diagrams/state-budget-period.drawio` is unchanged and still
+correct — it documents how a period behaves over time, not how that behaviour is
+stored. "Which month is active" is whichever period today falls inside.
+
+*Deliberately not added: a stored `is_active` flag.* It would reintroduce exactly
+the staleness this decision removes — something would have to write it, nothing
+runs while the app is closed, and it could disagree with the dates it is supposed
+to summarise. Today's date already answers the question.
+
+*Consequence:* ISSUE-001's ERD was re-opened to drop the column rather than letting
+the two artifacts disagree — per `erd-conventions.md`, the ERD is the design of
+record and anything downstream is a consumer of it.
+
+## 2026-08-20 — A budget period is deletable only while open *(SUPERSEDED same day — see "No guardrails" below)*
+
+Owner: *"full crud first week (or before the month starts), after that view only."*
+
+Resolves a contradiction, not a gap. FR-18 promised full CRUD over budgets; FR-16
+said a locked budget cannot change; §3's earlier ruling had settled *editing* and
+never mentioned deleting.
+
+The reason deletion mattered more than it appears: **a budget you can delete is a
+budget you can escape.** Leaving deletion available after the lock would let the
+owner delete and recreate a period at a new amount, which sidesteps FR-16 entirely
+and leaves the lock enforcing nothing. The lock only means something if the exit is
+closed too.
+
+So the editable window runs from creation — which may be before the period starts —
+until the lock at the end of the first week, and covers create, edit, and delete.
+After that the period is view-only. This adds one transition to the state diagram:
+`OPEN` -> final state, on owner deletion, available from `OPEN` only. `fr-nfr.md`
+FR-18 was amended to carry the exception rather than leaving the two documents in
+conflict.
+
+## 2026-08-20 — State management: Riverpod (unblocks ISSUE-002)
+
+Closes the "deliberately not decided" note in the Flutter stack entry above. Chosen
+after walking the owner — first mobile project, no Flutter background — through the
+four realistic candidates.
+
+**The deciding fact is that this app has an unusually small state-management
+problem.** Most Flutter state-management tooling exists to manage an in-memory *copy*
+of data that really lives behind a network boundary, where the copy can go stale or
+disagree with the server. This app has no server (local-first, `drift`), and drift
+DAOs return **reactive streams** that re-emit whenever an underlying row changes. The
+database already does the notifying. What is left to manage is only what never
+touches the database — selected tab, in-progress form input, spinners.
+
+**Riverpod fits that shape with the least machinery.** Its `StreamProvider` consumes
+a drift stream directly, with no adapter code between the two halves. Providers are
+declared outside the widget tree, so logic stays testable in a plain Dart test with
+no widget harness — which is the same discipline the Flutter stack entry above
+already requires ("keep entities and derivation logic in pure Dart, free of Flutter
+widget imports").
+
+**Why not the others:**
+
+- **Bloc** — would have us hand-writing event and state classes to wrap streams that
+  were already fine. On the ISSUE-002 diagrams that is roughly three to four extra
+  boxes per screen area, which buries the dependency chain the diagrams exist to
+  show under generated ceremony. Its real strength is a large team needing every
+  action to be a searchable named type; that is not this project.
+- **Plain `setState` + `StreamBuilder`** — genuinely workable here, and rejected for
+  a structural reason rather than a stylistic one: the screen must hold the DAO to
+  get a stream, which collapses the middle layer and contradicts the confirmed rule
+  that the screen never touches the DAO.
+- **Provider** — same idea as Riverpod with the sharp edge still attached: lookup is
+  by type at runtime, so a wiring mistake is a crash when the screen opens rather
+  than a compile error. Riverpod is that library's own author's rewrite to fix
+  exactly this.
+
+**Second reason, specific to this owner:** for a first mobile project, Riverpod's
+failure mode is a compile error, while Provider's and `setState`'s is an app that
+runs and shows a stale number or a blank screen. Debugging the latter without prior
+Flutter instinct is the expensive kind of stuck.
+
+**Known cost, recorded so it is not a surprise.** Riverpod's own documentation has
+several generations of syntax in circulation and that is a real source of beginner
+confusion — Bloc's docs are more consistent. **This project pins the current
+`Notifier` / `AsyncNotifier` style** so the question is not re-litigated per screen.
+
+**Consequence for the class diagrams (ISSUE-002).** The middle layer was drafted as
+`*ViewModel`. Under Riverpod it splits into two honest halves rather than being
+renamed: `StreamProvider` objects carry reads, `Notifier` classes carry writes. The
+chain, the arrow direction, and the "screen never touches the DAO" rule are all
+unchanged.
+
+## 2026-08-20 — No guardrails: the budget lock is removed (supersedes both entries above)
+
+Owner: *"i guess let budget be full crud like other, it's about users discipline
+anyways"*, then *"from now on it's user responsibility no more guardrails or whatever."*
+
+**What changed.** FR-16 locked a month's budget after the first week and was the only
+hard refusal in the app. It is gone. A budget period now accepts create, edit and
+delete for its whole life, exactly like every other entity. FR-18's carve-out goes with
+it, and NFR-4 loses its one sanctioned exception.
+
+**Why the owner is right on their own terms.** NFR-4 ("the app assists; it does not
+police") was generalised from the owner's own ruling, and they had already applied it to
+skipped months — *"it's users commitment not app problem."* The budget lock was the one
+place the app did police, justified as protecting *a target set in advance* rather than
+*a record of what happened*. The owner dissolved that distinction: if tidying your own
+records is your business, so is keeping to your own budget. There is no third party here
+— one user, no auditor, no one else misled.
+
+**The cost, raised before the change and reaffirmed.** This is the part worth keeping,
+because the change is easy to misread as being about discipline when the original rule
+was not. **FR-16's stated rationale was report fidelity** — *"a budget that can be raised
+in week three is not a budget, and a report measured against a moving target says
+nothing."* Removing it means UC-12's spent-vs-budget comparison is always satisfiable
+after the fact: nothing in the data distinguishes an amount set in advance from one
+raised later to match what was spent. What was lost is not restraint, it is a
+**measurement**. The owner accepted that knowingly.
+
+**Rejected, but only for now: recording amendments.** The offered middle path was full
+CRUD *plus* a record that an amount was changed after the period started, so the report
+could show "2M, amended from 1.5M on day 20". That keeps every action succeeding — it
+refuses nothing, so it is not a guardrail — while giving the comparison its meaning back.
+The owner declined the extra mechanism. Recorded because it stays available as a **pure
+addition** (one nullable column, one line of UI) and nothing in this decision forecloses
+it. If the budget report is ever found to be saying nothing, this is the fix, not
+reinstating a lock.
+
+**What it cost structurally, which is more than it looks.** `locked` ceased to exist,
+and `open` / `closed` collapsed into "is this month over" — a date comparison that gates
+nothing. `Budget_Period` therefore stopped having a lifecycle at all, and
+`docs/diagrams/state-budget-period.drawio` was deleted the day after it was built. That
+is the correct outcome, not waste: **a diagram is not a reason to keep a rule.** The
+generalisable form, now visible twice on this project in two days — first when state went
+from stored to derived, now when the lock went away — is that **status values exist to
+gate behaviour, so removing the gate removes the status, not just the enforcement.**
+`docs/statuses.md` now lists no values for any entity, and says why.
+
+**NFR-4's fit criterion got stronger, not weaker.** It is a counter: it previously read
+"exactly one user action is refused" and named this lock. It now reads **zero**. There is
+no longer a sanctioned exception that a future refusal can be argued as similar to, which
+makes the test sharper than it was while the lock existed.
+
+**Not touched, deliberately:** FR-10's two-level category depth. It does restrict the
+owner — no third level — but it is a data-shape decision the owner stated and confirmed
+themselves, not a mechanism for enforcing behaviour. Owner confirmed keeping it when the
+audit surfaced it. Recorded so the distinction is on file: **this project's "no
+guardrails" rule is about refusing user actions, not about the absence of all structure.**
+
+---
+
+## 2026-08-20 — drift runs the database on a background isolate
+
+The database is opened with drift's `NativeDatabase.createInBackground`, so SQLite
+runs on a separate isolate rather than on the isolate that draws the UI. Owner's
+call, made while planning ISSUE-005 (the component diagram) after the question
+surfaced there undecided.
+
+**What it is, precisely — the framing to keep.** This is *not* concurrent database
+access. drift still serialises statements; it does not let two queries run at once,
+and nothing about this makes writes parallel or introduces a race. What changes is
+**where the work happens**: on the plain setup, a query executes on the UI isolate
+and the screen cannot draw until it returns; on a background isolate the query runs
+elsewhere and the UI stays responsive while it does. The benefit is a free UI thread,
+not throughput. Written down because "concurrency" is the natural shorthand for it
+and would mislead anyone who later reasons about locking or write ordering from it.
+
+**Why it was decided rather than left open.** It follows directly from the hard
+constraint already attached to the Flutter decision — the app must stay light on old
+Android phones. Most queries in this app are trivially small, but UC-01's
+`FinancialPosition` and UC-12's `BudgetConsumption` both scan and join the whole
+`Transactions` table, and that table only grows. Those are exactly the two queries
+behind the primary screen (FR-1), so the cost of getting this wrong lands on the
+screen the owner opens most often, and it worsens with every month of use rather
+than being visible on day one.
+
+**What it costs:** a little startup time and a little memory — the wrong direction
+for the old-phone constraint, but a fixed cost, unlike the query cost it removes,
+which grows. Reversible in one line at setup if it ever measures badly.
+
+**Consequence for ISSUE-005.** This is the only edge in the entire system that
+crosses a real boundary. There is no backend, no queue and no HTTP call anywhere
+(backup is an export file, not sync), so every other edge on the component diagram is
+one process talking to itself. An isolate boundary is real — code cannot call across
+it, it passes messages — so `component-conventions.md`'s solid-vs-dashed vocabulary
+finally distinguishes something on this project instead of being decorative. The
+module -> `AppDatabase` edges are drawn as boundary-crossing; module -> module edges
+stay solid.
+
+---
+
+## 2026-08-20 — Modules reach each other's data by SQL join, not by calling another module's DAO
+
+ISSUE-005 D1, confirmed by the owner. When the `Accounts` module needs transaction rows
+to derive a balance, it writes one query joining `Accounts` and `Transactions` itself.
+It does **not** ask `TransactionDao` for the rows and add them up in Dart.
+
+**Rejected alternative — one owner per table.** Each module's DAO would be the only code
+touching its own tables, and cross-module data would arrive by a call into the owning
+module. It is the more defensible boundary, and it is what "module" normally implies.
+Rejected because UC-01's four figures and UC-12's budget consumption would each become
+several queries stitched together in Dart, where SQLite does the whole thing in one
+statement — and because NFR-2 wants exactly one source per number, computed in one
+place. Stitching in Dart is a second place for a number to come from.
+
+**What it costs, stated plainly because the diagram now says it out loud.** These
+modules are an organising convention and nothing more. Nothing enforces table ownership
+— not the compiler, not a package boundary, not even a within-DAO habit, since
+`AccountDao` and `BudgetDao` both legitimately read `Transactions`. Anyone changing the
+`Transactions` schema has to check three modules, not one. That is an acceptable trade
+for a solo app with one developer, and would not be for a team.
+
+**The cycle this surfaced, which nothing else in the repo showed.** `Accounts` and
+`Transactions` depend on each other in both directions: `Accounts` joins `Transactions`
+to derive balances (UC-01, UC-02, UC-10), and `Transactions` reads `Accounts` for the
+record screen's account picker (UC-04..UC-08, FR-10). The three per-module class
+diagrams each draw one module in isolation, so none of them could show this; it only
+became visible when the modules were put on one page. Harmless in a single process, but
+it means the two can never be separated without breaking one of the two reads. Drawn as
+two distinct edges rather than one bidirectional arrow, so the reason for each direction
+stays legible.
+
+*The general point, which is the reusable part:* **a per-module diagram cannot show a
+cross-module cycle, however carefully it is drawn.** Three correct diagrams hid a fact
+that one coarser diagram exposed immediately. That is the argument for the component
+diagram existing on a project where its stated purpose — distinguishing real boundaries
+from organizational ones — nearly did not apply.
+
+---
+
+## 2026-08-20 — "A month" means a calendar month
+
+Budget periods run first-to-last of the calendar month, and every report buckets the
+same way. Owner's call. This was the last item in `fr-nfr.md` §4 that blocked a schema
+decision; the other two (currency, transaction note) are single columns.
+
+**Rejected: payday-to-payday.** It is arguably the truer model of how a salaried
+person experiences a month, and it was the reason the question was flagged rather than
+assumed. It loses on three counts, all of which are about a period's boundary being
+derived from editable data. A period could not be created until its opening payday
+transaction existed. Editing or deleting that transaction would silently move a period
+boundary — and under FR-18 every transaction is editable, so that is not a hypothetical.
+And FR-15's automatic creation of next month's budget would have nothing to fire on,
+because "next month" would not exist until the owner got paid.
+
+*The general form, which this project has now hit three times:* **deriving a value from
+editable data means every edit silently rewrites everything built on that value.** Same
+shape as `Budget_Period.state` going from stored to derived (2026-08-20), and as the
+FR-16 lock removal collapsing the lifecycle. Calendar boundaries depend on nothing the
+owner can edit, which is the whole argument.
+
+**Nothing in the existing artifacts changes.** Calendar was assumed throughout, and
+`Budget_Period` already carries `starts_on` / `ends_on` as plain dates on the ERD —
+the general shape rather than a bare `YYYY-MM` key. That was not luck worth repeating
+silently: those columns are exactly what a future payday-to-payday change would need,
+so the cheap option stayed open at no cost.
+
+---
+
+## 2026-08-20 — One app-level currency, and amounts stored as integer minor units
+
+`IDR` or `USD`, chosen by the owner at setup, applying to the entire database. Amounts
+in all three amount columns are `int`, counting that currency's minor unit. FR-19,
+UC-14; the setting lives in a one-row `Settings` table, which is a fourth module.
+
+**Multi-currency was asked for first, and withdrawn the same day.** The owner opened
+with IDR/USD/CNY and "add later". The cost was raised before anything was written: a
+currency per account, a rate at a point in time behind every total, FR-1's four figures
+no longer summable into a net, UC-12's budget comparison splitting per currency, and a
+transfer between two currencies needing two amounts rather than one. The owner pulled
+back to a single currency in the same message. Recorded because the retreat was the
+right call and the reasoning should not have to be rebuilt if it is raised again.
+
+*Not foreclosed, and deliberately so:* because the currency is stored **with the data**
+rather than in device preferences, a future per-account currency is an added column, not
+a reinterpretation of rows already written.
+
+**`double` was proposed for amounts and rejected on NFR-2 grounds.** The owner's
+suggestion ("that way we can use double") was pushed back on once, and accepted. Binary
+floating point cannot represent 0.1 exactly, so error accumulates across sums — and NFR-2
+("the numbers must agree with each other") is exactly the requirement that breaks. The
+failure is nasty because it is unfixable at the query layer: a balance sheet whose net
+stops matching the sum of its parts by a cent has its error in storage. Integer minor
+units are exact, and `IDR` needs no fractional part at all.
+
+*The general form worth keeping:* **when a requirement says numbers must agree, that is a
+storage decision, not a formatting one.** Display is where a decimal point exists; the
+database should hold the smallest indivisible unit and nothing else.
+
+**Changing the currency later re-labels, it does not convert — and is not blocked.**
+50,000 recorded as rupiah reads as 50,000 dollars. NFR-4's fit criterion is zero
+refusals, so the app warns plainly at the moment the owner would cause it and then
+complies. This is the standing rule applied rather than an exception argued.
+
+**Why `Settings` is in the database and on the ERD.** Backup is an export file
+(2026-08-19), so a currency living in device preferences would not travel with the
+amounts, and a restored backup would silently reinterpret every figure in it. It is
+drawn on the ERD despite having no foreign key to anything because its single value
+changes the meaning of `Account.opening_amount`, `Transaction.amount` and
+`Budget_Period.amount` — **a coupling with no referential trace is exactly the kind the
+component diagram was built to make visible**, and hiding it as configuration would
+repeat that lesson in a new place.
+
+**Consequence: a fourth module.** Currency belongs to none of Accounts, Transactions or
+Budgeting — it is not where money lives, not something that happened, and not a budget.
+`Settings` joins them on the `Modules` sheet, which under the one-diagram-per-module rule
+also means a fourth class diagram (`class-settings.drawio`). The alternative, forcing it
+into Accounts because it touches `opening_amount`, would have misstated ownership on
+every artifact that keys off `Modul`.

@@ -1,0 +1,347 @@
+issues:
+  - id: ISSUE-001
+    slug: erd
+    title: System ERD
+    status: DONE
+    plan: pm/issues/001-erd/plan.md
+    depends_on: []
+    traces_to: [UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-09, UC-10, UC-11, UC-12, UC-13]
+    summary: >-
+      Draw docs/diagrams/erd.drawio from the workbook Entities sheet and UC FR.
+      Makes the schema decisions fr-nfr.md deferred to the ERD (budget identity
+      vs monthly amount) and the account-type naming collision. DONE 2026-08-19:
+      6 entities, 3 modules, 7 relationships, render visually verified; workbook
+      Entities sheet reconciled to the Budget split.
+  - id: ISSUE-002
+    slug: class-diagrams
+    title: Class diagrams (one per module)
+    status: DONE
+    plan: pm/issues/002-class-diagrams/plan.md
+    depends_on: [ISSUE-001]
+    traces_to: [UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-09, UC-10, UC-11, UC-12, UC-13]
+    summary: >-
+      Three per-module class diagrams (Accounts / Transactions / Budgeting) showing
+      the drift table -> AppDatabase -> DAO -> Riverpod provider -> Screen dependency
+      chain. Not EBC, per owner. UNBLOCKED and DONE 2026-08-20: the owner chose
+      Riverpod, which split the drafted ViewModel layer into StreamProvider reads and
+      Notifier writes without changing the chain. The `Transaction` naming risk was
+      checked against the drift docs and cleared - no rename, no ERD change. All three
+      renders visually verified; one bare crossing found and fixed with a line jump.
+  - id: ISSUE-003
+    slug: budget-period-state
+    title: Budget_Period state diagram
+    status: DONE
+    plan: pm/issues/003-budget-period-state/plan.md
+    depends_on: [ISSUE-001]
+    traces_to: [UC-11, UC-12]
+    summary: >-
+      State diagram for the budget period lifecycle (open -> locked -> closed) plus
+      populating the empty docs/statuses.md. All five transitions trace to a stated
+      FR. DONE 2026-08-20. All three surfaced questions answered by the owner and
+      recorded at their canonical homes: state is derived not stored (ERD re-opened,
+      column dropped), skipped months are not backfilled, and a period is deletable
+      only while open (FR-18 amended to carry the exception). docs/statuses.md
+      populated; render verified.
+      SUPERSEDED same day by ISSUE-004 - the owner removed FR-16's lock, which
+      collapsed the lifecycle this issue existed to draw, and the diagram was deleted.
+      Left DONE deliberately: the work was correct against the rules in force at the
+      time. Q1 (state derived, not stored) and Q2 (skipped months not backfilled) both
+      survive intact; only the deletable-only-while-open ruling and the diagram itself
+      were undone.
+  - id: ISSUE-004
+    slug: remove-budget-lock
+    title: Remove the budget lock; budgets get full CRUD
+    status: DONE
+    plan: pm/issues/004-remove-budget-lock/plan.md
+    depends_on: [ISSUE-001, ISSUE-002, ISSUE-003]
+    traces_to: [UC-11, UC-12]
+    summary: >-
+      Owner removed FR-16's budget lock - "from now on it's user responsibility no more
+      guardrails or whatever". Audited docs/fr-nfr.md end to end for anything that
+      refuses a user action and found exactly one guardrail, FR-16, plus three passages
+      dependent on it; everything else that looked like a candidate was correctness or
+      data shape, not restriction. DONE 2026-08-20. FR-16 rewritten, FR-18's carve-out
+      removed, NFR-4's fit criterion tightened from one refusal to zero. Knock-on: the
+      Budget_Period lifecycle collapsed, so docs/statuses.md now lists no values for any
+      entity and state-budget-period.drawio was deleted; class-budgeting.drawio lost
+      isEditable(), stateOf() and the BudgetPeriodState box (render re-verified); UC-11's
+      workbook Deskripsi rewritten. FR-10's two-level category depth deliberately kept -
+      it is data shape, not a discipline mechanism, and the owner confirmed keeping it.
+  - id: ISSUE-005
+    slug: component-diagram
+    title: System component diagram
+    status: DONE
+    plan: pm/issues/005-component-diagram/plan.md
+    depends_on: [ISSUE-001, ISSUE-002]
+    traces_to: [UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-09, UC-10, UC-11, UC-12, UC-13]
+    summary: >-
+      docs/diagrams/component-overview.drawio - the last Phase 1 artifact. Three module
+      components plus AppDatabase, every cross-module edge labeled with its real
+      mechanism. Owner confirmed D1 2026-08-20: modules reach each other's data by SQL
+      join on the shared database, not by calling another module's DAO - so table
+      ownership is enforced by nothing and the diagram says so. Owner also closed the
+      isolate question the same day (drift on a background isolate), which gives this
+      system its only real boundary crossing. DONE 2026-08-20: 4 components, 7 edges,
+      render visually verified. Surfaced a cross-module cycle (Accounts <-> Transactions)
+      that three correct per-module class diagrams could not show. component-conventions.md
+      gained a fourth edge mechanism (isolate call); elements.drawio gained the component
+      and requiredInterface shapes. Phase 1 documentation is now complete.
+  - id: ISSUE-006
+    slug: enums
+    title: docs/enums.md - canonical enum vocabulary
+    status: DONE
+    plan: pm/issues/006-enums/plan.md
+    depends_on: [ISSUE-001, ISSUE-002]
+    traces_to: [UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-09, UC-10, UC-12]
+    summary: >-
+      Owner's request 2026-08-20, replacing the deleted docs/rbac-entities.csv (empty, and
+      meaningless for a single-actor app). Peer of docs/statuses.md: statuses say what an
+      entity may do next, enums say what it is. No new decisions - every value is already
+      decided. Exists because Transaction.kind's seven values and their from/to semantics
+      currently live ONLY in pm/issues/001-erd/plan.md, a one-time record, which is the
+      failure general-rules.md warns about; the ERD and class diagrams both name the enum
+      without listing its values. DONE 2026-08-20: enums.md written (3 + 7 values, D1's
+      from/to table promoted out of the issue plan, four stated non-members), statuses.md
+      cross-linked both ways, class-accounts and class-transactions now show their enum
+      values on the diagram (renders verified), README docs/ listing corrected. Also
+      corrected three passages that still described "what a month means" as open after it
+      was decided the same day.
+  - id: ISSUE-007
+    slug: currency
+    title: Currency - one app-level setting, amounts as integer minor units
+    status: DONE
+    plan: pm/issues/007-currency/plan.md
+    depends_on: [ISSUE-001, ISSUE-006]
+    traces_to: [UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-09, UC-11, UC-12, UC-14]
+    summary: >-
+      Closes the last schema-blocking fr-nfr.md section 4 item. Owner asked for multi-currency
+      (IDR/USD/CNY), withdrew it the same message once the cost was raised, and settled on one
+      app-level currency chosen at setup. Owner proposed `double` for amounts; pushed back once
+      on NFR-2 grounds and the owner accepted `int` minor units (IDR exponent 0, USD exponent 2).
+      DONE 2026-08-20. FR-19 added and promoted to UC-14, which forced a fourth module (Settings)
+      because currency belongs to none of the three domain modules - and that in turn added a
+      fourth class diagram, a Settings box on the component diagram, and a Settings entity on the
+      ERD (drawn with no relationship line: its coupling is interpretive, not referential).
+      All renders visually verified. Six artifacts touched by what looked like one column.
+
+  - id: ISSUE-009
+    slug: coding-conventions
+    title: context/coding-conventions/
+    status: DONE
+    plan: pm/issues/009-coding-conventions/plan.md
+    depends_on: [ISSUE-002]
+    traces_to: []
+    summary: >-
+      Stack conventions for Flutter/Dart, drift and Riverpod, written at the owner's request
+      slightly ahead of the point general-rules.md expects them. DONE 2026-08-20: six files
+      grounded in official sources plus the decisions already recorded, and explicitly marked
+      PROVISIONAL - nothing in them has been checked against code, because none exists and no
+      Dart SDK is installed. Load-bearing content: class names in code must match the class
+      diagrams exactly; every amount is an int minor unit and never a double; a write returns
+      nothing to the screen because results arrive on the read path; and two requirements get
+      explicit tests (NFR-4's zero refusals, FR-18's full CRUD). Also answers the MCP
+      question - the official Dart/Flutter MCP server ships with the SDK and cannot be added
+      until Flutter is installed.
+
+  # ---------------------------------------------------------------------------
+  # Implementation backlog. Re-cut 2026-08-20 from seven vertical slices to one
+  # issue per use case, at the owner's request.
+  #
+  # ID scheme: an implementation issue takes the code of the use case it builds,
+  # `UC{NN}-{slug}`. Note the missing hyphen - the workbook Kode is `UC-01`, the
+  # issue implementing it is `UC01-balance-sheet`. They are deliberately
+  # near-identical and that hyphen is the only thing separating them; `traces_to`
+  # always carries the workbook form.
+  #
+  # Work with no use case takes a `FEAT{NN}` code instead, matching the "UC/FEAT"
+  # vocabulary context/index/map.yaml already uses. The scaffold is the only one:
+  # it has no actor and no workbook row, and saying so is more honest than
+  # attaching it to whichever use case happens to be built first.
+  #
+  # Why one issue per UC: the workbook is the spine, map.yaml indexes by UC, and
+  # the close checklist marks a workbook row implemented - so a 1:1 chain beats a
+  # union. The decisive reason is CLAUDE.md making a plan's scope its sequence
+  # diagram, and sequence-conventions.md drawing one diagram per use case: one UC
+  # = one diagram = one plan scope is the tightest reading of that gate.
+  #
+  # Two deliberate exceptions, both argued on their rows: FEAT01 (no UC exists
+  # for it) and UC04 (five use cases, one form, one write path - splitting it
+  # would fight ERD D1).
+  #
+  # All TODO. No plan.md exists for any of them; none may start until its own
+  # plan is written and confirmed.
+  # ---------------------------------------------------------------------------
+
+  - id: FEAT01-foundation
+    slug: foundation
+    title: Flutter scaffold, drift on a background isolate, first migration
+    status: TODO
+    plan: pm/issues/feat01-foundation/plan.md
+    depends_on: [ISSUE-007, ISSUE-008, ISSUE-009]
+    traces_to: []
+    summary: >-
+      The only issue with no use case, labelled FEAT rather than UC to say so out loud.
+      Flutter project, Riverpod, AppDatabase opened with NativeDatabase.createInBackground,
+      drift codegen, the schema from the ERD, first migration. No longer writes
+      context/coding-conventions/ - ISSUE-009 did that on 2026-08-20 - but it is the issue
+      that first tests those conventions against a real toolchain, and is expected to
+      correct them. UNBLOCKED 2026-08-21: Flutter 3.47.1 / Dart 3.13.1 stable installed at
+      C:/flutter and on the PATH, Dart MCP server connected. The schema this issue migrates
+      now includes Transaction.note (nullable free text, decided 2026-08-21). What still
+      gates it is the pipeline's own rule, not the toolchain - no code before this issue's
+      plan.md exists and is user-confirmed, and it is still a NOT PLANNED placeholder.
+
+  - id: UC14-choose-currency
+    slug: choose-currency
+    title: Choose the app currency
+    status: TODO
+    plan: pm/issues/uc14-choose-currency/plan.md
+    depends_on: [FEAT01-foundation]
+    traces_to: [UC-14]
+    summary: >-
+      First use case built despite being last in the workbook, because it is the smallest
+      module in the project and exercises the whole Screen -> provider -> DAO -> AppDatabase
+      -> table chain end to end. If the architecture on the class diagrams is wrong, this is
+      the cheapest place to find out. Changing the currency warns and proceeds, never
+      refuses (NFR-4, zero refusals) - that warning is a message, not a branch that ends.
+
+  - id: UC02-add-account
+    slug: add-account
+    title: Set up a place money lives
+    status: TODO
+    plan: pm/issues/uc02-add-account/plan.md
+    depends_on: [UC14-choose-currency]
+    traces_to: [UC-02]
+    summary: >-
+      One form for all three account groups - HOLDING, RECEIVABLE, PAYABLE (FR-3, FR-4,
+      FR-5). CARRIES A DEPENDENCY ITS NAME HIDES: FR-3's opening amount is an `adjustment`
+      transaction per ERD D1, so this issue lands the Transactions table and one write path,
+      not just the Accounts module. Re-cutting the backlog by use case did not remove this -
+      it lives in the schema, not in the slicing.
+
+  - id: UC03-adjust-account
+    slug: adjust-account
+    title: Correct what an account holds
+    status: TODO
+    plan: pm/issues/uc03-adjust-account/plan.md
+    depends_on: [UC02-add-account]
+    traces_to: [UC-03]
+    summary: >-
+      The second `adjustment` path - correcting a balance after the fact. Small on its own
+      because UC02 already built the form and the write path; kept separate because it is
+      its own workbook row and its own sequence diagram.
+
+  - id: UC01-balance-sheet
+    slug: balance-sheet
+    title: View financial position
+    status: TODO
+    plan: pm/issues/uc01-balance-sheet/plan.md
+    depends_on: [UC02-add-account]
+    traces_to: [UC-01]
+    summary: >-
+      FR-1's four figures on the primary screen - spendable, owed to me, I owe, net - never
+      merged, because money sitting with Budi cannot buy lunch. One query joining Accounts
+      to Transactions with no stored balance (NFR-2), which makes this the first issue that
+      writes the cross-module SQL join the component diagram's D1 describes.
+
+  - id: UC10-debt-progress
+    slug: debt-progress
+    title: See how much of a debt is paid
+    status: TODO
+    plan: pm/issues/uc10-debt-progress/plan.md
+    depends_on: [UC02-add-account]
+    traces_to: [UC-10]
+    summary: >-
+      FR-11's paid / remaining for one RECEIVABLE or PAYABLE account, plus marking it
+      settled. `settled` is a boolean flag and not a lifecycle (docs/statuses.md), and "how
+      much is paid" is derived by summing transactions rather than stored - a third value
+      here would be a stored duplicate of a derivable number, which NFR-2 forbids.
+
+  - id: UC13-categories
+    slug: categories
+    title: Manage categories and subcategories
+    status: TODO
+    plan: pm/issues/uc13-categories/plan.md
+    depends_on: [FEAT01-foundation]
+    traces_to: [UC-13]
+    summary: >-
+      The tagging vocabulary - exactly two levels, structural via two tables rather than a
+      self-FK (FR-10, ERD D6). Independent of the accounts chain, so it can run in parallel
+      with UC02/UC01. Ordered before UC04 so the record form is built once with its pickers
+      rather than twice.
+
+  - id: UC04-record-money-movement
+    slug: record-money-movement
+    title: Record money movement - all five recording use cases
+    status: TODO
+    plan: pm/issues/uc04-record-money-movement/plan.md
+    depends_on: [UC01-balance-sheet, UC13-categories]
+    traces_to: [UC-04, UC-05, UC-06, UC-07, UC-08]
+    summary: >-
+      THE DELIBERATE EXCEPTION to one-issue-per-UC. Expense, income, transfer, lend and
+      borrow are one form and one write path by schema decision - ERD D1 put all seven kinds
+      in one ledger table precisely so there would be one insert path, not five. Splitting
+      them would mean one real issue and four wrappers, or five issues churning the same
+      file. FR-6's "fastest path in the app" is also a property of the whole form.
+      Correctness test: transfers and lending never count as spending, which falls out of
+      to_account_id IS NULL rather than a rule repeated in every query.
+
+  - id: UC09-review-and-correct
+    slug: review-and-correct
+    title: Review and correct what was recorded
+    status: TODO
+    plan: pm/issues/uc09-review-and-correct/plan.md
+    depends_on: [UC04-record-money-movement]
+    traces_to: [UC-09]
+    summary: >-
+      The transaction list, and editing or deleting any row on it. FR-18 is full CRUD with
+      no exception for any entity, and NFR-4's fit criterion is zero refusals - this is the
+      likeliest issue to violate that quietly with a disabled button, so check it explicitly
+      rather than assuming.
+
+  - id: UC11-set-budget
+    slug: set-budget
+    title: Set a monthly budget amount
+    status: TODO
+    plan: pm/issues/uc11-set-budget/plan.md
+    depends_on: [FEAT01-foundation]
+    traces_to: [UC-11]
+    summary: >-
+      A monthly amount per budget group, on calendar months (decided 2026-08-20). Each month
+      stands alone with no carry-forward (FR-14); next month is pre-filled from this one
+      (FR-15); a period is editable for its whole life with no lock and no lifecycle (FR-16,
+      ISSUE-004). Needs only the Budget tables, so it can run in parallel with the accounts
+      chain.
+
+  - id: UC12-budget-consumption
+    slug: budget-consumption
+    title: See what is left of this month's budget
+    status: TODO
+    plan: pm/issues/uc12-budget-consumption/plan.md
+    depends_on: [UC11-set-budget, UC04-record-money-movement]
+    traces_to: [UC-12]
+    summary: >-
+      FR-13's remaining amount, draining as spending is recorded. Untagged spending appears
+      under "Others", which is the null budget_group_id and not a row (FR-17, ERD D5).
+      Depends on both halves for a real reason: without UC11 there is no amount, without UC04
+      there is nothing consuming it.
+
+  - id: ISSUE-008
+    slug: sequence-conventions
+    title: sequence-conventions.md
+    status: DONE
+    plan: pm/issues/008-sequence-conventions/plan.md
+    depends_on: [ISSUE-002]
+    traces_to: []
+    summary: >-
+      The last missing diagram-type convention, and the one gating every implementation
+      plan - CLAUDE.md makes the sequence diagram the scope boundary of an issue. DONE
+      2026-08-20, and renumbered from ISSUE-015 to ISSUE-008 the same day once the
+      ISSUE-008..014 backlog rows were replaced by UC-coded ids and left a gap.
+      Distilled from UML 2.5.1 Clause 17 plus the three worked examples, which
+      turned out to be MERMAID-GENERATED - so this is the only diagram type in the project
+      authored as Mermaid and converted, rather than hand-written XML. Two rules carry the
+      weight: every lifeline must be a class that already exists on a class diagram, and a
+      write gets no reply arrow because results arrive on the read path as a stream
+      emission. diagram-drawio-author's scope extended to match.
+

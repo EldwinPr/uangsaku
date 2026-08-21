@@ -1,0 +1,49 @@
+# UC/FEAT -> artifact index.
+# No code exists yet (Phase 1). Until it does, this maps use cases to the design
+# artifacts that specify them; code paths get added alongside, not instead.
+
+erd: docs/diagrams/erd.drawio
+
+# ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
+# class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
+# each other in BOTH directions (balances need Transactions; the record screen needs
+# the account picker), which is a real cycle and is drawn as two separate edges.
+component_overview: docs/diagrams/component-overview.drawio
+
+# ISSUE-006. The two vocabulary files, and the split between them: a status gates
+# behaviour (and needs a state diagram), an enum classifies (and needs none).
+# enums.md is the canonical source for Account.group and Transaction.kind - the ERD
+# and the class diagrams name those columns, this says what may go in them.
+vocabulary:
+  enums:    docs/enums.md
+  statuses: docs/statuses.md
+
+# No state diagrams. Budget_Period was the only entity with a lifecycle; removing
+# FR-16's lock on 2026-08-20 collapsed it (open/closed became a date comparison that
+# gates nothing), so the diagram was deleted. docs/statuses.md records why, and lists
+# no status values for any entity.
+
+class_diagrams:
+  # ISSUE-002. One per module. Chain drawn on all three:
+  # Screen -> Riverpod provider -> DAO -> AppDatabase -> drift tables.
+  # State management is Riverpod (decided 2026-08-20, decisions.md).
+  Accounts:     {file: docs/diagrams/class-accounts.drawio,     ucs: [UC-01, UC-02, UC-03, UC-10]}
+  Transactions: {file: docs/diagrams/class-transactions.drawio, ucs: [UC-04, UC-05, UC-06, UC-07, UC-08, UC-09, UC-13]}
+  Budgeting:    {file: docs/diagrams/class-budgeting.drawio,    ucs: [UC-11, UC-12]}
+  # ISSUE-007. Fourth module: the app-level currency setting belongs to none of the
+  # three domain modules, and its value changes the meaning of every amount in all of them.
+  Settings:     {file: docs/diagrams/class-settings.drawio,     ucs: [UC-14]}
+
+# No explainers tracked. docs/diagrams/class-budgeting-draft.drawio was deleted
+# 2026-08-20 once class_diagrams.Budgeting superseded it — it predated the Riverpod
+# decision and still showed a "BudgetViewModel" plus a note saying state management
+# was undecided, which is exactly the stale-doc failure decisions.md warns about.
+
+entities:
+  Account:       {modul: Accounts,     erd: docs/diagrams/erd.drawio, ucs: [UC-01, UC-02, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-09, UC-10]}
+  Transaction:   {modul: Transactions, erd: docs/diagrams/erd.drawio, ucs: [UC-01, UC-03, UC-04, UC-05, UC-06, UC-07, UC-08, UC-09, UC-10, UC-12]}
+  Category:      {modul: Transactions, erd: docs/diagrams/erd.drawio, ucs: [UC-04, UC-05, UC-09, UC-13]}
+  Subcategory:   {modul: Transactions, erd: docs/diagrams/erd.drawio, ucs: [UC-04, UC-05, UC-09, UC-13]}
+  Budget_Group:  {modul: Budgeting,    erd: docs/diagrams/erd.drawio, ucs: [UC-04, UC-05, UC-09, UC-11, UC-12, UC-13]}
+  Budget_Period: {modul: Budgeting,    erd: docs/diagrams/erd.drawio, ucs: [UC-09, UC-11, UC-12]}
+  Settings:      {modul: Settings,     erd: docs/diagrams/erd.drawio, ucs: [UC-14]}
