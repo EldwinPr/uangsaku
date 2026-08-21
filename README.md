@@ -157,8 +157,9 @@ QA reviews with fresh context because a worker's judgement of its own output is 
 link in the chain — this project has a recorded case of an agent inspecting its own diagram
 and passing a real defect as harmless.
 
-The unattended loop that drives them is `context/guide/orchestration.md`: the main session
-selects and dispatches, and does no planning, coding or reviewing itself. It runs in two
+The unattended loop that drives them is `context/guide/orchestration.md`, and
+**`/start-dev-pipeline`** starts it: the main session selects and dispatches, and does no
+planning, coding or reviewing itself. It runs in two
 phases — the issue loop, then a single repo-wide sweep — and **stops at findings.** Nothing
 found in the sweep is fixed by the run, because a cross-cutting finding usually needs a
 decision only the owner can make, and a run that repairs its own findings can loop
