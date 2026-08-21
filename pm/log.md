@@ -78,12 +78,17 @@ CRUD moved from UC-13 to UC-11, and `note` appears on every recording screen. Re
 run.
 
 **Open, non-blocking:** one `fr-nfr.md` §4 item — where the data lives, narrowed to
-phone-only but not closed. **Seven findings on file** (`pm/findings.md` F1–F7). Two are
-**FIXED**: F2 (`seq-uc13-categories.drawio` lacked the read path) and F6 (a long `note over`
-rendering outside its own box, on two diagrams). F3 narrowed twice, from fourteen diagrams
-to **twelve**, as UC-13 and UC-11 each corrected their own. **F1, F4, F5 and F7 stand,
-recorded and not fixed** — F7 is the newest: a non-numeric budget amount is silently saved
-as zero, and which non-refusing behaviour is wanted instead is the owner's call.
+phone-only but not closed. **Thirteen findings on file** (`pm/findings.md` F1–F13), of which
+F8–F13 come from the two end-of-run sweeps. **Four are resolved**: F2, F6, F13 fixed and
+F10 accepted (the clean-checkout verification, recorded as a negative result). F3 narrowed
+twice, fourteen diagrams to **twelve**. **Eight stand, recorded and not fixed** — the ones
+that need an owner ruling are **F7** (a non-numeric budget amount is silently saved as
+zero), **F8** (every screen issue orphans the previous screen; UC-13's is already
+unreachable, and six more screens are queued behind the same pattern), **F9** (a codegen
+toolchain the app has proved it cannot use, still carried as a runtime dependency and a
+suppressed lint), **F11** (`decisions.md` still calls open the very question `lessons.md`
+§1 was written about) and **F12** (the orchestration guide describes a process this run
+stopped following).
 
 **Unattended mode is live, and has now been exercised both ways.** `feat-planner` may mark
 a plan `AUTO-CONFIRMED` when every decision in it cites an already-confirmed artifact, and
@@ -595,3 +600,58 @@ and say so. The same parse will be needed by every amount field UC-04 introduces
 UC10, UC04, UC09 and UC12 are all behind `UC14-choose-currency`, halted at the planning gate
 since 2026-08-21 (`pm/questions.md` Q1). A halted issue stays halted for the whole run, so
 the run proceeds to phase 2 — the two `repo-qa` sweeps — and then stops.
+
+---
+
+## 2026-08-22 — Phase 2: the two end-of-run sweeps, and the run stops
+
+**[STATUS]** **Phase 1 ended with three issues closed of eleven.** `select` was re-run
+against `pm/tracker.yaml` and confirmed nothing is runnable: `UC14-choose-currency` is
+halted, and UC02, UC03, UC01, UC10, UC04, UC09 and UC12 all sit behind it. Both sweeps were
+run **in the main session**, not by `repo-qa` subagents, per the owner's 2026-08-22
+direction — scope APP over the code as a whole, scope TRAIL over the paper trail. Six
+findings, F8–F13.
+
+**[DISCOVERY]** **Scope APP — the clean-checkout run is the one thing worth doing twice.**
+Cloned the repo to a fresh directory at `9cad36d` and ran the full sequence there rather
+than in the working tree: `pub get` resolved, format 20 files 0 changed, analyze clean,
+**31 tests passed**, `audit.py` 13/0/0, and `build_runner` wrote 42 outputs from cold
+producing an `app_database.g.dart` **byte-identical** to the committed one. So nothing in
+the working tree was load-bearing and the committed generated code is exactly what the
+generator makes. Recorded as F10 — *a negative result is worth writing down when the check
+is one nothing else performs* (`lessons.md` §5).
+
+**[DISCOVERY]** **F8 — the screens are orphaning each other, and only a whole-app view
+shows it.** This app has no navigation host, so `MaterialApp.home` is the only route to a
+screen. UC-13 pointed it at `CategoryManagerScreen`; UC-11 re-pointed it at
+`SetBudgetScreen`, exactly as UC-13 D3 said a later issue would. **UC-13's screen is now
+unreachable in the running app** — its feature is built, tested and unusable. Both issues
+were individually correct and `issue-qa` could not have seen this: it reviews one diff
+against one plan. Six more screens are queued behind the same pattern. **A navigation host
+is on no class diagram, so no issue can invent one without an owner ruling.**
+
+**[DISCOVERY]** **F9 — the app still carries the codegen toolchain three issues proved it
+cannot use.** `riverpod_annotation` is a *runtime* dependency, `riverpod_generator` a dev
+one, and `invalid_annotation_target: ignore` switches off a real lint app-wide — all to
+support `@riverpod`, of which **there is not one occurrence**, and by recorded decision
+there cannot be while every read provider carries a drift row class.
+
+**[DISCOVERY]** **F11 — `lessons.md` §1 recurred inside the document the lesson is about.**
+`decisions.md` still says the credit/debit naming collision is "still open — see
+`fr-nfr.md` §4"; §4 records it `Closed 2026-08-19`. The 2026-08-20 sweep fixed one register
+and missed its mirror, and the stale sentence has now outlived the fix by three days and a
+shipped schema. *A file that documents a failure mode is not immune to it.* Added to
+`lessons.md` §1 as its ninth instance, with F13 as the tenth.
+
+**[TODO]** **F13 was a skipped close step, not a sweep discovery, and that is the point.**
+UC-11's workbook row still called a calendar month and the Budget_Group/Budget_Period split
+open, in the same week UC-11 was built on both. **UC-11's own planner found it and wrote
+"step 12 fixes it at close"; the close then ran without it.** Fixed during this sweep, with
+the neighbouring lock paragraph deliberately left alone because it is marked as history.
+*A correctly-identified close item can still fall out of a checklist* — worth watching
+whether this repeats before it earns a `lessons.md` entry of its own.
+
+**[DECISION]** **The run stops here.** Findings are recorded, not fixed. No closed issue is
+reopened, no issue is created for a finding, and the halted UC-14 stays halted. What the
+owner picks up: `pm/questions.md` Q1 (which unblocks seven issues), and the five findings
+above that need a ruling rather than a change.

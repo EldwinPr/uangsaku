@@ -194,3 +194,134 @@ amount, treat empty as "no budget set" and delete the row, or write the zero and
 **That is the owner's call**, which is why this is filed rather than fixed.
 **Confidence:** certain that it happens; worth checking whether it matters, since the same
 parse will be needed by every amount field UC-04 introduces.
+
+---
+
+*Phase 2 of the unattended run begins here. Findings F8–F13 come from the two end-of-run
+sweeps — scope APP over the code as a whole, scope TRAIL over the paper trail — run in the
+main session on 2026-08-22 rather than by `repo-qa` subagents, per the owner's direction.
+Both sweeps ask questions per-issue review is structurally blind to: `issue-qa` sees one
+diff against one plan, and whether three issues add up to one coherent app, or whether the
+documentation still describes what was built, are properties of the whole.*
+
+## F8 — every screen issue orphans the previous screen; UC-13's is now unreachable   [OPEN]
+**Scope:** APP          **Severity:** risk
+**Where:** `app/lib/src/app.dart` — `home: const SetBudgetScreen()`
+**Violates:** nothing stated. It is the accumulating cost of a decision each issue made
+correctly in isolation.
+**What it is:** this app has no navigation host, so `MaterialApp.home` is the only way to
+reach a screen. UC-13 D3 pointed `home` at `CategoryManagerScreen`; UC-11 D8 re-pointed it
+at `SetBudgetScreen`, exactly as UC-13 D3 said a later screen issue would. The consequence
+is that **`CategoryManagerScreen` is now unreachable in the running app** — no route, no
+reference from any live widget, exercised only by its tests. UC-13's delivered feature
+cannot be used. Both issues documented this honestly and neither did anything wrong; the
+problem is only visible across them. It compounds: UC-01, UC-02, UC-03, UC-04, UC-09 and
+UC-12 each build a screen, and on the current pattern each one orphans the last, so the app
+converges on one reachable screen and five dead ones. **The owner's call is whether a
+navigation host becomes its own issue before the next screen lands** — it is on no class
+diagram, so no issue can invent one without a ruling.
+**Confidence:** certain — `grep` for `CategoryManagerScreen` outside its own file and tests
+returns only doc comments.
+
+## F9 — the app carries a codegen toolchain that three issues have proved it cannot use   [OPEN]
+**Scope:** APP          **Severity:** risk
+**Where:** `app/pubspec.yaml` (`riverpod_annotation ^4.0.6` as a **runtime** dependency,
+`riverpod_generator ^4.0.8` as a dev dependency) and `app/analysis_options.yaml:18`
+(`invalid_annotation_target: ignore`)
+**Violates:** nothing stated. FEAT01 D3 added the lint suppression saying it is required by
+`riverpod_generator` "and there for no other reason."
+**What it is:** **not one `@riverpod` annotation exists in this app**, and by recorded
+decision none can: `riverpod_generator` throws `InvalidTypeException` on any provider typed
+over a drift-generated row class (`decisions.md` 2026-08-21), and every read provider in
+this app carries drift rows. All four providers are hand-written. So a runtime dependency, a
+dev dependency and a lint suppression all persist to support a generator with nothing to
+generate. Three costs, none fatal: `riverpod_annotation` ships in the built app for nothing;
+the suppressed lint is a real check switched off app-wide for a reason that no longer
+applies; and the next issue reading `pubspec.yaml` will reasonably assume `@riverpod` is the
+house style and rediscover the failure. **Removing them is a decision, not a cleanup** —
+if the owner expects a future non-drift provider, keeping them is defensible, but then the
+`riverpod.md` note should say that is why.
+**Confidence:** certain — no import of `riverpod_annotation` anywhere in `lib/` or `test/`.
+
+## F10 — codegen and the five commands verified reproducible on a clean checkout   [ACCEPTED]
+**Scope:** APP          **Severity:** improvement
+**Where:** the whole `app/` package, at `9cad36d`
+**Violates:** nothing — this is the sweep's negative result, recorded because a clean
+checkout is the only thing phase 2 checks that no per-issue review does (`lessons.md` §5:
+`renders.lock` once hashed raw bytes and would have read stale on CI and fresh locally).
+**What it is:** cloned the repository to a fresh directory and ran the full sequence.
+`flutter pub get` resolved; `dart format --set-exit-if-changed` 20 files 0 changed;
+`flutter analyze` `No issues found!`; `flutter test` **31 passed**; `python audit.py`
+13/0/0. `dart run build_runner build` wrote 42 outputs from cold and the regenerated
+`app_database.g.dart` is **byte-identical** to the committed one (169,324 bytes, raw
+comparison, not normalised). So the committed generated code is exactly what the generator
+produces, and nothing in the working tree was load-bearing. `git status` does briefly show
+the file as modified after a cold build — a stat-cache refresh, not a content change, since
+`git diff` is empty and the raw bytes match.
+**Confidence:** certain — measured on a clean clone, not on the working tree.
+
+## F11 — `decisions.md` still calls open the very question `lessons.md` §1 was written about   [OPEN]
+**Scope:** TRAIL          **Severity:** defect
+**Where:** `context/index/decisions.md:107` — *"Naming still open — see `docs/fr-nfr.md` §4."*
+**Violates:** `lessons.md` §1 — *a decision is not finished until every register that listed
+it as open is updated*, in its mirror-image form: a document claiming something is **open
+when it is settled.**
+**What it is:** the credit/debit account naming collision. `decisions.md` sends the reader to
+`fr-nfr.md` §4 to find it unresolved; **§4 records it as `Closed 2026-08-19`** — settled by
+constraint, not preference, since NFR-1's fit criterion forbids a debit/credit column
+outright, and `Account.group` has shipped as `HOLDING`/`RECEIVABLE`/`PAYABLE` since FEAT01.
+So the pointer resolves to its own refutation, and a reader who trusts the first document
+believes a shipped schema decision is still up for argument.
+**Why it is worth its own entry:** this is *the* example `lessons.md` §1 opens with — it
+"sat in `fr-nfr.md` §4 as 'undecided, blocking schema and UI naming' for a full day after it
+was closed." That sweep fixed `fr-nfr.md` and **missed the mirror sentence in
+`decisions.md`**, which has now outlived the fix by three days and a shipped schema. A
+pattern already distilled into a lessons file recurred in the document the lesson is about.
+The fix is one sentence, but the entry is the evidence.
+**Confidence:** certain — both passages read end to end, and `erd.drawio` plus
+`app/lib/src/accounts/accounts_table.dart` confirm which one is true.
+
+## F12 — the orchestration guide describes a process this run stopped following   [OPEN]
+**Scope:** TRAIL          **Severity:** risk
+**Where:** `context/guide/orchestration.md` (lines 4, 12, 17–22, 35, 81, 93),
+`CLAUDE.md` lines 33–34, `.claude/commands/start-dev-pipeline.md` line 17
+**Violates:** `lessons.md` §1, prospectively — these are live present-tense instructions,
+not history.
+**What it is:** all three state that the main session **"does no planning, coding or
+reviewing itself"**, that the loop is `select → feat-planner → flutter-coder → issue-qa`,
+and that phase 2 is **"dispatch `repo-qa` twice in parallel."** On 2026-08-22 the owner
+directed mid-run that **diagram work and QA stop going to subagents**, after two background
+agents died on a session limit. From that point the main session did UC-11's review and
+close, both as-built diagram passes, and both phase-2 sweeps itself; only planning and
+coding still dispatched. **So the run that these documents describe is not the run that
+happened**, and the next session bootstrapping from them will re-adopt a shape the owner
+has already replaced. Recorded in `pm/log.md` under 2026-08-22 as an execution decision
+rather than promoted to `decisions.md`, on the grounds that it might not outlive the run —
+**it now has**, which is the trigger for promoting it.
+**What it does not mean:** nothing here says the three-agent split was wrong. The isolation
+argument for it is intact and the `issue-qa`/`repo-qa` agent definitions are unchanged and
+still usable. The question for the owner is only which shape the documents should describe.
+**Confidence:** certain.
+
+## F13 — UC-11's workbook row still called two of its own decisions open   [FIXED]
+**Scope:** TRAIL          **Severity:** defect
+**Where:** `docs/workbook.xlsx`, sheet `UC FR`, row 12 (`UC-11`), the `Deskripsi` cell's
+closing paragraph
+**Violates:** `lessons.md` §1's mirror-image form.
+**What it is:** the row ended *"Open (fr-nfr.md section 4): what 'a month' means — calendar
+month or payday-to-payday — was never discussed… Also deferred to the ERD: whether a
+budget's identity is separate from its monthly amount."* **Both were decided 2026-08-20,
+and UC-11 was built on both** — the calendar month is what `BudgetDao._monthStart()`
+computes, and the Budget_Group / Budget_Period split is what the code's two tables are. The
+owning row of a use case described its own shipped foundations as unsettled.
+**How it was missed:** UC-11's planner found it and wrote *"step 12 fixes it at close"*. The
+close then ran without it. **It was not a sweep discovery but a skipped close step**, caught
+one phase later — recorded that way rather than as a clean find, because the interesting
+fact is that a correctly-identified close item can still fall out of a checklist.
+**Fixed 2026-08-22:** the paragraph now records both decisions with the reasoning that
+settled them and points at `decisions.md`. **The neighbouring paragraph that also mentions
+the lock was deliberately left alone** — it is marked as history ("this use case previously
+carried the app's only lifecycle"), and `lessons.md` §1 is explicit that only claims still
+asserted in the present tense go stale. Verified after save that the history sentence
+survives and the open-claim is gone.
+**Confidence:** certain — reloaded and re-read the cell after writing.

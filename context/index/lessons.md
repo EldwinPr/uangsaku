@@ -31,6 +31,17 @@ made in advance, so it locks (FR-16)"*. Both rest on the lock ISSUE-004 removed 
 2026-08-20 — the same reversal that had already been chased through nine other files that
 day. **A sweep that catches nine of eleven feels complete and is not.**
 
+**A ninth and tenth on 2026-08-22, both found by the end-of-run sweep, and the ninth is
+the sharpest instance on file.** `decisions.md` still read *"Naming still open — see
+`docs/fr-nfr.md` §4"* about the credit/debit collision — **the very question this section
+opens with.** The 2026-08-20 sweep fixed `fr-nfr.md`, which now records it `Closed
+2026-08-19`, and missed the mirror sentence in `decisions.md`, so the pointer resolves to
+its own refutation three days and one shipped schema later. The tenth: UC-11's workbook row
+still called a calendar month and the Budget_Group/Budget_Period split open, in the same
+week UC-11 was **built on both**. *The register that records a decision is not automatically
+the register that stops calling it open — and a file that documents this failure is not
+immune to it.* Recorded as F13 and F11.
+
 **The mirror image is just as expensive.** The failure this project guards against is a
 document claiming something is settled when it is not. Three of these four were the
 reverse — a document claiming something was **open when it was settled** — which makes a
