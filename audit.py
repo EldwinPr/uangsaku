@@ -11,6 +11,7 @@ import os
 import re
 import glob
 import sys
+import hashlib
 import xml.dom.minidom
 
 import openpyxl
@@ -30,9 +31,6 @@ ALLOWED_DANGLING = {
         'generic filename in bpmn-conventions.md, not a claim that a file exists',
     'docs/diagrams/bpmn-to-be.drawio':
         'same as bpmn-as-is.drawio -- this project uses the FR route, so has no BPMN',
-    'docs/diagrams/seq-uc02-add-account.drawio':
-        "illustrative filename in sequence-conventions.md's CLI example, not a claim that "
-        "the file exists; UC-02's real diagram gets drawn when ISSUE-009 is planned",
     'pm/issues/015-sequence-conventions/plan.md':
         'renumbered to 008-sequence-conventions on 2026-08-20; pm/log.md is append-only, '
         'so entries written before the renumber still name the old path',
@@ -60,6 +58,53 @@ try:
          for i in _tr if i.get('status') == 'TODO'})
 except Exception as _e:  # the tracker's own checks report this properly further down
     fail.append('could not read pm/tracker.yaml for the planned-file set: {}'.format(_e))
+
+def _sha(path):
+    """Hash of a diagram source, used to tell a stale render from a current one.
+
+    Line endings are normalised first, and that is not a detail. This repo is developed
+    on Windows with core.autocrlf=true, so a checkout rewrites LF to CRLF in the working
+    tree while git stores LF -- a raw byte hash therefore changes on clone, and every
+    render would read as stale on CI and fresh locally, or the reverse. Normalising
+    means the hash describes the diagram rather than the machine it was checked out on.
+    """
+    # newline=None is universal-newline mode: CRLF and LF both read back as LF, with
+    # no escape sequences needed to say so.
+    text = open(path, encoding='utf-8', newline=None).read()
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
+
+
+def _slugdir(issue_id):
+    """pm/issues/ folder name for a tracker id -- the tracker does not store the path."""
+    for d in glob.glob('pm/issues/*'):
+        base = os.path.basename(d)
+        if base.lower().startswith(issue_id.lower().split('-')[0]):
+            return base
+    return issue_id.lower()
+
+
+if '--record-renders' in sys.argv:
+    # Run this immediately AFTER re-exporting a sequence diagram's PNG. It records the
+    # hash of each .drawio as it stands now, which is the claim "the committed render was
+    # made from this exact source". Running it without re-exporting launders a stale
+    # picture into looking current, which is the one thing this mechanism exists to catch.
+    import yaml as _y
+    _lock = {p_.replace(os.sep, '/'): {'source_sha': _sha(p_),
+                                       'render': os.path.basename(p_)[:-7] + '.png'}
+             for p_ in sorted(glob.glob('docs/diagrams/seq-uc*.drawio'))}
+    _header = [
+        '# Written by `python audit.py --record-renders`, immediately after a sequence',
+        '# diagram is re-exported. Maps each .drawio to the hash of the source its',
+        '# committed PNG was made from; audit.py fails when the two drift apart.',
+        "# Sequence renders are committed and carry an issue's scope, so a wrong picture",
+        '# is worse than a missing one. See drawio-general-guide.md.',
+    ]
+    with open('docs/diagrams/renders.lock', 'w', encoding='utf-8') as fh:
+        fh.write('\n'.join(_header) + '\n')
+        _y.safe_dump(_lock, fh, default_flow_style=False, sort_keys=True)
+    print('recorded {} sequence renders in docs/diagrams/renders.lock'.format(len(_lock)))
+    sys.exit(0)
+
 
 def is_stub(path):
     """True for an issue folder's NOT PLANNED placeholder, which is not a plan."""
@@ -101,6 +146,13 @@ for r, srcs in sorted(refs.items()):
 for r, why in sorted(PLANNED_NOT_WRITTEN.items()):
     if os.path.exists(r) and not r.startswith('pm/issues/'):
         W('{} now exists -- drop it from PLANNED_NOT_WRITTEN ({})'.format(r, why))
+# Symmetric check, and the reason this one exists: seq-uc02-add-account.drawio sat in
+# ALLOWED_DANGLING as "an illustrative filename, not a claim that the file exists" long
+# after the file was actually drawn. An exemption that has quietly stopped applying is
+# the same defect as one that never applied -- it stops a real check without saying so.
+for r, why in sorted(ALLOWED_DANGLING.items()):
+    if os.path.exists(r):
+        W('{} exists now -- drop it from ALLOWED_DANGLING ({})'.format(r, why))
 O('{} distinct file references checked ({} known-dangling, {} planned-not-written)'.format(
     len(refs), len(ALLOWED_DANGLING), len(PLANNED_NOT_WRITTEN)))
 
@@ -262,6 +314,49 @@ O('all {} use cases owned by exactly one of {} implementation issues; '
 O('{} tracker issues ({} planned, {} still TODO and unplanned by design): '
   'dependencies satisfied, summaries present'.format(
       len(tr), planned, len(tr) - planned))
+
+# ---------- sequence renders: present, in the right issue, and not stale ----------
+# A sequence diagram's picture IS its issue's scope (CLAUDE.md), and unlike the other
+# diagram types its render is committed. So a .drawio edited without re-exporting leaves
+# a wrong picture in the repo where a reader will believe it. Neither git nor a mtime
+# check can see that -- mtimes do not survive a clone -- so the export records the hash
+# of the source it was made from, and this compares.
+RENDER_LOCK = 'docs/diagrams/renders.lock'
+owner_of = {uc: i['id'] for i in impl for uc in (i.get('traces_to') or [])}
+lock = {}
+if os.path.exists(RENDER_LOCK):
+    lock = yaml.safe_load(open(RENDER_LOCK, encoding='utf-8')) or {}
+
+stale, missing = [], []
+for src in sorted(glob.glob('docs/diagrams/seq-uc*.drawio')):
+    src = src.replace(os.sep, '/')
+    name = os.path.basename(src)
+    uc = 'UC-' + name[6:8]
+    issue = owner_of.get(uc)
+    if not issue:
+        F('{} draws {} which no implementation issue traces to'.format(name, uc))
+        continue
+    png = 'pm/issues/{}/{}'.format(_slugdir(issue), name[:-7] + '.png')
+    if not os.path.exists(png):
+        missing.append('{} -> {}'.format(name, png))
+        continue
+    cur = _sha(src)
+    was = (lock.get(src) or {}).get('source_sha')
+    if was is None:
+        missing.append('{} is not in {}'.format(name, RENDER_LOCK))
+    elif was != cur:
+        stale.append(name)
+for f in sorted(glob.glob('docs/diagrams/seq-uc*.png')):
+    F('sequence render left in docs/diagrams/ -- it belongs in its issue folder and this '
+      'copy will go stale: {}'.format(os.path.basename(f)))
+for x in missing:
+    F('sequence render missing or unrecorded: {}'.format(x))
+if stale:
+    F('.drawio changed since its render was exported, so the committed picture is wrong: '
+      '{} -- re-export, then `python audit.py --record-renders`'.format(', '.join(stale)))
+if not (stale or missing):
+    O('{} sequence renders present in their issue folder and current with their source'
+      .format(len(lock)))
 
 # ---------- what is still open, reported not judged ----------
 sec4 = s.split('## 4. Not decided')[1].split('###')[0]

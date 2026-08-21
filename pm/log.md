@@ -1352,3 +1352,60 @@ lifted. It used to rest on two reasons — no code, and no SDK. The SDK reason i
 stands, and it is the larger half: no `pub get` has run, no package version in `riverpod.md` or
 `drift.md` is verified, nothing has been compiled. `FEAT01` is still expected to correct these
 files and say so here.
+
+**[STATUS]** Under git — `EldwinPr/uangsaku` on GitHub, `main`, two commits, working tree clean
+and in sync with origin. 169 files tracked. The `.gitignore` split written earlier the same day
+was verified against a real repo rather than assumed: 14 sequence renders tracked under
+`pm/issues/`, 0 PNGs tracked from `docs/diagrams/`. Named `uangsaku` — the app id and Dart
+package name should follow it and be settled before `FEAT01` runs `flutter create`, since
+renaming those afterwards is a multi-file change across the Android and iOS projects.
+
+**[TODO]** CI is now possible and is not configured. The job is already specified in two places:
+the four commands at the bottom of `testing.md` (`flutter analyze`, `dart format
+--set-exit-if-changed`, `flutter test`, `build_runner build`), plus `python audit.py`, plus the
+diagram re-export check noted in `tooling.md`. Worth standing up before the unattended run
+rather than after — an unattended run with no CI has nothing checking it but itself.
+
+**[STATUS]** CI written — `.github/workflows/ci.yml`, two jobs. `docs` runs `python audit.py`
+and works today. `app` runs the four commands from `testing.md` with `build_runner` **first**,
+since generated code has to exist before `analyze`, `format` and `test` read it; running it last
+only checks the previous commit's output. Every `app` step is guarded on `pubspec.yaml` existing,
+so it passes trivially until FEAT01 rather than failing red for months. Flutter pinned to 3.47.1
+to match the developer machine — bump both together or neither.
+
+**[DECISION]** Sequence renders are now checked for staleness, not just presence.
+`docs/diagrams/renders.lock` records the hash of the `.drawio` each committed PNG was exported
+from; `audit.py` fails when they drift, and `python audit.py --record-renders` rewrites the lock
+**after** a re-export. The mechanism exists because these renders are committed and each one is
+an issue's scope, so a wrong picture is worse than a missing one — and neither git nor a file
+timestamp can detect it, because timestamps do not survive a clone. Proven in both directions:
+edited a diagram and the audit failed, reverted and it passed.
+
+**[DISCOVERY]** Building that check surfaced a defect that would have made it useless, and the
+general form is worth more than the fix. The first version hashed raw bytes. This repo is
+developed on Windows with `core.autocrlf=true`, so a checkout rewrites LF to CRLF in the working
+tree while git stores LF — every render would have read as stale on CI and fresh locally. The
+hash now normalises line endings, so it describes the diagram rather than the machine it was
+checked out on. *Any content hash compared across machines has to say which normalisation it
+means, or it is comparing environments instead of content.*
+
+**[DISCOVERY]** `flutter doctor`: **there is no runnable target on this machine.** No Android SDK
+(the actual gap — Android is the target platform), Visual Studio Build Tools present but
+incomplete so Windows desktop will not build, and **web is not a fallback** because
+`NativeDatabase.createInBackground` is native-only — a web build would need a different drift
+backend and would not be testing the app this project decided to build. What still works is the
+half that matters for now: `flutter test` is headless on the Dart VM and needs none of it, and
+`testing.md` deliberately puts this app's correctness surface in DAO tests against in-memory
+SQLite. So FEAT01 and every use-case issue can be built and tested today; what waits is launching
+the app and looking at it. Install the Android SDK **before the first UI issue**, not before
+FEAT01. Written up in `tooling.md`.
+
+**[DECISION]** `audit.py` grew a symmetric exemption check. `ALLOWED_DANGLING` still exempted
+`seq-uc02-add-account.drawio` as "an illustrative filename, not a claim that the file exists"
+long after the file was drawn — an exemption that has quietly stopped applying disables a real
+check without saying so, which is the same defect as one that never applied. The stale entry is
+gone and the audit now warns when any exemption's file comes back.
+
+**[TODO]** Not yet committed at the time of writing: `.github/`, `docs/diagrams/renders.lock`,
+and the modified `audit.py` / conventions files. CI fails without the lock file, so committing
+the workflow without it would produce a red build on the first push.

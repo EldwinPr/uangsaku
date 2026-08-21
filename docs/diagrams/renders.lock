@@ -1,0 +1,47 @@
+# Written by `python audit.py --record-renders`, immediately after a sequence
+# diagram is re-exported. Maps each .drawio to the hash of the source its
+# committed PNG was made from; audit.py fails when the two drift apart.
+# Sequence renders are committed and carry an issue's scope, so a wrong picture
+# is worse than a missing one. See drawio-general-guide.md.
+docs/diagrams/seq-uc01-balance-sheet.drawio:
+  render: seq-uc01-balance-sheet.png
+  source_sha: f0d260edb38ec721497a52a888d4365a2481b8c476aedf3a0dc91c12d03859e0
+docs/diagrams/seq-uc02-add-account.drawio:
+  render: seq-uc02-add-account.png
+  source_sha: 3a5c3a5d667e27bc68edf4e4b343d11deb30464e68a90e19f02babd2e88f6c12
+docs/diagrams/seq-uc03-adjust-account.drawio:
+  render: seq-uc03-adjust-account.png
+  source_sha: 4dbac13928d6d1cc61556422e3cc446c28447c94f8075e350c5d2bac4da432ab
+docs/diagrams/seq-uc04-record-expense.drawio:
+  render: seq-uc04-record-expense.png
+  source_sha: 028a7c720a329a114bd8ba53bec72b6bfb82ee1b1f9c7b1844156f3c2408f8f5
+docs/diagrams/seq-uc05-record-income.drawio:
+  render: seq-uc05-record-income.png
+  source_sha: c2fd14b6886011c8f432a1df42194ba0b3a8c1e42c2ab5f0d36dffb4775fcea7
+docs/diagrams/seq-uc06-move-money.drawio:
+  render: seq-uc06-move-money.png
+  source_sha: 1e4918875165ceeae8fec813bfd3bf03e5ce095fbc064e4ff295102057bb2b48
+docs/diagrams/seq-uc07-lend-borrow.drawio:
+  render: seq-uc07-lend-borrow.png
+  source_sha: 6fc25b7b15493222e7483f7bfb9d64349fbbf360bde6c1c95d2d0658f3030fe3
+docs/diagrams/seq-uc08-repayment.drawio:
+  render: seq-uc08-repayment.png
+  source_sha: 4a0b0bbd8d7147195736546b10fd389910d3ca4f24f4f136eaab39010547574c
+docs/diagrams/seq-uc09-review-and-correct.drawio:
+  render: seq-uc09-review-and-correct.png
+  source_sha: 93af2bb60a1afc7da301d1e1c5006d47ee01b1521f5e566ebe4c0a50e15bd41f
+docs/diagrams/seq-uc10-debt-progress.drawio:
+  render: seq-uc10-debt-progress.png
+  source_sha: 798606311d8b569ebea6d8aa28d991a1b7f22ce369518aea752a1d262b62dcdc
+docs/diagrams/seq-uc11-set-budget.drawio:
+  render: seq-uc11-set-budget.png
+  source_sha: a17ec7e3d088903fbd66aec0f35fac568b99839683ac0983d753befb7599ffb6
+docs/diagrams/seq-uc12-budget-consumption.drawio:
+  render: seq-uc12-budget-consumption.png
+  source_sha: 469c4369b82967d9bb03681ca2e405836513957d2ac36660f514c3ff4d5a2c3b
+docs/diagrams/seq-uc13-categories.drawio:
+  render: seq-uc13-categories.png
+  source_sha: c99e2113485bbce5c8bf3ea43978d80309be29fc309d647715e97cdae8e9f9aa
+docs/diagrams/seq-uc14-choose-currency.drawio:
+  render: seq-uc14-choose-currency.png
+  source_sha: b3c8e03ebf4bec119d3fcc11b114145e4db0a43767b346d25fbcf59f34ec9d91

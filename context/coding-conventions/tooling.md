@@ -31,6 +31,33 @@ shell scripts and will not execute.
 and that `FEAT01` could not begin. That was true when written and is the reason `FEAT01`'s row
 in `pm/tracker.yaml` was marked blocked in practice.*
 
+## What `flutter doctor` says, and what it means for this project
+
+Run 2026-08-21. Four categories flagged, and only one of them actually matters yet:
+
+| | |
+|---|---|
+| **Android toolchain** | ✗ **No Android SDK.** This is the real gap — Android is the target platform, and nothing can be run on it until the SDK is installed (Android Studio, or the command-line tools). |
+| **Visual Studio** | ! Build Tools 2026 present but the installation is **incomplete**, so the Windows desktop target will not build either. |
+| **Chrome** | ✗ Not found. Web is not a target for this app anyway — see below. |
+| **Flutter binary "not on your path"** | Cosmetic, and misleading: `doctor` inherited the same stale environment described above. It is on the PATH. |
+
+**Consequence, stated plainly because it shapes what "verified" can mean for a while:
+there is currently no runnable target.** `flutter devices` finds Windows desktop and Edge;
+Windows desktop needs the Visual Studio install completed, and **web is not a fallback** —
+`drift.md` opens the database with `NativeDatabase.createInBackground`, which is native-only.
+A web build would need a different drift backend and would not be testing the app this project
+decided to build.
+
+What still works, and it is the important half: **`flutter test` runs headless on the Dart VM
+and needs none of the above.** `testing.md` deliberately puts this app's correctness surface in
+DAO query tests against an in-memory SQLite database, so `FEAT01` and every use-case issue can
+be built, tested and reviewed today. What has to wait is launching the app and looking at it —
+and per the caution below, that was never the thing to lean on for the requirements most likely
+to break.
+
+**Install the Android SDK before the first UI issue**, not before `FEAT01`.
+
 ## The Dart and Flutter MCP server — worth having
 
 There is an official one, built and maintained by the Dart and Flutter teams at Google:
@@ -97,11 +124,11 @@ looked at once.
 - **`build_runner` is non-negotiable from the first commit**, because `drift_dev` is a builder.
   That is also the argument for using Riverpod's code generator: the cost is already paid
   (`riverpod.md`).
-- **No CI configured, and none proposed yet.** This working copy is not a git repository yet
-  (still true 2026-08-21). That is deliberate and sequenced, not an oversight: the owner is
-  writing every `plan.md` first, then creating the repo with GitHub Issues and CI on top of it,
-  then running implementation unattended. The four commands at the bottom of `testing.md` are
-  exactly what that CI job should run, and are currently run by remembering to.
+- **Under git as of 2026-08-21** — `EldwinPr/uangsaku` on GitHub, `main`. **CI is now possible
+  and is not configured yet.** The four commands at the bottom of `testing.md` are exactly what
+  the job should run, and are currently run by remembering to. The owner's sequencing has the
+  repo arriving before implementation and after the documentation, which is where it now is:
+  plans next, then GitHub Issues and CI, then implementation run unattended.
 - **Add one more to that CI list: re-exporting diagram renders.** Sequence-diagram PNGs live in
   `pm/issues/<issue>/` and are committed (`drawio-general-guide.md`), so a `.drawio` edited
   without a re-export leaves a wrong picture in the repo — and for sequence diagrams the picture

@@ -75,3 +75,13 @@ dart run build_runner build --delete-conflicting-outputs   # after schema or pro
 All four before an issue closes. `flutter analyze` counts as verification in the
 definition-of-done sense — a warning left in place is a decision to leave it, and should be
 argued in the plan rather than ignored.
+
+**These four now run in CI** (`.github/workflows/ci.yml`, added 2026-08-21), in that order but
+with `build_runner` first — generated code has to exist before `analyze`, `format` and `test`
+read it, and running it last only checks the previous commit's output. The Flutter job is
+guarded on `pubspec.yaml` existing, so it passes trivially until `FEAT01` creates the project
+rather than failing red for months. A second job runs `python audit.py`, which guards the
+documentation the same way.
+
+Running them locally before pushing is still the faster loop; CI is there because an
+unattended implementation run has nothing else checking it.

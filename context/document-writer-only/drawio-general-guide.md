@@ -89,6 +89,14 @@ this file stays about mechanics that apply regardless of diagram type:
    source, and a `seq-uc*.png` left in `docs/diagrams/` is a stray duplicate that will silently
    go stale. Delete it if you create one.
 
+   **Then run `python audit.py --record-renders`.** Because these renders are committed, a
+   `.drawio` edited without re-exporting leaves a wrong picture in the repo, and nothing about
+   git or a file timestamp can detect that — timestamps do not survive a clone. So the export
+   records the hash of the source it was made from, in `docs/diagrams/renders.lock`, and
+   `audit.py` fails when the two drift apart. Run it **after** re-exporting, never instead of:
+   running it on its own launders a stale picture into looking current, which is the single
+   thing the mechanism exists to catch.
+
 ## Cropped close-up verification
 
 When a region has several connectors converging, or you suspect two lines are close enough to

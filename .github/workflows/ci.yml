@@ -1,0 +1,61 @@
+# CI for uangsaku.
+#
+# Two jobs, deliberately separate. `docs` guards the paper trail and runs today; `app`
+# guards the code and is inert until FEAT01 creates the Flutter project. Keeping them
+# apart means a documentation-only change does not wait on a Flutter toolchain, and the
+# app job appearing is a visible signal that implementation has started.
+#
+# The commands in `app` are the four at the bottom of context/coding-conventions/testing.md,
+# in the order they have to run: generated code must exist before anything reads it.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  docs:
+    name: documentation consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install openpyxl pyyaml
+      # audit.py checks that the artifacts agree with each other: every cited file exists,
+      # UC codes are unique and owned by exactly one issue, entities agree across the ERD /
+      # workbook / map.yaml, every FR is traced, and every sequence render is present in its
+      # issue folder and current with the .drawio it was exported from.
+      - run: python audit.py
+
+  app:
+    name: analyze, format, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Inert until FEAT01 lands a pubspec.yaml. Every step below is guarded on it, so this
+      # job passes trivially in the meantime rather than failing red for months.
+      - id: probe
+        run: echo "exists=$([ -f pubspec.yaml ] && echo yes || echo no)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        if: steps.probe.outputs.exists == 'yes'
+        with:
+          channel: stable
+          # Match the developer machine (tooling.md). Bump both together, never one.
+          flutter-version: '3.47.1'
+      - if: steps.probe.outputs.exists == 'yes'
+        run: flutter pub get
+      # build_runner first: drift_dev and riverpod_generator both emit code that analyze,
+      # format and test all read. Running it after them checks the previous commit's output.
+      - if: steps.probe.outputs.exists == 'yes'
+        run: dart run build_runner build --delete-conflicting-outputs
+      - if: steps.probe.outputs.exists == 'yes'
+        run: dart format --set-exit-if-changed .
+      - if: steps.probe.outputs.exists == 'yes'
+        run: flutter analyze
+      - if: steps.probe.outputs.exists == 'yes'
+        run: flutter test
