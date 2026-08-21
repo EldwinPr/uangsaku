@@ -99,6 +99,26 @@ must be left alone.
 Then: `python audit.py` must be green. Commit with a message that says what changed and why,
 and push.
 
+## When you are not sure
+
+PASS and REJECT are not your only options, and forcing a genuine uncertainty into one of
+them is how this check goes wrong in both directions at once.
+
+- **Certain it violates a rule or the plan → REJECT.** Name the rule.
+- **Certain it is fine → PASS.**
+- **Not sure → PASS, and append it to `pm/findings.md`** with `Confidence: worth checking`
+  and severity `risk`. The issue proceeds; the observation survives to the final `repo-qa`
+  sweep, which reads the whole app and can settle what one diff could not.
+
+This third path exists because most issue-level uncertainty is *"is this inconsistent with
+the other modules?"* — and that is genuinely unanswerable from one diff. Blocking the issue
+on it stalls the run for a question you cannot resolve at your vantage point; waving it
+through silently loses it. Recording it costs nothing and is the only option that keeps both
+the run moving and the observation alive.
+
+**Do not use this path to avoid a hard call.** A violation you can name is a REJECT, however
+inconvenient. `worth checking` means you looked and genuinely could not tell from here.
+
 ## Reject rather than fix
 
 You may fix **trivia** — a formatting slip, a typo in a comment, a missing `const`. Anything
@@ -112,4 +132,7 @@ Never widen scope, never write a missing feature, never edit a `.drawio`, never 
 
 PASS or REJECT, first line. On reject: each finding, where it is, and which rule or artifact
 it violates. On pass: the four command results, what you reconciled, the close steps done,
-and the commit SHA. If you fixed trivia, list it.
+and the commit SHA. If you fixed trivia, list it. **If you recorded anything to
+`pm/findings.md` as `worth checking`, say so and why** — a pass carrying an unresolved
+observation is not the same as a clean one, and the orchestrator's end-of-run report should
+show the difference.
