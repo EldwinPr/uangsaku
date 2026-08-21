@@ -23,11 +23,14 @@ no `build_runner` or `drift` yet, and CI's `app` job is guarded on `app/pubspec.
 committing it before step 2 activates the job and fails it. `issue-qa` commits it once
 step 10's four commands are green.
 
-**Committed:** three commits on `main`, **none pushed** — so CI has not yet run against any
-of them, including the `app`-job probe fix.
+**Committed:** several commits on `main`, **none pushed** — so CI has not yet run against
+any of them, including the `app`-job probe fix. *(Deliberately not a count: a number here
+goes stale on the next commit, which is the §1 failure this block keeps demonstrating.)*
 
-**Orchestration.** `select → feat-planner → flutter-coder → issue-qa → select`, main session
-as orchestrator. Loop, halt paths and retry budget: `context/guide/orchestration.md`.
+**Orchestration.** Two phases, `context/guide/orchestration.md`. Phase 1 loops
+`select → feat-planner → flutter-coder → issue-qa`. When nothing is runnable, phase 2 runs
+`repo-qa` twice (APP and TRAIL) into `pm/findings.md` — **and the run stops there.** Findings
+are recorded, never fixed by the run; halted issues stay halted.
 
 **Stack.** Flutter/Dart, `drift` over SQLite, Riverpod, no backend, local-first, single
 user. **Settled, no longer provisional** — the choice hinged on iOS being a real target
@@ -225,3 +228,46 @@ information over the local four commands is clean-checkout behaviour — genuine
 across twenty issues, and a loosening notion of "done" would affect everything after it with
 nothing reporting so. The defence written into the guide is that `pm/tracker.yaml` is re-read
 at every `select` and is the source of truth — never what the orchestrator remembers.
+
+## 2026-08-21 — Phase 2: the final sweep, and the hard stop
+
+**[DECISION]** **The run has two phases, and ends at findings.** When the issue loop has
+nothing runnable left, `repo-qa` is dispatched twice in parallel — scope `APP` over the code
+as a whole, scope `TRAIL` over the paper trail — both writing to `pm/findings.md`. **Then the
+run stops.** Owner's instruction: findings do not go back into the loop.
+
+**[DECISION]** **`repo-qa` finds and records; it does not fix.** It has no `Write` or `Edit`
+tool beyond `pm/findings.md`, which is enforcement rather than instruction. It may not reopen
+a closed issue, create an issue for a finding, or dispatch the coder at one.
+
+The reason is convergence. A cross-cutting finding usually needs a decision only the owner
+can make, and **a run that repairs its own findings can loop indefinitely, each pass
+generating the next.** Handing back a clear list beats handing back a repo quietly edited
+toward one agent's judgement. The same logic keeps a halted issue halted for the whole run.
+
+**[DECISION]** **One agent definition, dispatched twice**, rather than two. The owner has
+twice asked for fewer agents and allowed two here; two *instances* satisfies that while
+keeping the roster at seven. The scopes share their whole workflow — read wide, verify,
+record, never fix — and differ only in what they read.
+
+**[DISCOVERY]** The split is worth stating because it is the thing per-issue review
+structurally cannot do: `issue-qa` sees **one diff against one plan**. Whether twenty issues
+add up to one coherent app, and whether the documentation still describes what was built,
+are properties of the whole and invisible from any single diff. Concretely, `APP` sweeps the
+standing decisions across every file at once (one `double`, one `kind IN (...)`, one
+disabled control anywhere), counts NFR-4's refusals app-wide, and runs the four commands on
+a **clean checkout** rather than the working tree — the difference that produced this
+project's CRLF bug (`lessons.md` §5). `TRAIL` re-runs the as-built reconcile at whole-app
+scale, because a drift introduced by a *later* issue was never rechecked against an earlier
+one's diagram.
+
+**[DECISION]** `pm/findings.md` separates **defect / risk / improvement**, and severity is
+*whether it is wrong*, not how hard it is to fix. Forty style observations bury two real
+defects, and this file exists to decide what happens next. It is also explicitly distinct
+from `pm/questions.md`: questions **blocked** work before it happened, findings are problems
+in work **already done**, and a finding gates nothing.
+
+**[TODO]** Resolving a finding is the owner's: promote it to a tracked issue with its own
+plan, or mark it WONTFIX with a reason. *A defect resolved by a decision rather than a change
+is still resolved* — record which. And if a finding is another occurrence of something
+already in `lessons.md`, it belongs there as evidence; the pattern is worth more than the fix.

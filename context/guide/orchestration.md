@@ -5,11 +5,24 @@ selects issues and dispatches, and does no planning, coding or reviewing itself.
 agents do the work, each starting cold with only its brief — which is what keeps the
 orchestrator's context small enough to survive the whole backlog.
 
-## The loop
+## The two phases
 
 ```
-select ─→ feat-planner ─→ flutter-coder ─→ issue-qa ─→ select ─→ …
+PHASE 1 — the loop
+  select ─→ feat-planner ─→ flutter-coder ─→ issue-qa ─→ select ─→ …
+                                                          │
+                                              nothing runnable
+                                                          ↓
+PHASE 2 — the sweep, once
+  repo-qa (APP) ─┐
+                 ├─→ pm/findings.md ─→ STOP
+  repo-qa (TRAIL)┘
 ```
+
+Phase 2 runs **once**, when phase 1 has nothing runnable left. Two `repo-qa` dispatches, in
+parallel, different scopes. Then the run ends.
+
+## The loop
 
 **select** — the next issue in `pm/tracker.yaml` with `status: TODO`, every `depends_on`
 `DONE`, and no halt recorded. Ties break by tracker order. If nothing is runnable, stop and
@@ -63,6 +76,38 @@ A halt on one leaves the other runnable. Keep going until nothing is.
 - **Never mark a plan `CONFIRMED`,** never answer a question in `pm/questions.md`, never
   edit a `.drawio`. Those are the owner's, and the specialist agents'.
 
+## Phase 2 — the final sweep
+
+When `select` finds nothing runnable, dispatch `repo-qa` twice in parallel:
+
+- **scope APP** — the code as a whole. Cross-issue coherence, the standing decisions swept
+  across every file, NFR-4's refusal count, FR-18's coverage, and the four commands on a
+  **clean checkout** rather than the working tree.
+- **scope TRAIL** — the paper trail. `audit.py`, `map.yaml` completeness, every `plan.md`
+  saying DONE, the as-built reconcile at whole-app scale, stale registers, renders.
+
+Both write to `pm/findings.md`. **Neither fixes anything** — they have no `Write` or `Edit`
+tool beyond that file.
+
+Two scopes rather than one pass because they ask different questions of different artifacts,
+and because per-issue review is structurally blind to both: `issue-qa` sees one diff against
+one plan. Whether twenty issues add up to one coherent app, and whether the documentation
+still describes what was built, are properties of the whole.
+
+## The hard stop
+
+**When phase 2 finishes, the run ends. Do not re-enter phase 1.**
+
+Findings are recorded, not fixed. Do not reopen a closed issue, do not create an issue to
+address a finding, do not dispatch `flutter-coder` at one. Owner's instruction, and the
+reason is convergence: a cross-cutting finding often needs a decision only the owner can
+make, and a run that repairs its own findings can loop indefinitely with each pass
+generating the next.
+
+The same applies to a halted issue. A halt means a question is waiting in
+`pm/questions.md`; answering it is the owner's, so a halted issue stays halted for the
+whole run.
+
 ## Starting a run
 
 Point a session at `pm/active.json` and tell it to run the backlog. Everything else — where
@@ -71,6 +116,10 @@ to start, what has already been done, the halt rules — is in that file and in
 
 ## Ending a run
 
-Report, in this order: issues closed, issues halted and why, anything in `pm/questions.md`
-awaiting a ruling, and CI status. **Halts are the useful output, not the failure** — they
-are the pipeline refusing to guess, which is the behaviour the gate exists to produce.
+Report, in this order: issues closed; issues halted and why; anything still OPEN in
+`pm/questions.md` and what it blocked; the findings count by severity from both scopes; CI
+status.
+
+**Halts and findings are the useful output, not the failure.** A halt is the pipeline
+refusing to guess, which is exactly what the gate exists to produce. A run that closes
+twenty issues and reports nothing is the one worth being suspicious of.

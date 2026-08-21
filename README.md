@@ -148,6 +148,7 @@ Delegate rather than hand-authoring; each one already knows which conventions to
 | `feat-planner` | Writing and revising an issue's `plan.md` — never code |
 | `flutter-coder` | Dart/Flutter code under `app/` — never without a confirmed plan, never commits |
 | `issue-qa` | Reviewing, reconciling, closing and committing a finished issue |
+| `repo-qa` | The final repo-wide sweep — dispatched twice, app and paper trail. Records findings, fixes nothing |
 
 The last three encode the planning gate as a boundary between agents rather than a rule
 someone has to remember: the planner cannot write code, the coder stops at a `NOT PLANNED`
@@ -157,7 +158,11 @@ link in the chain — this project has a recorded case of an agent inspecting it
 and passing a real defect as harmless.
 
 The unattended loop that drives them is `context/guide/orchestration.md`: the main session
-selects and dispatches, and does no planning, coding or reviewing itself.
+selects and dispatches, and does no planning, coding or reviewing itself. It runs in two
+phases — the issue loop, then a single repo-wide sweep — and **stops at findings.** Nothing
+found in the sweep is fixed by the run, because a cross-cutting finding usually needs a
+decision only the owner can make, and a run that repairs its own findings can loop
+indefinitely with each pass generating the next.
 
 ## Environment notes
 

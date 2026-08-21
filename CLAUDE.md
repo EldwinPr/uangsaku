@@ -30,7 +30,9 @@ the close checklist below apply regardless of which issue you're on.
   itself: the planner never writes code, the coder never starts without a confirmed plan
   and never commits, and QA is the only one that can call an issue Done.
 - Running the backlog unattended → `context/guide/orchestration.md`. The main session
-  orchestrates and dispatches; it does not plan, code or review itself.
+  orchestrates and dispatches; it does not plan, code or review itself. Two phases: the
+  issue loop, then one repo-wide `repo-qa` sweep whose findings go to `pm/findings.md` —
+  and **the run stops there.** Findings are recorded, never fixed by the run itself.
 - About to start any task → skim `context/index/lessons.md`. It is the distilled
   record of how this project has actually gone wrong, and every entry in it happened
   more than once.
