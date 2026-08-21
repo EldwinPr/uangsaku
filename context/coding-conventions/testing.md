@@ -63,6 +63,28 @@ create-only because no screen ever offered a delete.
 - No mocking of drift. An in-memory SQLite database is fast and real, and mocking the thing
   whose behaviour you are testing proves nothing.
 
+**Two `flutter_test` + drift interactions, verified `UC13`, 2026-08-21, both costing real
+debugging time (hours, not the trivial fix that follows once known):**
+
+- **Don't consume a `watch()` stream's `.first` before a widget subscribes to the identical
+  query.** `dao.watchTree().first` before `pumpWidget()` leaves the widget's own subscription
+  to the same SQL starved — the widget hangs in `AsyncValue.loading()` forever and
+  `pumpAndSettle()` spins until its (default ten-minute) timeout. Fetch setup data with a
+  plain `select(...).getSingle()`/`.get()` instead; save `.first`/`.listen()` on the watch
+  stream itself for tests that never also build a widget against the same query (as
+  `category_dao_test.dart` does throughout, safely).
+- **A widget test that ever builds something watching a drift stream must unmount and pump a
+  real duration before the test body returns**, or `flutter_test`'s own teardown throws "A
+  Timer is still pending" — drift's `StreamQueryStore.markAsClosed` schedules a
+  zero-duration `Timer` when a `watch()` subscription cancels, and that only fires on a later
+  pump. `addTearDown` runs too early to catch it (before `flutter_test`'s own widget-tree
+  disposal, which is what triggers the drift stream's cancellation in the first place); it
+  has to be the last thing the test body itself does:
+  ```dart
+  await tester.pumpWidget(const SizedBox());
+  await tester.pump(const Duration(seconds: 1));   // a bare tester.pump() is not enough
+  ```
+
 ## Running
 
 ```bash

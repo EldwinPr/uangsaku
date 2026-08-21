@@ -200,6 +200,15 @@ issues:
     plan: pm/issues/uc14-choose-currency/plan.md
     depends_on: [FEAT01-foundation]
     traces_to: [UC-14]
+    halted: >-
+      HALTED 2026-08-21 by the unattended run, at the planning gate. feat-planner could
+      not cite the guard on seq-uc14's opt fragment ("an existing currency is being
+      changed, not initial setup") to any confirmed artifact - Settings carries no setup
+      marker, and FEAT01 D6 seeds a currency at first launch, so the predicate is either
+      always true or means something the diagram does not say. Question is pm/questions.md
+      Q1; blocks UC02, UC03, UC01, UC10, UC04, UC09 and UC12. Stays halted for this run -
+      answering it is the owner's. The plan itself is written and D1-D8 are all cited; only
+      D9 is open.
     summary: >-
       First use case built despite being last in the workbook, because it is the smallest
       module in the project and exercises the whole Screen -> provider -> DAO -> AppDatabase
@@ -262,7 +271,7 @@ issues:
   - id: UC13-categories
     slug: categories
     title: Manage categories and subcategories
-    status: TODO
+    status: DONE
     plan: pm/issues/uc13-categories/plan.md
     depends_on: [FEAT01-foundation]
     traces_to: [UC-13]
@@ -275,6 +284,12 @@ issues:
       UC11 - Budget_Group is a Budgeting entity and no Transactions class supported it, so
       seq-uc13 had scoped it out and this issue as drawn did not deliver what the workbook
       promised. The entity's owning module wins over the workbook's grouping (decisions.md).
+      DONE 2026-08-21: CategoryDao, categoryTreeProvider, CategoriesNotifier and
+      CategoryManagerScreen - the first DAO, provider and screen in the app, 14 tests green,
+      no schema change. Two toolchain rulings recorded in decisions.md (a DAO drawn with
+      update()/delete() cannot be a DatabaseAccessor; riverpod_generator cannot type a
+      provider over a drift row class). The as-built edit to seq-uc13-categories.drawio is
+      OUTSTANDING and belongs to diagram-drawio-author - see findings F2/F3.
 
   - id: UC04-record-money-movement
     slug: record-money-movement

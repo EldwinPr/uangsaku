@@ -62,6 +62,18 @@ file did not error in testing — `source_gen`'s combining builder merges both g
 output into one `.g.dart` — but the plain `Provider` is simpler and was the actual choice
 made in `app_database.dart`.
 
+**A second, broader exception, verified `UC13`, 2026-08-21:** `riverpod_generator` cannot
+build a provider whose signature (parameter *or* return type) mentions a drift-generated row
+class — `Category`, `Subcategory`, or any other class declared in `app_database.g.dart` (a
+`part of 'app_database.dart'`). It fails with `InvalidTypeException: The type is invalid and
+cannot be converted to code`, isolated by swapping only the type: a `Stream<int>` provider
+builds, the identical provider retyped `Stream<Category>` fails. This is not the
+`categoriesProvider`-naming contingency below — it applies even to a bare top-level
+`@riverpod` **function**, and it means `categoryTreeProvider` (`StreamProvider<Map<Category,
+List<Subcategory>>>`) has to be hand-written too, not only `CategoriesNotifier`. Hand-write
+any provider whose type touches a drift-generated row class; codegen remains the default for
+everything else.
+
 ## The rule that is easiest to get wrong
 
 **A write does not return the result to the screen.** This is the same asymmetry

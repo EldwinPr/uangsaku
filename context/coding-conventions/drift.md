@@ -64,6 +64,37 @@ One per concern, not one per table, following the class diagrams: `AccountDao`,
 from `TransactionDao` deliberately — UC-13 is category CRUD against two tables that
 `TransactionDao` does not otherwise own.
 
+**Corrected `UC13`, 2026-08-21** — this section previously showed every DAO as a
+`@DriftAccessor`/`DatabaseAccessor<AppDatabase>` subtype, registered on `AppDatabase` via
+`@DriftDatabase(… daos: […])`. That shape breaks the moment a DAO's own method is named
+`update` or `delete`: `DatabaseAccessor` extends `DatabaseConnectionUser`, which already
+declares `update<T, D>(TableInfo<T, D>, …)` and `delete<T, D>(TableInfo<T, D>, …)`, and a
+subclass method of the same name with an incompatible (named-parameter) signature is an
+**invalid override** — verified against the real toolchain, a straight `invalid_override`
+analyzer error, not fixable from inside the method body. `CategoryDao`'s class diagram names
+its own methods `update()` / `delete()` (UC-13 D5), so it cannot extend `DatabaseAccessor`.
+
+The fix: a **plain class composing `AppDatabase`** rather than extending
+`DatabaseAccessor<AppDatabase>` —
+
+```dart
+class CategoryDao {
+  CategoryDao(this._db);
+  final AppDatabase _db;
+
+  Future<void> update({required int id, ...}) async {
+    await (_db.update(_db.subcategories)..where(...)).write(...);
+  }
+}
+```
+
+— using `_db.update(table)` / `_db.delete(table)` (the free methods on `AppDatabase` itself,
+a different object from `this`) instead of the inherited ones. No `@DriftAccessor`
+annotation, no generated mixin, no `daos: […]` entry on `@DriftDatabase` — there is no
+accessor for drift to attach. Any DAO whose class diagram gives it an `update()` or
+`delete()` method needs this shape; a DAO with no method of either name (nothing in this
+project yet) can still use the `@DriftAccessor`/`DatabaseAccessor` shape safely.
+
 - **Reads return streams** (`watchBalances()`, `watchAll()`), because Riverpod's
   `StreamProvider` consumes them directly.
 - **Writes return `Future<void>`** unless the caller genuinely needs the new id.

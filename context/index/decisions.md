@@ -873,3 +873,39 @@ defaults to `isAutoDispose: false` (verified in `providers/provider.dart`), so i
 alive without the annotation, which is exactly what "outlives every screen" asked for. It
 also keeps one generator per `part` file: `AppDatabase` already owns `app_database.g.dart`
 via `@DriftDatabase`.
+
+## 2026-08-21 — UC-13: two rulings the real toolchain forced above the database
+
+The categories issue was the first to write a DAO, a provider and a screen. Both rulings
+below were verified by `issue-qa` re-running the failing shape against the analyzer and the
+generator, not accepted from the coder's report (`lessons.md` §10), and both bind every DAO
+and provider written after this one.
+
+**1. A DAO whose class diagram gives it `update()` or `delete()` cannot be a
+`DatabaseAccessor`.** `drift.md` showed every DAO as `@DriftAccessor` /
+`DatabaseAccessor<AppDatabase>`, registered through `@DriftDatabase(… daos: […])`.
+`DatabaseAccessor` extends `DatabaseConnectionUser`, which already declares
+`update<Tbl, R>(TableInfo<Tbl, R>)` and `delete<T, D>(TableInfo<T, D>)`; a subclass method
+of either name with a named-parameter signature is a straight `invalid_override` analyzer
+error, reproduced in isolation at close. `class-transactions.drawio` names `CategoryDao`'s
+own methods `update()` and `delete()`, and the class diagram outranks the convention
+(`coding-conventions/README.md`), so **`CategoryDao` is a plain class composing
+`AppDatabase`** and calls `_db.update(table)` / `_db.delete(table)` on a different object
+than `this`. Consequence: **no `daos: […]` entry on `@DriftDatabase`** — there is no
+accessor for drift to attach — and no change to the generated code or to
+`drift_schemas/app_database/drift_schema_v1.json`, both verified byte-identical at close.
+`AccountDao`, `TransactionDao` and `BudgetDao` all draw `delete()` too, so this is the
+shape for all of them, not a one-off.
+
+**2. `riverpod_generator` cannot build any provider whose type mentions a drift-generated
+row class.** `@riverpod` on a bare top-level function returning `Stream<Category>` fails
+with `InvalidTypeException: The type is invalid and cannot be converted to code`; the
+identical function returning `Stream<int>` builds. Reproduced at close by swapping only the
+type, which isolates the generated `part`-file class as the cause. So **`categoryTreeProvider`
+and `categoriesProvider` are both hand-written**, and this is broader than UC-13 D2's
+anticipated contingency (which was only that codegen would name the notifier's provider
+`categoriesNotifierProvider` rather than the `categoriesProvider` the class diagram names —
+also true, and also resolved in the class diagram's favour, the `appDatabaseProvider`
+precedent). Codegen stays the default for everything that does not touch a row class;
+in practice that will be very little, since every read provider in this app carries drift
+rows. `riverpod.md` corrected in place.

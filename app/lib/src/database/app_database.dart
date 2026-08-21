@@ -13,6 +13,11 @@ part 'app_database.g.dart';
 ///
 /// All seven tables land at `schemaVersion = 1` (ISSUE-001 D3) — see
 /// `docs/diagrams/erd.drawio` for the column-level source of truth.
+///
+/// No `daos: […]` entry: `CategoryDao` is a plain composition over this
+/// class rather than a `@DriftAccessor`/`DatabaseAccessor` subtype (see
+/// `category_dao.dart`'s doc comment for why), so there is no accessor for
+/// drift to attach here.
 @DriftDatabase(
   tables: [
     Accounts,

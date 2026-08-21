@@ -64,3 +64,76 @@ that has produced four green-for-the-wrong-reason results on this project. `sqli
 would answer the question the name asks.
 **Confidence:** worth checking — whether this matters depends on what the rest of the suite
 looks like once DAO tests exist, which is not visible from one issue's diff.
+
+*F2 and F3 were filed at `UC13-categories`' close, by `issue-qa`, for the same reason as F1
+— and because `issue-qa` may not edit a `.drawio` itself.*
+
+## F2 — `seq-uc13-categories.drawio` does not draw the read path the code has   [OPEN]
+**Scope:** TRAIL          **Severity:** defect
+**Where:** `docs/diagrams/seq-uc13-categories.drawio` (and its render at
+`pm/issues/uc13-categories/seq-uc13-categories.png`)
+**Violates:** `CLAUDE.md` close-checklist step 1 (the as-built reconcile) — a sequence
+diagram that disagrees with the code it specifies.
+**What it is:** messages 2, 8, 14 and 23 all show `categoryTreeProvider` emitting the tree,
+but the diagram carries **no `categoryTreeProvider → CategoryDao.watchTree()` message and no
+`CategoryDao ⇄ AppDatabase` query pair** — the four messages `seq-uc14-choose-currency`
+draws for the identical chain. The code built that path (authorised by the plan, which cites
+`class-transactions.drawio`'s `categoryTreeProvider → CategoryDao` edge and records the gap
+rather than filling it silently). The code is right and the diagram is incomplete, so the
+**diagram** is what needs to change: four messages added, re-exported to PNG, the render
+**looked at** (`lessons.md` §3), and `pm/issues/uc13-categories/seq-uc13-categories.png` plus
+`renders.lock` refreshed. `issue-qa` did not do it because sequence diagrams are authored as
+Mermaid and converted by `diagram-drawio-author`, never as hand-written XML
+(`sequence-conventions.md`), and because a reviewer that repairs what it reviews has stopped
+being a reviewer. **Dispatch `diagram-drawio-author`.**
+**Confidence:** certain — verified by extracting every label from the file at close; the six
+lifelines and twenty-three messages are as the plan describes and the read path is absent.
+
+## F3 — every sequence diagram's isolate note names a mechanism one wrapper stale   [OPEN]
+**Scope:** TRAIL          **Severity:** risk
+**Where:** all fourteen `docs/diagrams/seq-uc*.drawio` — the note reading *"DAO to
+AppDatabase crosses the isolate boundary (NativeDatabase.createInBackground, 2026-08-20)"*
+**Violates:** nothing stated; it is `lessons.md` §1's half-true label, in fourteen copies.
+**What it is:** the code opens the database through `drift_flutter`'s `driftDatabase()`,
+which calls `NativeDatabase.createBackgroundConnection` (`decisions.md` 2026-08-21, FEAT01
+ruling 2, checked in the package source). **The boundary the note marks is real, is in the
+right place, and the guarantee is unchanged** — only the mechanism's name is stale. Both the
+UC-13 and UC-14 plans recorded it against their own diagram before noticing it is on all
+fourteen, i.e. it is a repo-wide nit and not one issue's defect. Fixing it inside UC-13
+would have meant editing thirteen diagrams UC-13 does not own, so it is filed instead.
+**Confidence:** certain — `grep -rl createInBackground docs/diagrams/` returns all fourteen.
+
+## F4 — the NFR-4 enabled-controls test can pass vacuously for the rename control   [OPEN]
+**Scope:** APP          **Severity:** risk
+**Where:** `app/test/transactions/category_manager_screen_test.dart`, the `NFR-4: add, rename
+and delete stay enabled…` test
+**Violates:** nothing stated. It is the `lessons.md` §5 shape — a check that would stay green
+if its subject vanished.
+**What it is:** the test collects finders and asserts `onPressed` is non-null for each
+matched element. Two of the three finders cannot be empty — `find.…(Icons.add).last` throws
+on an empty match, and the delete finder is tapped with `.first` immediately afterwards, and
+the delete is then proven by the row disappearing from the re-rendered tree, which is a real
+end-to-end assertion. But the **edit** finder is only iterated: if the rename buttons ever
+stopped rendering, that loop would run zero times and the test would still pass while its
+name still claimed rename stays enabled. Not wrong today — the controls are all present and
+the D7 test independently proves the subcategory row renders — so it is recorded rather than
+sent back. A `findsNWidgets` count before the loop closes it.
+**Confidence:** worth checking — whether it matters depends on how the other screens' NFR-4
+tests end up written, which one issue's diff cannot show.
+
+## F5 — the workbook has nowhere to mark a use case implemented   [OPEN]
+**Scope:** TRAIL          **Severity:** risk
+**Where:** `docs/workbook.xlsx`, sheet `UC FR` — columns are `Kode`, `Nama Use Case`, `User`,
+`Modul`, `Input`, `Deskripsi`, `Output`, `Entity/Objek Terkait`
+**Violates:** `context/general-rules.md`, Definition of "done" step 4 — *"the corresponding
+workbook row marked as implemented, if the issue traces back to a UC."*
+**What it is:** `UC13-categories` is the first issue on this project that traces to a UC and
+reaches DONE, so step 4 applied for the first time — and there is **no column to write it
+in**, nor any rule for one in `workbook-conventions.md`. `issue-qa` did not invent one:
+adding a column to a client-facing workbook is a schema change that belongs to
+`workbook-xlsx-author`, and `audit.py` asserts that sheet's shape. The consequence today is
+mild (the tracker is the real implementation register and it is accurate) but it means a
+step in the definition of done cannot be performed as written, and a step that silently
+cannot be done is the shape `lessons.md` §5 warns about. Either add the column and a
+convention for it, or amend step 4 to name the tracker — **one of the two, not neither.**
+**Confidence:** certain that the column is absent; the right resolution is the owner's.

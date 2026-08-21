@@ -25,9 +25,24 @@ code:
     transactions: app/lib/src/transactions/ # Transactions, Categories, Subcategories, TransactionKind
     budgeting:    app/lib/src/budgeting/    # BudgetGroups, BudgetPeriods
     settings:     app/lib/src/settings/     # Settings, Currency
-    entrypoint:   app/lib/main.dart         # + app/lib/src/app.dart (placeholder screen)
+    entrypoint:   app/lib/main.dart         # + app/lib/src/app.dart (MaterialApp root;
+                                            # its home is UC-13's screen since 2026-08-21,
+                                            # temporarily - FR-1 gives it to UC-01)
     schema:       app/drift_schemas/        # generated snapshots, committed (drift.md)
     tests:        app/test/database/app_database_test.dart
+
+  # UC13-categories, DONE 2026-08-21. The first DAO, the first Notifier and the first
+  # screen in the app. No schema change - Categories and Subcategories landed at FEAT01,
+  # so schemaVersion stays 1 and drift_schema_v1.json is untouched. CategoryDao is a plain
+  # class composing AppDatabase, not a DatabaseAccessor (decisions.md, 2026-08-21); both
+  # providers are hand-written for the same reason.
+  UC-13:
+    dao:      app/lib/src/transactions/category_dao.dart              # watchTree/insert/update/delete
+    providers: app/lib/src/transactions/transactions_providers.dart   # categoryTreeProvider, categoriesProvider
+    screen:   app/lib/src/transactions/category_manager_screen.dart   # CategoryManagerScreen
+    tests:
+      - app/test/transactions/category_dao_test.dart
+      - app/test/transactions/category_manager_screen_test.dart
 
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on

@@ -14,11 +14,19 @@ plainly because it changes how much these files are worth:
 > three files that lost were corrected in place** (`riverpod.md`, `drift.md`,
 > `dart-and-flutter.md` — each correction is marked and dated where it sits).
 >
-> **Everything above the database is still unverified.** No DAO, notifier, screen or widget
-> test has been written, so the DAO and provider sections here, all of
-> [`testing.md`](testing.md) beyond the database layer, and every claim about the
-> Screen → provider → DAO chain remain derived from the class diagrams rather than from
-> code. `UC14-choose-currency` is the issue that tests them.
+> **`UC13-categories` ran on 2026-08-21 and tested the DAO/provider/screen/widget-test half
+> against the real toolchain.** A DAO, a `StreamProvider`, a `Notifier`, a `ConsumerWidget`
+> screen and a widget test all now exist and pass. `drift.md` and `riverpod.md` are each
+> corrected in place, marked and dated where the toolchain disagreed. Note the sentence this
+> replaces used to name `UC14-choose-currency` as the issue that would test this half —
+> `UC14` is halted (`pm/questions.md` Q1) and `UC13` got there first, so that pointer is
+> corrected here rather than left stale (`lessons.md` §1).
+>
+> **Still unverified: a cross-module join and a derived-figure query**, the two claims
+> `drift.md`'s "DAOs" section and `testing.md`'s "What is actually worth testing here" make
+> that no issue has yet exercised — `UC13`'s `CategoryDao` does touch a second module's table
+> (`Transactions`, for D6's tag-blanking), but nothing here yet asserts NFR-2's derived
+> figures (a balance, a budget consumption total) against a real query.
 >
 > **Anything that turns out to fight the real toolchain loses** — update the file as part of
 > the issue that hits it, and say so in `pm/log.md`. *Do not re-broaden this note to a

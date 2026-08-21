@@ -52,3 +52,56 @@ number is what tells the owner how urgent an answer is.
 *No open questions. Both items that stood here on 2026-08-21 — UC-13's budget group CRUD
 and whether `note` appears on the transfer / lend-borrow / repayment screens — were
 answered by the owner before the run began and are recorded in `context/index/decisions.md`.*
+
+---
+
+## Q1 — What makes the currency-change warning fire?          [OPEN]
+
+**Raised by:** UC14-choose-currency, 2026-08-21
+**Blocks:** UC14-choose-currency directly, and **seven issues transitively** — UC02-add-account,
+then UC03-adjust-account, UC01-balance-sheet and UC10-debt-progress behind it, then
+UC04-record-money-movement, then UC09-review-and-correct and UC12-budget-consumption. That is
+eight of the eleven implementation rows. The other chain (UC13-categories, UC11-set-budget) is
+unaffected and can still run.
+
+`seq-uc14-choose-currency.drawio` guards its `opt` fragment (message 9, the warning) on
+**[[an existing currency is being changed, not initial setup]]**. Nothing says how code
+decides that, and the schema cannot express it.
+
+**Why it cannot be derived:**
+
+- `docs/fr-nfr.md` **FR-19** splits "chosen at setup" from "*I can change it later, and the app
+  will not stop me*", and puts the warning at *"the moment I would cause it"* — the moment
+  amounts would be re-labelled. It does not say how the app recognises that moment.
+- The **workbook UC-14 row** repeats the same split — *"at first setup or any time after"* —
+  and defines neither side.
+- `docs/enums.md` and `docs/diagrams/class-settings.drawio` both say the change re-labels and
+  the app warns and proceeds. Neither gives a trigger.
+- `docs/diagrams/erd.drawio` and the built table (`app/lib/src/settings/settings_table.dart`):
+  `Settings` is exactly `settings_id` + `currency`. **No "setup complete" marker, no
+  timestamp** — the distinction the guard names is not readable from the database.
+- `FEAT01` D6 seeds one `Settings` row at `Currency.IDR` on a fresh database, so a currency
+  value exists from first launch. Read literally, "an existing currency is being changed" is
+  true every time, and the guard's carve-out has nothing to attach to.
+- `context/index/decisions.md` (2026-08-20, one app-level currency) and `docs/statuses.md`
+  (no status values, deliberately) do not address it.
+- NFR-4 does not choose either: all three options below warn and proceed, none refuses.
+
+**Options, with their cost:**
+
+- **A — warn when the chosen value differs from the stored one.** Free; the screen already
+  holds the current value from message 7. Costs one wrong warning at first setup if the owner
+  picks USD over the IDR seed — the exact case the guard says should *not* warn.
+- **B — warn when any amount exists in the database.** Truthful to the warning's own wording.
+  Costs `SettingsDao` a count over `Transactions` / `Accounts` / `BudgetPeriods`. That
+  cross-module join is permitted (ISSUE-005 D1) but is **not drawn on this sequence diagram**,
+  so choosing it widens the scope boundary `CLAUDE.md` makes absolute — the diagram would need
+  a message added and re-rendered.
+- **C — always warn on any selection.** Simplest. Drops the guard, i.e. skips part of the
+  diagram, which `CLAUDE.md` forbids without this ruling.
+- **D — add a "setup complete" column to `Settings`.** Makes the guard literally true, and
+  costs `schemaVersion` 2, a new snapshot and migration, plus the ERD, `class-settings.drawio`
+  and `map.yaml` going stale with it. `lessons.md` §8: the last "just one column" cost twelve
+  artifacts. Raised before the work, not after.
+
+**Answer:**

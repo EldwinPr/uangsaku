@@ -15,10 +15,16 @@ before starting work.
 ## Current state — 2026-08-21
 
 **Phase.** Documentation complete; **implementation under way.** The app compiles and its
-test suite is green. There are no screens and no DAOs yet — the first of each belongs to
-UC14.
+test suite is green (14 tests). **The first DAO, provider and screen exist** — UC-13's,
+built 2026-08-21; UC14 was to have been first and is halted instead.
 
-**Active issue.** `UC14-choose-currency` — **not planned yet.** `FEAT01-foundation` is
+**Active issue.** `UC11-set-budget` — not planned yet, and **the only runnable row left.**
+`UC14-choose-currency` is **HALTED** at the planning gate (`pm/questions.md` Q1 — the guard
+on `seq-uc14`'s `opt` fragment cites no confirmed artifact), which blocks **seven** issues
+behind it: UC02, UC03, UC01, UC10, UC04, UC09 and UC12. `UC13-categories` is **DONE
+2026-08-21** — `CategoryDao`, `categoryTreeProvider`, `CategoriesNotifier`,
+`CategoryManagerScreen`, no schema change, and `MaterialApp.home` now points at that screen
+temporarily (UC-13 D3; FR-1 gives the spot to UC-01). `FEAT01-foundation` is
 **DONE 2026-08-21**: all twelve steps, reviewed and committed by `issue-qa`. `app/` now
 holds the seven ERD tables at `schemaVersion 1` (`app/lib/src/{accounts,transactions,
 budgeting,settings}`), `AppDatabase` on a background isolate, the committed v1 schema
@@ -38,7 +44,8 @@ user. **Settled, no longer provisional** — the choice hinged on iOS being a re
 and it was confirmed 2026-08-21.
 
 **Targets.** Android and iOS. Neither is runnable on this machine: no Android SDK
-(install before UC14, the first UI issue), and no Mac, so `app/ios/` is versioned but
+(UC-13 built the first UI without one — `flutter test` is headless, so this has cost
+nothing yet; it is only needed to *launch* the app), and no Mac, so `app/ios/` is versioned but
 never compiled. Web is not a fallback — the database opens through `drift_flutter`'s
 `driftDatabase()`, whose native path is `NativeDatabase.createBackgroundConnection`; a web
 build would need drift's wasm backend and its assets, so it would not be testing this app. `flutter test` is headless and works, which is where `testing.md` puts the
@@ -67,21 +74,27 @@ CRUD moved from UC-13 to UC-11, and `note` appears on every recording screen. Re
 run.
 
 **Open, non-blocking:** one `fr-nfr.md` §4 item — where the data lives, narrowed to
-phone-only but not closed.
+phone-only but not closed. **Four findings on file** (`pm/findings.md` F1–F4); F2 is the one
+that is a real defect — `seq-uc13-categories.drawio` does not draw the read path the code
+now has, and needs `diagram-drawio-author`.
 
-**Unattended mode is live.** `feat-planner` may mark a plan `AUTO-CONFIRMED` when every
-decision in it cites an already-confirmed artifact, and halts the issue to
-`pm/questions.md` when one cannot be cited. FEAT01 was `CONFIRMED` by the owner directly
-and is now DONE; **every remaining issue is unplanned**, so the next one to run is the
-first real test of `AUTO-CONFIRMED`.
+**Unattended mode is live, and has now been exercised both ways.** `feat-planner` may mark
+a plan `AUTO-CONFIRMED` when every decision in it cites an already-confirmed artifact, and
+halts the issue to `pm/questions.md` when one cannot be cited. Both branches have fired on
+real work: `UC13-categories` was `AUTO-CONFIRMED`, built and closed; `UC14-choose-currency`
+**halted** on one uncitable guard. That the halt came first is the mode working as
+specified — over-permission is the failure it is guarding against, not over-halting.
 
-**Standing caveat, now half-lifted.** `context/coding-conventions/` was written provisional.
-FEAT01 tested part of it against a real toolchain and corrected what lost: **versions,
-`analysis_options.yaml`, the database-open call and the provider shapes are now verified**
-(`riverpod.md`, `drift.md`, `dart-and-flutter.md`, marked in place). **Everything above the
-database is still unverified** — no DAO, notifier, screen or widget test has been written,
-so `testing.md`, the DAO and provider sections of `drift.md`/`riverpod.md`, and every claim
-about the Screen → provider → DAO chain remain shape rather than fact until UC14 runs.
+**Standing caveat, now mostly lifted.** `context/coding-conventions/` was written
+provisional. FEAT01 verified versions, `analysis_options.yaml`, the database-open call and
+the provider shapes; **UC-13 verified the half above the database** — a DAO, a
+`StreamProvider`, a `Notifier`, a `ConsumerWidget` and widget tests all exist and pass, and
+`drift.md`, `riverpod.md` and `testing.md` were each corrected in place where they lost
+(the `DatabaseAccessor` DAO shape, `@riverpod` over drift row classes, and two
+`flutter_test`/drift interactions). **Still unverified: a cross-module join and a
+derived-figure query** — nothing yet asserts NFR-2's balances or budget totals against real
+SQL. The README's banner is split to say exactly that, and no longer names UC14 as the issue
+that tests this half (`lessons.md` §1).
 
 ---
 
@@ -391,3 +404,86 @@ the whole suite.
 notifier, and the first issue to be `AUTO-CONFIRMED` rather than confirmed by the owner.
 **Install the Android SDK before it if the app is to be launched**; `flutter test` is
 headless and does not need it.
+
+---
+
+## 2026-08-21 — `UC13-categories` DONE: the first DAO, provider and screen
+
+**[STATUS]** **`UC13-categories` is DONE**, reviewed and committed by `issue-qa`. What
+landed: `CategoryDao` (`watchTree()` / `insert()` / `update()` / `delete()`),
+`categoryTreeProvider` and `CategoriesNotifier` (exposed as `categoriesProvider`),
+`CategoryManagerScreen`, and fourteen passing tests — the four verification commands were
+**re-run at review rather than accepted from the coder's report** (`lessons.md` §10):
+`build_runner` clean, `dart format` 14 files / 0 changed, `flutter analyze` *No issues
+found!*, `flutter test` 14/14, `audit.py` 13/0/0. **No schema change:** `app_database.g.dart`
+and `drift_schemas/app_database/drift_schema_v1.json` are byte-identical to FEAT01's, which
+is what "`schemaVersion` stays 1" has to mean in practice.
+
+**[DECISION]** **Two toolchain rulings, both durable, both in `context/index/decisions.md`,
+and both re-derived from scratch at review instead of taken on trust.**
+
+1. **A DAO whose class diagram gives it `update()` or `delete()` cannot be a
+   `DatabaseAccessor`.** `DatabaseConnectionUser` already declares both names with generic
+   `TableInfo` signatures, so the diagram's named-parameter versions are an
+   `invalid_override` — reproduced in isolation with a throwaway `ProbeDao`, a straight
+   analyzer error, unfixable from inside the method body. `CategoryDao` is therefore a plain
+   class composing `AppDatabase`, and `@DriftDatabase` gains **no `daos: […]` entry**. The
+   class diagram outranks the convention; `drift.md` corrected in place. This binds
+   `AccountDao`, `TransactionDao` and `BudgetDao` too — all three are drawn with `delete()`.
+2. **`riverpod_generator` cannot type a provider over a drift-generated row class.**
+   `@riverpod Stream<Category>` fails with `InvalidTypeException`; the identical function
+   returning `Stream<int>` builds — the swap isolates the generated `part`-file class as the
+   cause. Both of this issue's providers are hand-written. **This is broader than the plan's
+   D2 contingency**, which anticipated only the `categoriesNotifierProvider` naming
+   mismatch. `riverpod.md` corrected.
+
+**[DISCOVERY]** **Two `flutter_test` + drift interactions cost real debugging time and are
+now in `testing.md`:** consuming a `watch()` stream's `.first` before a widget subscribes to
+the same query starves the widget's subscription until `pumpAndSettle()` times out; and a
+widget test that ever built something watching a drift stream must unmount and pump a real
+`Duration` as the **last thing in the test body**, or `flutter_test` throws *"A Timer is
+still pending"* (`addTearDown` runs too early). Reviewed specifically for `lessons.md` §5 —
+whether the tests had been shaped around the quirk until they passed. They had not: both
+workarounds are plumbing that runs *after* the assertions, and the assertions themselves are
+real (D6 reads the transaction row back out of the database and asserts it survived with
+both tags null; the NFR-4 test deletes a category through the UI and proves the tree
+re-rendered without it).
+
+**[DISCOVERY]** **`lessons.md` §1 sweep at close found two stale registers**, both the
+half-true form. `map.yaml` still described `app/lib/src/app.dart` as "(placeholder screen)"
+— it renders `CategoryManagerScreen` now. And this file's own current-state block still said
+"there are no screens and no DAOs yet", named UC14 as the first UI issue and called
+`AUTO-CONFIRMED` untested. All corrected above.
+
+**[TODO]** **The as-built diagram pass is outstanding, not skipped** — `pm/findings.md` **F2**.
+`seq-uc13-categories.drawio` draws four `categoryTreeProvider` emissions and no
+`watchTree()` read path to produce them; the code has that path (authorised by the plan,
+citing `class-transactions.drawio`). The code is right and the diagram is incomplete, so the
+diagram is what changes — **`diagram-drawio-author`'s job**, authored as Mermaid and
+converted, exported to PNG and *looked at*. `issue-qa` does not edit `.drawio` files and a
+reviewer that repairs what it reviews has stopped being one. **F3** files the same
+diagram's isolate note, which names `NativeDatabase.createInBackground` on all fourteen
+sequence diagrams where the code uses `driftDatabase()` → `createBackgroundConnection` —
+same guarantee, stale mechanism name, repo-wide and not UC-13's to fix. **F4** notes that
+the NFR-4 test's rename-control assertion could pass vacuously.
+
+**[TODO]** **The plan's three open questions are the owner's and stay unanswered.** The app
+has no navigation host, so exactly one screen is reachable at a time and `home` is now
+UC-13's; deleting a category blanks the tag on every transaction that used it **without
+warning** (NFR-4 permits a warning, nothing requires one, and the owner has never been shown
+that sentence); and category ordering is insertion order because no artifact states one.
+
+**[STATUS]** **Next: `UC11-set-budget`** — the only remaining runnable row. **UC14's halt
+has blocked seven issues** (UC02, UC03, UC01, UC10, UC04, UC09, UC12): everything on the
+accounts chain sits behind UC14, and UC12 needs UC11 *and* UC04. UC14 stays halted for this
+run — `pm/questions.md` Q1 is the owner's to answer. Also committed with this issue, as the
+run's record of that halt and **not as UC-13 work**: UC14's written plan, its Q1, and the
+`halted:` note on its tracker row.
+
+**[TODO]** **Definition-of-done step 4 could not be performed and is filed as F5.** UC-13 is
+the first issue tracing to a UC to reach DONE, and `docs/workbook.xlsx`'s `UC FR` sheet has
+**no column for "implemented"** — nor does `workbook-conventions.md` describe one. Adding a
+column to a client-facing sheet is `workbook-xlsx-author`'s call and `audit.py` asserts that
+sheet's shape, so `issue-qa` recorded the gap instead of inventing a column. The workbook's
+UC-13 text itself was checked and needs no correction: it is already re-titled *"Set Up
+Categories and Subcategories"* and already says UC-11 owns budget groups.
