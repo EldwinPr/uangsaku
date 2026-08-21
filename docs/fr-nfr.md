@@ -355,15 +355,25 @@ from `starts_on` / `ends_on` and today's date. Recorded with its reasoning in
 `context/index/decisions.md`; the ERD was re-opened to drop the column.
 
 **Decided 2026-08-19 — stack and platform.** **Flutter/Dart**, `drift` over
-SQLite, no backend. Provisional: it rests on the assumption that iOS is in
-scope, which the owner set as a working premise rather than a confirmed
-requirement — so if iOS is ever dropped for good this is worth re-opening.
+SQLite, no backend. *No longer provisional — see the 2026-08-21 note below.*
 Carries a hard constraint: the app must stay light on old Android phones, which
 is the one axis where this choice is worse than the native-Android alternative
 it replaced. Reasoning, the alternatives weighed (React Native, SvelteKit +
 Capacitor, native Kotlin), what is lost (OCR moves from first-party ML Kit to a
 plugin; footprint and cold start both worsen), and the build requirements that
 follow from the old-phone constraint are in `context/index/decisions.md`.
+
+**Decided 2026-08-21 — both iOS and Android are targets.** *(Owner: "i want to
+make it for ios and android.")* This settles the assumption the entry above was
+provisional on, and settles it the way that entry predicted: Flutter was chosen
+*because* iOS was assumed real, and it now is. The stack decision is closed.
+
+Two things follow that are not obvious. The old-phone constraint is **not**
+relaxed by this — a second platform makes it harder to honour, not easier. And
+**iOS cannot be built on the owner's machine**, because Apple's toolchain is
+macOS-only; the `ios/` folder is generated and versioned from the first commit,
+but nothing builds or tests it until there is a Mac, and CI does not cover it.
+"Works on Android" is therefore not evidence about iOS.
 
 ### Assumed but never actually stated
 

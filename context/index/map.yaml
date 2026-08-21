@@ -2,6 +2,11 @@
 # No code exists yet (Phase 1). Until it does, this maps use cases to the design
 # artifacts that specify them; code paths get added alongside, not instead.
 
+# Distilled from pm/log-archive-2026-08.md on 2026-08-21: the failure patterns this
+# project has hit more than once. decisions.md says what was decided; this says how the
+# work goes wrong. Read before starting a task.
+lessons: context/index/lessons.md
+
 erd: docs/diagrams/erd.drawio
 
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module

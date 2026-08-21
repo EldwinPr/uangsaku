@@ -24,6 +24,13 @@ the close checklist below apply regardless of which issue you're on.
   `workbook-xlsx-author` agent, or read
   `context/document-writer-only/workbook-conventions.md` directly for the
   UC-derivation rule and the `openpyxl` editing gotchas.
+- Writing or revising an issue's `plan.md` → delegate to the `feat-planner` agent.
+  Writing Dart/Flutter code under `app/` → delegate to the `flutter-coder` agent. The
+  split is the planning gate itself: the planner never writes code, and the coder
+  never starts without a confirmed plan and never widens one.
+- About to start any task → skim `context/index/lessons.md`. It is the distilled
+  record of how this project has actually gone wrong, and every entry in it happened
+  more than once.
 - Need a second opinion / independent audit → `context/guide/cross-model-review.md`
 - Documenting how modules communicate → `context/guide/component-conventions.md`
 - Learned something durable while doing a task → write it directly into the
@@ -111,5 +118,7 @@ When an issue closes:
    decided along the way that isn't captured elsewhere.
 4. `pm/tracker.yaml` -> status Done + one-line summary.
 5. `pm/log.md` -> append a dated entry, tagged [STATUS]/[DECISION]/
-   [DISCOVERY]/[TODO] as appropriate.
+   [DISCOVERY]/[TODO] as appropriate. Update the current-state block at the head of
+   that file too if the issue changed anything it states. If a failure recurred, it
+   belongs in `context/index/lessons.md`, not only in the entry.
 6. `pm/active.json` -> point at the next issue, or clear it.

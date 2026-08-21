@@ -37,7 +37,8 @@ Run 2026-08-21. Four categories flagged, and only one of them actually matters y
 
 | | |
 |---|---|
-| **Android toolchain** | ✗ **No Android SDK.** This is the real gap — Android is the target platform, and nothing can be run on it until the SDK is installed (Android Studio, or the command-line tools). |
+| **Android toolchain** | ✗ **No Android SDK.** This is the real gap — Android is the only target reachable from this machine, and nothing can be run on it until the SDK is installed (Android Studio, or the command-line tools). |
+| **Xcode / iOS** | ✗ **Not applicable on Windows.** iOS is a confirmed target (`decisions.md`, 2026-08-21), but Apple's toolchain is macOS-only — see below. |
 | **Visual Studio** | ! Build Tools 2026 present but the installation is **incomplete**, so the Windows desktop target will not build either. |
 | **Chrome** | ✗ Not found. Web is not a target for this app anyway — see below. |
 | **Flutter binary "not on your path"** | Cosmetic, and misleading: `doctor` inherited the same stale environment described above. It is on the PATH. |
@@ -57,6 +58,20 @@ and per the caution below, that was never the thing to lean on for the requireme
 to break.
 
 **Install the Android SDK before the first UI issue**, not before `FEAT01`.
+
+### iOS is a target that this machine cannot build
+
+`--platforms=android,ios` generates `app/ios/` and it is committed from the first commit,
+deliberately: versioning it now beats having it arrive as a large untracked diff months
+later. But **Xcode, the simulator and code signing are macOS-only**, so on this machine
+`ios/` is configuration that is never compiled, never run and never tested. CI does not
+cover it either — an iOS build needs a `macos-latest` runner, billed well above Linux, and
+is not worth configuring before a Mac exists.
+
+The consequence to hold onto: **a green Android build is not evidence about iOS.** The
+Dart code is shared and platform-neutral (`NativeDatabase` is SQLite, which ships with
+both), so the risk is not in the domain or data layers — it is in plugins, permissions and
+platform channels, none of which this app has yet. Revisit when it acquires the first one.
 
 ## The Dart and Flutter MCP server — worth having
 

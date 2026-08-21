@@ -86,27 +86,42 @@ than one describing what the line does. Where a rule looks arbitrary, name its d
 Mirror the module structure the rest of the artifacts use, so `map.yaml` can point a use case
 at a directory and be right:
 
+**The Dart package is `app/`, not the repository root** (`decisions.md`, 2026-08-21). The
+root is the documentation pipeline's namespace — `docs/`, `pm/`, `context/`, `input/`,
+`audit.py` — and Flutter's names are generic enough (`lib`, `test`) that mixing the two in
+one listing reads as clutter. Everything below is relative to `app/`.
+
 ```
-lib/
-  main.dart
-  src/
-    app.dart                  # MaterialApp, routing, theme
-    database/
-      app_database.dart       # AppDatabase, the isolate open, migrations
-    accounts/
-      accounts_table.dart     # drift table declarations
-      account_dao.dart
-      accounts_providers.dart # StreamProviders + Notifier
-      balance_sheet_screen.dart
-      account_form_screen.dart
-    transactions/
-    budgeting/
-    settings/
+app/
+  pubspec.yaml
+  analysis_options.yaml
+  build.yaml
+  android/  ios/             # both targets (decisions.md, 2026-08-21)
+  test/                      # mirrors lib/src/, *_test.dart
+  lib/
+    main.dart
+    src/
+      app.dart                  # MaterialApp, routing, theme
+      database/
+        app_database.dart       # AppDatabase, the isolate open, migrations
+      accounts/
+        accounts_table.dart     # drift table declarations
+        account_dao.dart
+        accounts_providers.dart # StreamProviders + Notifier
+        balance_sheet_screen.dart
+        account_form_screen.dart
+      transactions/
+      budgeting/
+      settings/
 ```
 
 Four modules, matching the `Modules` sheet and the four class diagrams: `accounts`,
 `transactions`, `budgeting`, `settings`. `AppDatabase` sits outside them because all four
 share it — which is exactly what `component-overview.drawio` draws.
+
+`map.yaml` entries therefore carry the prefix — `UC-02 → app/lib/src/accounts/` — and so
+does anything run from CI, where every Flutter step needs `working-directory: app`. A
+command run from the repository root will not find `pubspec.yaml`.
 
 **One band of the class diagram per file kind.** The class diagrams are drawn as four vertical
 bands (screen, provider, DAO, table); the file names above are those bands. A reader holding

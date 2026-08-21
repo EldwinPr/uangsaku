@@ -7,6 +7,11 @@
 #
 # The commands in `app` are the four at the bottom of context/coding-conventions/testing.md,
 # in the order they have to run: generated code must exist before anything reads it.
+#
+# The Dart package lives in app/, not at the root (decisions.md, 2026-08-21). Every step
+# below therefore runs with working-directory: app, and the probe looks for
+# app/pubspec.yaml. Pointing the probe at the root would make this job report success
+# having run nothing at all -- worse than failing, because a green build gets trusted.
 
 name: ci
 
@@ -37,10 +42,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Inert until FEAT01 lands a pubspec.yaml. Every step below is guarded on it, so this
+      # Inert until FEAT01 lands app/pubspec.yaml. Every step below is guarded on it, so this
       # job passes trivially in the meantime rather than failing red for months.
       - id: probe
-        run: echo "exists=$([ -f pubspec.yaml ] && echo yes || echo no)" >> "$GITHUB_OUTPUT"
+        run: echo "exists=$([ -f app/pubspec.yaml ] && echo yes || echo no)" >> "$GITHUB_OUTPUT"
       - uses: subosito/flutter-action@v2
         if: steps.probe.outputs.exists == 'yes'
         with:
@@ -49,13 +54,18 @@ jobs:
           flutter-version: '3.47.1'
       - if: steps.probe.outputs.exists == 'yes'
         run: flutter pub get
+        working-directory: app
       # build_runner first: drift_dev and riverpod_generator both emit code that analyze,
       # format and test all read. Running it after them checks the previous commit's output.
       - if: steps.probe.outputs.exists == 'yes'
         run: dart run build_runner build --delete-conflicting-outputs
+        working-directory: app
       - if: steps.probe.outputs.exists == 'yes'
         run: dart format --set-exit-if-changed .
+        working-directory: app
       - if: steps.probe.outputs.exists == 'yes'
         run: flutter analyze
+        working-directory: app
       - if: steps.probe.outputs.exists == 'yes'
         run: flutter test
+        working-directory: app

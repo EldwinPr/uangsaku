@@ -667,3 +667,71 @@ Budgeting — it is not where money lives, not something that happened, and not 
 also means a fourth class diagram (`class-settings.drawio`). The alternative, forcing it
 into Accounts because it touches `opening_amount`, would have misstated ownership on
 every artifact that keys off `Modul`.
+
+## 2026-08-21 — iOS is confirmed as a real target, and the Flutter premise is now settled
+
+**Decision.** iOS and Android are both targets. Owner, asked which platforms the project
+should generate: *"i want to make it for ios and android."* `FEAT01` scaffolds with
+`--platforms=android,ios`.
+
+**This closes an open assumption rather than making a new choice**, which is the only
+reason it deserves an entry at all. The Flutter entry above (2026-08-19) was recorded as
+**provisional**, resting on *"okay for now just assume will be used in ios"*, and it said
+plainly that if iOS were later dropped for good the entry should be re-opened because the
+superseded Kotlin case would become correct again on its own terms.
+
+It is not dropped. The premise the whole stack decision hinged on is now a stated
+requirement, so:
+
+- **The Flutter decision stops being provisional.** No new argument was needed in either
+  direction — the earlier entry named this exact hinge in advance and the confirmation
+  simply lands on the side it predicted.
+- **The Kotlin entry above is now permanently superseded**, not conditionally. Its own
+  reasoning ruled itself out for a real iOS target; that condition is met.
+- **`fr-nfr.md` §4's caveat on the stack is retired.** Updated the same day.
+
+**What does not change.** The hard constraint carried over from the Kotlin entry —
+*must not be heavy on old Android phones* — survives intact and is not softened by iOS
+being real. Per-ABI splits or an App Bundle, and testing on an actual low-end device,
+remain build requirements rather than advice. Adding a second platform makes that
+constraint harder to honour, not easier.
+
+**Accepted cost, stated plainly: iOS cannot be built on this machine.** Apple's toolchain
+is macOS-only, so `ios/` will exist under version control and go unexercised until there
+is a Mac. This is deliberate — generating it now keeps the iOS configuration versioned
+from the first commit instead of arriving as a large untracked diff months later — but it
+means **"builds on Android" is not evidence the iOS target is healthy**, and nothing in CI
+checks it. An iOS build job needs a `macos-latest` runner, which is billed well above
+Linux; not configured, and not worth configuring before a Mac exists.
+
+Nothing in the data layer is affected. `NativeDatabase.createInBackground` is SQLite,
+which ships with both platforms, so the ERD, the class diagrams and every DAO are
+platform-neutral as drawn.
+
+## 2026-08-21 — The Flutter project lives in `app/`, not at the repository root
+
+**Decision.** The Dart package is created at `app/`, leaving `docs/`, `pm/`, `context/`,
+`input/` and `audit.py` at the root. Owner's call, made before any code landed.
+
+**Why it is worth recording.** The repo is a documentation pipeline that has now grown a
+codebase, and the root is already the documentation's namespace. Dropping `lib/`, `test/`,
+`android/`, `ios/`, `pubspec.yaml` and `analysis_options.yaml` beside `docs/` and `pm/`
+would mix two vocabularies in one listing, and Flutter's names are generic enough
+(`lib`, `test`) that the collision reads as clutter rather than structure.
+
+**The trap this creates, and why it is written down rather than remembered.**
+`.github/workflows/ci.yml`'s `app` job is guarded on `pubspec.yaml` existing — a guard
+written when the project was going to be at the root, so that the job passed trivially
+until `FEAT01` landed instead of failing red for months. With the package at `app/`, that
+probe **never fires**, and the job goes green having run nothing at all, permanently and
+silently.
+
+*The general form worth keeping:* **a guard that reports success when it cannot find its
+subject is worse than one that fails.** A red build gets fixed; a green one that checked
+nothing gets trusted. The probe now points at `app/pubspec.yaml` and every Flutter step
+carries `working-directory: app`.
+
+**Consequences applied the same day:** `dart-and-flutter.md`'s directory layout gains the
+`app/` prefix; `FEAT01`'s D2 file manifest is rewritten against it; `map.yaml`'s future
+UC → code entries are `app/lib/src/<module>/`. `audit.py` is unaffected — it reads
+documentation paths, none of which moved.

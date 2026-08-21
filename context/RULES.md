@@ -5,6 +5,11 @@ Read these before doing anything else:
 - `pm/active.json` — which issue/worktree this session is on right now.
 - `pm/tracker.yaml` — the ticket board: what's TODO/OUTLINED/WRITTEN/REVIEWED/DONE/BLOCKED.
 - `context/general-rules.md` — cross-stack conventions that apply regardless of task type.
+- `context/index/lessons.md` — how this project has actually gone wrong, distilled from
+  fifteen sessions. Short, and it is the cheapest thing here that prevents a repeat.
+- `pm/log.md` — the current-state block at its head. The pre-2026-08-21 narrative is
+  archived in `pm/log-archive-2026-08.md`; read that only when you need the evidence
+  behind something, not routinely.
 - `context/index/map.yaml` — UC/FEAT → code index, so you don't re-discover where something lives.
 - The active issue's `pm/issues/{id}-{slug}/plan.md`, if `active.json` points to one.
 

@@ -19,11 +19,11 @@ or project-management state.
 | `context/document-writer-only/` | Per-artifact conventions: BPMN, ERD, class, state, workbook, plus the cross-cutting draw.io guide. |
 | `context/document-writer-only/examples/` | Verified worked examples + `elements.drawio`, the living shape palette. |
 | `context/guide/` | Component-diagram conventions; cross-model review workflow. |
-| `context/index/` | `map.yaml` (UC/FEAT → code) and `decisions.md` (durable architectural decisions). |
+| `context/index/` | `map.yaml` (UC/FEAT → code), `decisions.md` (durable architectural decisions), and `lessons.md` (the failure patterns this project has hit more than once). |
 | `context/files/` | Published third-party specs the conventions are distilled from (OMG BPMN, UML). |
 | `input/` | Raw client source material, one folder per intake event. The substrate everything else derives from. |
 | `docs/` | The real client deliverables: `workbook.xlsx`, `fr-nfr.md`, `requests.md`, `enums.md`, `statuses.md`, and `diagrams/`. |
-| `pm/` | Project state: `tracker.yaml` (the board), `active.json` (current issue), `log.md` (append-only history). |
+| `pm/` | Project state: `tracker.yaml` (the board), `active.json` (current issue), `log.md` (current state + append-only history), `log-archive-2026-08.md` (sessions 1-15 verbatim). |
 | `.claude/agents/` | Specialist subagents for the artifacts that have repeatable, error-prone rules. |
 | `.claude/skills/` | Tooling skills (`drawio`, `xlsx`, `doc-coauthoring`). |
 
@@ -138,8 +138,14 @@ Delegate rather than hand-authoring; each one already knows which conventions to
 | Agent | Use for |
 |---|---|
 | `bpmn-drawio-author` | BPMN diagrams |
-| `diagram-drawio-author` | Every other `.drawio`: ERD, class, state, component |
+| `diagram-drawio-author` | Every other `.drawio`: ERD, class, state, component, sequence |
 | `workbook-xlsx-author` | Deriving UCs, promoting requests, refreshing the Entities dedup |
+| `feat-planner` | Writing and revising an issue's `plan.md` — never code |
+| `flutter-coder` | Dart/Flutter code under `app/` — never without a confirmed plan |
+
+The last two encode the planning gate as a boundary between agents rather than a rule
+someone has to remember: the planner cannot write code, and the coder stops at a
+`NOT PLANNED` placeholder and at the edge of the sequence diagram.
 
 ## Environment notes
 
@@ -185,10 +191,19 @@ Skipping to step 6 is what makes old work unreconstructable. Don't.
 
 ## Current state
 
-The conventions layer and the agent/skill tooling are built and validated against worked
-examples (a retail store modeled Level 1→3, a food-stand collaboration diagram, a restaurant
-BPMN + ERD + class diagrams + workbook). The client-facing artifacts are still scaffolding:
-`docs/workbook.xlsx` holds headers only, and `pm/tracker.yaml`, `pm/active.json`, `pm/log.md`,
-`context/index/*` are empty — no real issue has been run through the pipeline yet.
-#   u a n g s a k u  
+*Updated 2026-08-21.*
+
+**Documentation complete; implementation not started.** Nine issues closed — the ERD, four
+class diagrams, the component diagram, `enums.md`, the currency decision, sequence
+conventions, and `context/coding-conventions/` — plus all fourteen per-use-case sequence
+diagrams, rendered and visually verified. `audit.py` is green at 13/0/0 and runs in CI.
+
+The app is **`uangsaku`**: a personal balance-sheet tracker in Flutter/Dart with `drift`
+over SQLite and Riverpod, targeting Android and iOS, no backend. It lives in `app/`.
+
+**Eleven issues remain TODO.** `FEAT01-foundation` (the Flutter scaffold) is planned and
+confirmed but not executed; the other ten are placeholders awaiting `feat-planner`. The
+head of `pm/log.md` carries the current state in one screen.
+#   u a n g s a k u 
+ 
  
