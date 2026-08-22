@@ -957,3 +957,38 @@ Recorded because a dependency drawn on a class diagram is a claim about code, an
 `budgetConsumptionProvider` from. The diagram's own note already says to drop `Clock`
 "if a later pass finds nothing actually asking it the time" — `BudgetDao` does ask, so
 `Clock` itself stays; only the second edge was wrong.
+
+## 2026-08-22 — Changing the currency changes the prefix and nothing else
+
+Owner's ruling, answering `pm/questions.md` Q1 — the halt that blocked eight of the eleven
+implementation rows: *"for q1 by change currency it just changes the prefix thats all"*.
+
+**What it means.** `Settings.currency` selects how an amount is *displayed*. The stored
+values are untouched: every amount is an `int` of minor units and stays exactly the integer
+it was. Nothing is converted, no rate is applied, no other table is read or written, and no
+exponent arithmetic runs at the moment of the change. IDR 250000 becomes USD 250000 shown
+with a different prefix, not USD 15.
+
+**The exponent still applies to rendering, not to storage.** `enums.md` gives IDR exponent 0
+and USD exponent 2, which is how a stored `int` becomes text. Changing the currency changes
+which exponent the formatter uses, so the same integer renders differently — that *is* the
+re-labelling FR-19 warns about, and it is a display concern, not a migration.
+
+**What it rejects.** A "setup complete" marker on `Settings` (`schemaVersion` 2 for a
+distinction that changes nothing), and counting existing amounts across Transactions /
+Accounts / BudgetPeriods to decide the message's wording (a cross-module join bought for
+nothing, and not drawn on `seq-uc14-choose-currency.drawio`).
+
+**The consequence for the sequence diagram's guard.** `seq-uc14`'s `opt` fragment reads
+*"an existing currency is being changed, not initial setup"* — a predicate the schema cannot
+express, since FEAT01 seeds a currency at first launch so "an existing currency" is always
+true. It resolves to **the chosen currency differs from the stored one**, because that is
+exactly when the prefix changes. The carve-out for initial setup was written when the change
+was imagined to be consequential; it has no referent once the change is a prefix, and
+warning on a genuine first-setup switch from the IDR seed to USD is *true* rather than
+spurious. The guard text is corrected on the diagram at UC-14's as-built pass rather than
+reinterpreted silently.
+
+**Still true, and worth keeping in view:** this is the reason NFR-4's zero refusals costs
+nothing here. There is no data-loss scenario to protect the owner from, so the notice is a
+message and never a branch that ends.

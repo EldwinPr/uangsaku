@@ -55,7 +55,7 @@ answered by the owner before the run began and are recorded in `context/index/de
 
 ---
 
-## Q1 — What makes the currency-change warning fire?          [OPEN]
+## Q1 — What makes the currency-change warning fire?          [ANSWERED]
 
 **Raised by:** UC14-choose-currency, 2026-08-21
 **Blocks:** UC14-choose-currency directly, and **seven issues transitively** — UC02-add-account,
@@ -104,4 +104,27 @@ decides that, and the schema cannot express it.
   and `map.yaml` going stale with it. `lessons.md` §8: the last "just one column" cost twelve
   artifacts. Raised before the work, not after.
 
-**Answer:**
+**Answer:** *"for q1 by change currency it just changes the prefix thats all"* — the owner,
+2026-08-22. Recorded at `context/index/decisions.md` (2026-08-22, "Changing the currency
+changes the prefix and nothing else").
+
+**What it settles, and how the guard resolves.** The answer is about *what changing the
+currency does*, and it dissolves the question rather than picking from the menu above.
+Changing the currency re-labels: the stored `int` minor units are untouched, nothing is
+converted, no other table is read or written, and no exponent arithmetic runs. Under that:
+
+- **D is rejected** — a "setup complete" column would buy a distinction that changes nothing,
+  at the cost of `schemaVersion` 2 and the artifacts `lessons.md` §8 predicts.
+- **B is rejected** — counting amounts across three modules to decide the wording of a
+  message about a prefix is a cross-module join bought for nothing, and it is not drawn on
+  the diagram.
+- **A is what the guard becomes:** the notice appears when the chosen currency differs from
+  the stored one, which is exactly when the prefix changes. **A's only stated cost was a
+  "wrong" warning at first setup if the owner picks USD over the IDR seed — the owner's
+  answer removes it**, because in that case the prefix really does change and saying so is
+  true, not spurious. The guard's "not initial setup" carve-out was written when the change
+  was imagined to be consequential; it has no referent once the change is a prefix.
+
+So `opt [the chosen currency differs from the stored one]`. **The diagram's guard text is
+corrected at UC-14's as-built pass**, not silently reinterpreted — the fragment stays, one
+message stays inside it, and nothing is skipped.
