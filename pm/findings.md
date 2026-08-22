@@ -104,7 +104,7 @@ two pixel columns are blank, so it is complete.
 
 ## F3 — every sequence diagram's isolate note names a mechanism one wrapper stale   [OPEN]
 **Scope:** TRAIL          **Severity:** risk
-**Where:** twelve of the fourteen `docs/diagrams/seq-uc*.drawio` — the note reading *"DAO to
+**Where:** eleven of the fourteen `docs/diagrams/seq-uc*.drawio` — the note reading *"DAO to
 AppDatabase crosses the isolate boundary (NativeDatabase.createInBackground, 2026-08-20)"*
 **Violates:** nothing stated; it is `lessons.md` §1's half-true label, in fourteen copies.
 **What it is:** the code opens the database through `drift_flutter`'s `driftDatabase()`,
@@ -117,7 +117,8 @@ would have meant editing thirteen diagrams UC-13 does not own, so it is filed in
 **Confidence:** certain — `grep -rl createInBackground docs/diagrams/` returned all fourteen
 when this was filed.
 **Narrowed again 2026-08-22:** `seq-uc11-set-budget.drawio` corrected in UC-11's as-built
-pass. **Twelve remain.**
+pass, then `seq-uc14-choose-currency.drawio` in UC-14's. **Eleven remain**, one per
+unbuilt issue, each to be corrected by its own as-built pass.
 **Narrowed 2026-08-22:** `seq-uc13-categories.drawio` was corrected as part of F2's as-built
 pass, because UC-13 owns that diagram. **Thirteen remain**, and they stay filed rather than
 fixed — the run does not repair findings, and each belongs to an issue that has not been
@@ -220,8 +221,12 @@ UC-12 each build a screen, and on the current pattern each one orphans the last,
 converges on one reachable screen and five dead ones. **The owner's call is whether a
 navigation host becomes its own issue before the next screen lands** — it is on no class
 diagram, so no issue can invent one without a ruling.
+**Confirmed again 2026-08-22:** UC-14 D3 re-pointed `home` at `CurrencyScreen`, so
+**`SetBudgetScreen` is now orphaned too** — two dead screens, one reachable, exactly as this
+entry predicted. UC-14's plan named the cost in advance rather than rediscovering it, which
+is the right handling, but it does not stop the count rising. Five screens remain queued.
 **Confidence:** certain — `grep` for `CategoryManagerScreen` outside its own file and tests
-returns only doc comments.
+returns only doc comments; the same is now true of `SetBudgetScreen`.
 
 ## F9 — the app carries a codegen toolchain that three issues have proved it cannot use   [OPEN]
 **Scope:** APP          **Severity:** risk

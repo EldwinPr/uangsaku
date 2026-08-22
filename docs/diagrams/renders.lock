@@ -44,4 +44,4 @@ docs/diagrams/seq-uc13-categories.drawio:
   source_sha: 1a31fa2c5cf6f3255bae5770967a07847db499fcbf4f5a90ef15abb165c426a2
 docs/diagrams/seq-uc14-choose-currency.drawio:
   render: seq-uc14-choose-currency.png
-  source_sha: b3c8e03ebf4bec119d3fcc11b114145e4db0a43767b346d25fbcf59f34ec9d91
+  source_sha: d96156277480bd65ddb4a819373abc6e4b3d9aeb375b5f1c07aa244c7f772e3f

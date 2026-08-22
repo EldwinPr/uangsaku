@@ -1,17 +1,20 @@
 # UC14-choose-currency — Choose the app currency
 
-**Status:** **HALTED — awaiting owner ruling.** Everything below D1–D8 is derived from
-already-confirmed artifacts and is ready to build. **D9 is not**: the sequence diagram's
-`opt` guard names a distinction — *"an existing currency is being changed, not initial
-setup"* — that no artifact defines and the schema cannot express. Three different, equally
-plausible predicates satisfy it, they produce different behaviour, and none can be cited.
-Under the unattended-mode rule in `context/general-rules.md` that halts the issue rather
-than picking a default. The question is `Q1` in [`pm/questions.md`](../../questions.md).
+**Status:** DONE 2026-08-22 — built, reviewed, closed and committed. Halted 2026-08-21 at the planning gate; unhalted when the owner answered Q1. The as-built pass corrected three items on the sequence diagram (the `opt` guard, the Indonesian label, the isolate note).
+an artifact the owner has already confirmed, and D9 — the one that halted this plan on
+2026-08-21 — now cites the owner's own ruling on `pm/questions.md` Q1, recorded at
+`context/index/decisions.md` (2026-08-22, *"Changing the currency changes the prefix and
+nothing else"*).
 
-**This plan is kept in place deliberately** so the derivation is not repeated when the
-answer arrives. When Q1 is answered, D9 gets written from the answer, the status becomes
-`AUTO-CONFIRMED` (or `PROPOSED` if the owner is present), and steps 1–11 run unchanged —
-only step 6 depends on Q1.
+**Three decisions changed while this plan sat halted, and are amended in place rather than
+rewritten** (the FEAT01 D4 shape — what it used to say, what changed, why): **D1** and
+**D7** against the two rulings UC-13 forced on DAO and provider shape, and **D9** from
+`HALTED` to decided. **D5 and D6 were re-checked against the currency ruling and stand
+exactly as written** — the ruling strengthens both rather than disturbing them; see the
+confirmation notes under each. D2, D3, D4 and D8 are unchanged in substance, D8 gaining one
+test that D9 now makes assertable.
+
+Steps 1–11 run in order. Nothing is blocked.
 
 **Traces to:** UC-14 (`docs/workbook.xlsx`, `UC FR`) — FR-19.
 **Depends on:** `FEAT01-foundation` — **DONE 2026-08-21** (`pm/tracker.yaml`).
@@ -23,15 +26,20 @@ two other issues that could run in parallel — UC13 and UC11 — own `Categorie
 
 ## Goal
 
-The first screen, the first DAO and the first Notifier in the app. At the end, the owner
+The settings module end to end. At the end, the owner
 can open the app, see which currency the database is recording in, and change it between
 `IDR` and `USD`; the change is written to the one `Settings` row and pushed back to the
 screen as a new stream emission rather than as the write's return value. Existing amounts
 are re-labelled, never converted, and the change is never refused.
 
-Nothing in the accounts, transactions or budgeting modules is touched. The reason this
-use case is built first despite being last in the workbook is that it is the smallest
-module in the project and still exercises the whole
+Nothing in the accounts, transactions or budgeting modules is touched.
+
+*(Written 2026-08-21, when this was to be the first screen, DAO and provider in the app.
+It no longer is: UC-13 and UC-11 shipped while this issue was halted, and their toolchain
+rulings now bind it — see D1 and D7. What survives unchanged is the reason it was
+sequenced first.)* The reason this use case is scheduled ahead of the rest despite being
+last in the workbook is that it is the smallest module in the project and still exercises
+the whole
 `Screen → provider → DAO → AppDatabase → table` chain the four class diagrams draw — so if
 that architecture is wrong, this is the cheapest place to find out (`pm/tracker.yaml`,
 this issue's row). It is also the issue `context/coding-conventions/README.md` names as
@@ -76,7 +84,9 @@ do not have.
 - **8** `Owner → CurrencyScreen` *pilih IDR / USD* — the choice, two values only.
 - **9** the `opt` fragment — *warning: existing amounts are re-labelled, not converted
   (FR-19, NFR-4 zero refusals)*, guarded on *[[an existing currency is being changed, not
-  initial setup]]*. **This guard is what halts the issue — see D9.**
+  initial setup]]*. **That guard text is stale and resolves to [[the chosen currency
+  differs from the stored one]]** — the owner's ruling of 2026-08-22, D9. It is corrected
+  on the diagram at the as-built pass (discrepancy 3 below), not here.
 - **10** `CurrencyScreen → SettingsNotifier` *setCurrency(chosen)* — **unconditional**: it
   sits outside the `opt` box, so the write happens whether or not the warning was shown.
   There is no second operand, no cancel path, and no return arrow to the owner. The
@@ -90,22 +100,35 @@ do not have.
   the stream it is already watching (`sequence-conventions.md`; `riverpod.md`, "the rule
   that is easiest to get wrong").
 
-**Two as-built discrepancies found on the diagram.** Neither blocks the work; both are for
-the close checklist's as-built pass, not for silent correction now:
+**Three as-built discrepancies on the diagram.** None blocks the work; all three are for
+the close checklist's as-built pass, not for silent correction now. **They are recorded
+here, not fixed here** — the main session owns `.drawio` edits:
 
 1. The diagram's note reads *"NativeDatabase.createInBackground, decided 2026-08-20"*. The
    code opens the database through `drift_flutter`'s `driftDatabase()`, which calls
    `NativeDatabase.createBackgroundConnection` — the same isolate guarantee, verified in
    the package source (`decisions.md`, 2026-08-21, FEAT01 ruling 2). The boundary the note
    marks is real and in the right place; only the mechanism's name is one wrapper stale.
+   Already filed repo-wide as **`pm/findings.md` F3** (twelve of the fourteen `seq-uc*`
+   diagrams carry the same note), so UC-14's as-built pass records it against F3 rather
+   than re-discovering it; fixing fourteen diagrams is not this issue's business.
 2. Message 8 is labelled **`pilih IDR / USD`** — Indonesian. `context/general-rules.md`
    fixes this project's language as English and says so on provenance grounds. Every other
    label on the diagram is English.
+3. **The `opt` guard text itself.** It reads *"an existing currency is being changed, not
+   initial setup"*, a predicate the schema cannot express and which the owner's 2026-08-22
+   ruling has now resolved to **[[the chosen currency differs from the stored one]]**
+   (D9). The fragment stays, message 9 stays inside it, message 10 stays outside it, and
+   nothing is skipped — only the guard's text is corrected, and `decisions.md` 2026-08-22
+   says explicitly that it is corrected *"at UC-14's as-built pass rather than
+   reinterpreted silently"*. Code is written against the resolved predicate from step 6;
+   the diagram catches up at close.
 
 ## Decisions
 
-Each entry cites the confirmed artifact it comes from. **D1–D8 are transcriptions; D9 is
-not, and that is why this plan is halted.**
+Each entry cites the confirmed artifact it comes from. **All nine are transcriptions** —
+D1–D8 of the requirements, diagrams and conventions; D9 of the owner's ruling of
+2026-08-22. Nothing below is a default chosen by the planner.
 
 ### D1 — The three new files, and nothing else
 
@@ -121,10 +144,23 @@ app/lib/src/settings/settings_providers.dart    currencyProvider (StreamProvider
 app/lib/src/settings/currency_screen.dart       CurrencyScreen (ConsumerWidget)
 ```
 
-Modified, not created: `app/lib/src/app.dart` (D3), `app/lib/src/database/app_database.dart`
-(registering the DAO under `@DriftDatabase(daos: […])`, which is how drift attaches one).
+**Amended 2026-08-22.** This entry used to list `app/lib/src/database/app_database.dart`
+as modified, "registering the DAO under `@DriftDatabase(daos: […])`, which is how drift
+attaches one". **It is no longer modified at all.** `decisions.md` 2026-08-21 (UC-13
+ruling 1) settles that a DAO is a plain class composing `AppDatabase`, never a
+`@DriftAccessor`/`DatabaseAccessor` subtype — `DatabaseAccessor` already declares
+`update()` and `delete()`, which the class diagrams give the DAOs themselves, and the
+override is an outright analyzer error. The consequence stated in that ruling: **no
+`daos: […]` entry**, because there is no accessor for drift to attach. `app_database.dart`'s
+own doc comment already records this, and `CategoryDao` / `BudgetDao` shipped that way.
+`SettingsDao` follows the same shape even though `watchCurrency()` / `setCurrency()` would
+not themselves have collided — the ruling is stated for every DAO, not only the colliding
+ones.
+
+So the only modified file is `app/lib/src/app.dart` (D3).
 `app/lib/src/settings/settings_table.dart` is **not** modified — the table and the
-`Currency` enum already exist exactly as the class diagram draws them.
+`Currency` enum already exist exactly as the class diagram draws them. The schema does not
+change: `schemaVersion` stays 1 and no new migration snapshot is produced.
 
 Tests, mirroring `lib/src/` per `testing.md` §Conventions:
 `app/test/settings/settings_dao_test.dart`, `app/test/settings/currency_screen_test.dart`.
@@ -162,6 +198,17 @@ It is explicitly temporary. `UC01-balance-sheet` lands FR-1's four figures on **
 primary screen"** (`pm/tracker.yaml`, UC01's row), and re-pointing `home` is that issue's
 business. This issue introduces no router and no navigation structure.
 
+**Kept as written, with its cost now named (2026-08-22).** `home` currently points at
+`SetBudgetScreen` (UC-11 D8), which itself displaced `CategoryManagerScreen`. Pointing it
+here **orphans `SetBudgetScreen`** — no route, no reference from any live widget, exercised
+only by its tests. That is not new and not a reason to deviate: it is `pm/findings.md`
+**F8**, *"every screen issue orphans the previous screen"*, already filed against this exact
+pattern and explicitly predicting UC-01/02/03/04/09/12 each doing the same. The alternative
+— inventing a navigation host — needs a class no class diagram draws, which
+`coding-conventions/README.md` forbids. So this issue continues the pattern knowingly, and
+the close **records the new orphan against F8 rather than re-discovering it** (step 11). A
+navigation host is its own issue, not a tidy-up here.
+
 ### D4 — The screen offers exactly two values, both always enabled
 
 *Cites:* `docs/enums.md` §`Settings.currency` (two values, `IDR` and `USD`, and adding a
@@ -190,7 +237,15 @@ recorded as IDR reads as 50,000 USD (`enums.md`, the class diagram's own note). 
 acknowledged and the write proceeds. Adding a "Cancel" that abandons the change would be a
 second operand the diagram does not draw.
 
-**What is *not* decided here is when it fires.** That is D9.
+**Re-checked against the 2026-08-22 ruling and CONFIRMED unchanged.** The ruling strengthens
+this decision rather than disturbing it, and says so in its own words: *"this is the reason
+NFR-4's zero refusals costs nothing here. There is no data-loss scenario to protect the
+owner from, so the notice is a message and never a branch that ends."* A cancel path would
+exist to protect stored data; under the ruling no stored data is at risk — the integers do
+not move — so the thing a cancel would protect does not exist. The shape stays: one operand,
+acknowledged, proceeds, and message 10 fires either way.
+
+**When it fires is D9, and D9 is now decided.**
 
 ### D6 — Nothing is converted, and no other table is read or written
 
@@ -205,18 +260,51 @@ any stored integer. `lessons.md` §2 is the reason this is stated rather than as
 changing how a value is obtained silently invalidates what is built on it — here the
 invalidation is deliberate, confirmed, and the exact thing the warning exists to announce.
 
+**Re-checked against the 2026-08-22 ruling and CONFIRMED, with one clarification the ruling
+adds.** *Also cites:* `decisions.md` 2026-08-22 — *"the stored values are untouched: every
+amount is an `int` of minor units and stays exactly the integer it was… IDR 250000 becomes
+USD 250000 shown with a different prefix, not USD 15."* The clarification concerns the
+**exponent**: `enums.md` gives IDR 0 and USD 2, and it would be an easy misreading to treat
+a change of exponent as arithmetic on stored values. It is not. The ruling puts the exponent
+on **rendering, not storage** — it changes how a stored `int` becomes text — so **no
+exponent arithmetic runs at the moment of the change**, and none runs anywhere in this
+issue, because nothing on `CurrencyScreen` renders an amount (see Out of scope; the
+formatter is UC-01's). This issue writes one enum column and reads it back. Nothing else.
+
 ### D7 — `currencyProvider` is kept alive; `SettingsNotifier` is not special-cased
 
 *Cites:* `riverpod.md` §Code generation — *"a provider whose state must outlive its screen
-has to say so explicitly (`@Riverpod(keepAlive: true)`). **Expect to need that for the
-currency setting and almost nothing else.**"*; `riverpod.md` §The two shapes.
+has to say so explicitly. **Expect to need that for the currency setting and almost nothing
+else.**"*; `riverpod.md` §The two shapes; `decisions.md` 2026-08-21 (UC-13 ruling 2, and
+FEAT01 ruling 3); `decisions.md` 2026-08-22 (UC-11, the multi-stream shape);
+`class-settings.drawio` for both provider names.
 
-`currencyProvider` is `@Riverpod(keepAlive: true)` — every amount displayed anywhere in
-the app will eventually need the exponent, so it must not dispose when this screen closes.
-`SettingsNotifier` is an ordinary generated `Notifier` exposed as `settingsProvider`, the
-write shape the conventions allow. No third provider shape is introduced; the existing
-hand-written `appDatabaseProvider` is reused as-is (`decisions.md` 2026-08-21, FEAT01
-ruling 3).
+**The substance is unchanged: `currencyProvider` outlives this screen.** Every amount
+displayed anywhere in the app will eventually need the exponent, so it must not dispose when
+`CurrencyScreen` closes — it is the one provider `riverpod.md` names for this.
+
+**Amended 2026-08-22 — how that is expressed.** This entry used to say `currencyProvider` is
+`@Riverpod(keepAlive: true)` and that `SettingsNotifier` is "an ordinary generated
+`Notifier`". **Neither is buildable.** `decisions.md` 2026-08-21, UC-13 ruling 2:
+`riverpod_generator` throws `InvalidTypeException` on any provider whose type mentions a
+drift-generated row class, and hand-written providers are the shape every provider in this
+app has shipped with. So both are **hand-written**: `currencyProvider` a plain
+`StreamProvider<Currency>` declared **without `.autoDispose`**, which is how a hand-written
+provider says "kept alive" — the same property FEAT01 ruling 3 verified for
+`appDatabaseProvider` (`isAutoDispose` defaults to `false` in riverpod 3.4.2). The contrast
+with the shipped `categoryTreeProvider` / `budgetProvider`, which *are* `.autoDispose`, is
+deliberate: omitting it here is the whole of `keepAlive`. `SettingsNotifier` is a
+hand-written `NotifierProvider` exposed as `settingsProvider`, which keeps the class
+diagram's name exactly (the `categoriesProvider` precedent, same ruling).
+
+**The UC-11 multi-stream ruling does not apply here — checked, not assumed.**
+`decisions.md` 2026-08-22 replaces `StreamNotifier` with a hand-subscribing
+`Notifier<AsyncValue<…>>` **for a screen that reads more than one drift stream**.
+`CurrencyScreen` reads exactly one (message 3, `watchCurrency()`), and that same ruling
+records that "a `StreamNotifierProvider` wrapping a *single* drift stream closes cleanly".
+A plain `StreamProvider` over one stream is the read shape `riverpod.md` prescribes and the
+one the class diagram draws. No third provider shape is introduced; `appDatabaseProvider` is
+reused as-is.
 
 ### D8 — "Done" without a runnable app, and what the tests must assert
 
@@ -252,79 +340,98 @@ Tests to add, each named for the requirement it defends (`testing.md`):
   `testing.md` names explicitly: *"changing the currency after amounts exist"*.
 - **Widget** — the screen renders whatever `currencyProvider` is overridden to emit, via a
   `ProviderContainer`/`ProviderScope` override over an in-memory database.
+- **The guard, widget** *(added 2026-08-22, once D9 made it assertable)* — choosing the
+  currency **already stored** shows no notice and the stored value is unchanged; choosing
+  the **other** currency shows the notice, and acknowledging it leaves the other currency
+  stored. This is the test that pins D9's predicate, and it is deliberately paired with the
+  NFR-4 test above so that "warns" and "never refuses" are asserted by different tests
+  rather than one doing double duty.
 
 FR-18's edit/delete test does not apply: `Settings` is a single seeded row with no create
 and no delete on any artifact, and no screen offers either.
 
-### D9 — **OPEN. This is the halt.** What makes the warning in message 9 fire?
+### D9 — The notice fires when the chosen currency differs from the stored one
 
-*No citation exists.* The `opt` guard reads *[[an existing currency is being changed, not
-initial setup]]*, and nothing in the confirmed artifact set says how code decides that.
+*Cites:* the **owner's ruling of 2026-08-22** answering `pm/questions.md` Q1 — *"for q1 by
+change currency it just changes the prefix thats all"* — recorded permanently at
+`context/index/decisions.md`, 2026-08-22, *"Changing the currency changes the prefix and
+nothing else"*. Also `enums.md` (IDR exponent 0, USD exponent 2) for what "the prefix"
+covers, and the sequence diagram for the fragment this resolves.
 
-**What was checked, and what each failed to say:**
+**Revised 2026-08-22 — this entry previously read "OPEN. This is the halt."** and set out
+three predicates (A: chosen ≠ stored; B: any amount exists; C: always warn) plus a fourth
+option (a "setup complete" column), with the note that nothing in the confirmed artifact
+set selected between them. That derivation is preserved in `pm/questions.md` Q1 and is not
+repeated here. The owner's answer does not pick from the menu — **it dissolves the
+question**, by settling what changing the currency *does*.
 
-- **`docs/fr-nfr.md` FR-19** distinguishes "chosen at setup" from "*I can change it later,
-  and the app will not stop me*", and attaches the warning to *"the moment I would cause
-  it"* — the moment existing amounts would be re-labelled. It does not say how the app
-  recognises that moment.
-- **The workbook UC-14 row** repeats the same split — *"Owner opens the currency setting,
-  at first setup or any time after"* — without defining either side.
-- **`docs/enums.md`** and **`class-settings.drawio`** both say changing the value
-  re-labels and the app warns and proceeds. Neither gives a trigger.
-- **`docs/diagrams/erd.drawio`** and the built table
-  (`app/lib/src/settings/settings_table.dart`): `Settings` has exactly two columns,
-  `settings_id` and `currency`. **There is no "setup complete" marker and no timestamp**,
-  so the distinction the guard names cannot be read from the database at all.
-- **FEAT01 D6** seeds one `Settings` row at `Currency.IDR` on a fresh database. So a
-  currency value *always exists* from first launch — which means "an existing currency is
-  being changed" is, read literally, true on every launch, and the guard's own carve-out
-  has nothing to attach to.
-- **`decisions.md`** (2026-08-20, one app-level currency) and **`docs/statuses.md`** (no
-  status values for any entity, deliberately) — neither addresses it.
+**The guard resolves to `opt [the chosen currency differs from the stored one]`.**
 
-**Three predicates fit the guard, they behave differently, and nothing selects between
-them:**
+**Why that follows from the ruling, in the ruling's own terms:**
 
-| | Predicate | Cost / consequence |
-|---|---|---|
-| **A** | `chosen != currently stored` | Free — the screen already holds the current value from message 7. Warns once at first setup if the owner picks USD over the IDR seed, which the guard says it should not. |
-| **B** | any amount exists in the database | Truthful to the warning's own words, but needs `SettingsDao` to count rows in `Transactions` / `Accounts` / `BudgetPeriods`. That join is permitted (ISSUE-005 D1) but is **not on this sequence diagram** — adding it means widening the scope boundary `CLAUDE.md` makes absolute. |
-| **C** | always warn on any selection | Simplest; drops the `opt` guard entirely, i.e. skips part of the diagram, which `CLAUDE.md` forbids without going back to the owner. |
+- The change is a **re-label**. Stored `int` minor units are untouched, nothing is
+  converted, no rate applies, no other table is read or written, and the exponent moves the
+  *rendering*, not the storage (D6). So the moment worth announcing is exactly the moment
+  the prefix changes — which is precisely `chosen != stored`.
+- **The `opt`'s "not initial setup" carve-out has no referent.** It was written when the
+  change was imagined to be consequential. `decisions.md` 2026-08-22 states this directly,
+  and FEAT01 D6 is why it never had one anyway: a currency exists from first launch, so
+  "an existing currency is being changed" is literally true every time.
+- **The one cost the old option A carried is gone.** A was priced at "one wrong warning at
+  first setup if the owner picks USD over the IDR seed". Under the ruling that warning is
+  **true, not spurious** — the prefix really does change — so the cost was a cost of the
+  old reading, not of the predicate.
 
-All three obey NFR-4 — none refuses anything — so the fit criterion does not choose either.
-A fourth option, adding a "setup done" column, is a schema change: `schemaVersion` 2, a new
-snapshot and migration, plus the ERD, the class diagram and `map.yaml` going stale with it
-(`lessons.md` §8 — the last "just one column" cost twelve artifacts). Raised here rather
-than after the work, per `lessons.md` §7.
+**What the ruling rejects, recorded so it is not re-proposed:** a `Settings.setup_complete`
+column (option D — `schemaVersion` 2, a new snapshot and migration, plus the ERD,
+`class-settings.drawio` and `map.yaml` going stale with it, for a distinction that changes
+nothing — `lessons.md` §8), and counting amounts across `Transactions` / `Accounts` /
+`BudgetPeriods` (option B — a cross-module join bought for nothing, and not drawn on this
+sequence diagram).
 
-**This is why the issue is halted rather than planned around a default.** Q1 in
-`pm/questions.md`.
+**Nothing on the diagram is skipped.** The `opt` fragment stays, message 9 stays inside it,
+message 10 stays outside it and fires either way (D5). Only the guard's *text* is stale,
+and it is corrected at the as-built pass, not reinterpreted silently — `decisions.md`
+2026-08-22 says so explicitly. It is item 3 of the three as-built discrepancies under
+*Scope*.
+
+**What it costs to build: nothing.** The screen already holds the stored value from
+message 7, so the predicate is a comparison in the widget. No new query, no new column, no
+new message on the diagram, no schema change.
 
 ## Steps
 
-Executable in this order once Q1 is answered. **Step 6 is the only one that depends on the
-answer**; 1–5 and 7–11 are already fully determined and could run first if the owner
-prefers to unblock the chain in two passes.
+Executable in this order. Q1 is answered (2026-08-22) and **no step is blocked** — the
+two-pass split this section previously described is no longer needed.
 
-1. Write `settings_dao.dart`: `SettingsDao` as a drift `DatabaseAccessor` over
-   `AppDatabase` with `@DriftAccessor(tables: [Settings])`. `watchCurrency()` watches the
-   single settings row and maps it to `Currency`; `setCurrency(Currency)` updates that
-   row's `currency` column and returns `Future<void>`. Names per D2.
-2. Register the accessor on `AppDatabase` (`@DriftDatabase(… daos: [SettingsDao])`) and
-   re-run the generator. This is the only edit to `app_database.dart` — the schema does
-   not change, so `schemaVersion` stays 1 and no new migration snapshot is produced.
-3. Write `settings_providers.dart`: `currencyProvider` as a `@Riverpod(keepAlive: true)`
-   `StreamProvider` over `watchCurrency()`, and `SettingsNotifier` (exposed as
-   `settingsProvider`) whose `setCurrency()` calls the DAO and returns nothing to the
-   screen (D2, D7; `riverpod.md`).
+1. Write `settings_dao.dart`: `SettingsDao` as a **plain class composing `AppDatabase`**
+   (D1, amended) — *not* a `DatabaseAccessor`, no `@DriftAccessor`. `watchCurrency()`
+   watches the single settings row and maps it to `Currency`; `setCurrency(Currency)`
+   updates that row's `currency` column and returns `Future<void>`. Names per D2; the
+   shipped `CategoryDao` / `BudgetDao` are the worked precedent for the shape.
+2. **Do not touch `app_database.dart`.** There is no `daos: […]` entry to add (D1,
+   amended), the schema does not change, `schemaVersion` stays 1 and no new migration
+   snapshot is produced. This step is here rather than deleted so that a coder who expects
+   to register the DAO finds the reason it is not registered; if `app_database.g.dart` or
+   `drift_schemas/app_database/drift_schema_v1.json` changes at all in this issue, that is
+   a signal something went wrong, not progress.
+3. Write `settings_providers.dart`, both providers **hand-written**, not `@riverpod` (D7,
+   amended): `currencyProvider` as a `StreamProvider<Currency>` over `watchCurrency()`
+   declared **without `.autoDispose`** (that omission is the whole of `keepAlive`), and
+   `SettingsNotifier` exposed as `settingsProvider` via a `NotifierProvider`, whose
+   `setCurrency()` calls the DAO and returns nothing to the screen (D2, D7;
+   `riverpod.md`).
 4. Write `currency_screen.dart`: `CurrencyScreen` as a `ConsumerWidget` watching
    `currencyProvider`, rendering the two values with both always enabled (D4), and firing
    `ref.read(settingsProvider.notifier).setCurrency(chosen)` on selection — fire and
    forget, never rendering the write's return (D2, `riverpod.md`).
 5. Point `app.dart`'s `home` at `CurrencyScreen`, removing FEAT01's placeholder (D3).
-6. **Blocked on Q1.** Implement the message-9 warning with the predicate the owner rules
-   on, as a dialog that is acknowledged and proceeds (D5).
-7. Write the three tests in D8, each named for the requirement it defends.
+6. Implement the message-9 notice: shown when **the chosen currency differs from the
+   stored one** (D9), as a dialog that is acknowledged and proceeds, with no cancel (D5).
+   Message 10 — the `setCurrency()` call — sits outside the `opt` and therefore runs on
+   every selection, including one that shows no notice. Its wording says the amounts are
+   re-labelled, not converted (D6): the same integers, a different prefix.
+7. Write the four tests in D8, each named for the requirement it defends.
 8. Run all four D8 commands from `app/`. Fix, repeat until clean. Run them **before** the
    commit, not after — CI runs all five steps on every push since FEAT01 landed
    (`testing.md`), and a first red build on this commit is avoidable.
@@ -339,10 +446,17 @@ prefers to unblock the chain in two passes.
     that banner has already been caught being half true once.
 11. Close per `CLAUDE.md`'s checklist. Named explicitly because `lessons.md` §1 is about
     registers nobody remembers to update:
-    - **As-built pass** on `seq-uc14-choose-currency.drawio` — including the two
-      discrepancies listed under *Scope* above (`createInBackground` vs
-      `driftDatabase()`/`createBackgroundConnection`, and the Indonesian `pilih` label).
-      Re-export and look at the render; do not edit XML and call it done (`lessons.md` §3).
+    - **As-built pass** on `seq-uc14-choose-currency.drawio` — the **three** discrepancies
+      listed under *Scope* above: (1) `createInBackground` vs
+      `driftDatabase()` / `createBackgroundConnection`, which is **`pm/findings.md` F3**
+      repo-wide and is recorded against F3 rather than fixed in fourteen diagrams here;
+      (2) the Indonesian `pilih IDR / USD` label on message 8; (3) the `opt` guard text,
+      corrected to *[[the chosen currency differs from the stored one]]* per D9 and
+      `decisions.md` 2026-08-22. Re-export and look at the render; do not edit XML and call
+      it done (`lessons.md` §3).
+    - **`pm/findings.md` F8** — append that UC-14 re-pointed `home` and orphaned
+      `SetBudgetScreen`, the fourth screen in the chain (D3). Recorded against the existing
+      finding, not filed as a new one, and **not fixed**: a finding is not an issue.
     - **`context/index/map.yaml`** — a `UC-14 → app/lib/src/settings/` entry under `code:`,
       in the shape FEAT01's entry uses.
     - **`context/index/decisions.md`** — only if the toolchain forced a durable ruling, as
@@ -352,8 +466,9 @@ prefers to unblock the chain in two passes.
     - **`pm/tracker.yaml`** → Done with a one-line summary; **`pm/log.md`** → a dated
       entry plus the current-state block at its head; **`pm/active.json`** → the next
       issue.
-    - **`pm/questions.md`** → Q1 marked ANSWERED with a pointer to where the answer landed
-      permanently.
+    - **`pm/questions.md`** → Q1 is **already** marked ANSWERED with its pointer to
+      `decisions.md` (2026-08-22). Verify it, do not re-write it; `lessons.md` §1 is about
+      registers left half-updated, and this one is the register that listed the halt.
 
 ## Out of scope
 
@@ -366,6 +481,10 @@ prefers to unblock the chain in two passes.
   point of the enum, but the first screen that *renders money* is UC-01's balance sheet.
   Nothing on `CurrencyScreen` displays an amount, so a shared formatter here would be
   written against no caller. It belongs to UC01; flagging it so it is not forgotten.
+  **Sharpened by the 2026-08-22 ruling, which makes the formatter the *only* place the
+  currency has any effect at all** ("changes the prefix and nothing else") — that raises
+  its importance to UC-01 and does not move it into this issue, since this issue builds no
+  caller for it.
 - **A third currency.** `CNY` was asked about and is an enum value plus a migration
   (`enums.md`), deliberately a code change and not a user-editable table.
 - **Per-account or per-transaction currency.** Asked for and withdrawn 2026-08-20 with the
@@ -387,15 +506,18 @@ prefers to unblock the chain in two passes.
 - **Fixing `pm/findings.md` F1** (the table-existence test reads drift's declared
   `allTables` rather than the SQLite schema). Recorded, not fixed; a finding is not an
   issue, per the run's own rule.
-- **Editing the sequence diagram now.** The two discrepancies found above are reconciled in
-  the as-built pass at close (step 11), not mid-flight.
+- **Editing the sequence diagram now.** The three discrepancies found above — including
+  the `opt` guard text D9 resolves — are reconciled in the as-built pass at close (step 11),
+  not mid-flight. The main session owns `.drawio` edits.
+- **Fixing `pm/findings.md` F3 or F8.** F3 spans twelve diagrams this issue does not own;
+  F8 needs a navigation host no class diagram draws. Both are *recorded* at close (step 11)
+  and neither is fixed here.
 
 ## Open questions
 
-**Blocking — this issue cannot be built past step 5 until it is answered:**
-
-- **Q1 — what makes the currency-change warning fire?** Full statement, options and costs
-  in `pm/questions.md`. Summarised in D9 above.
+**None blocking.** Q1 — *what makes the currency-change warning fire?* — was the halt, and
+the owner answered it on 2026-08-22. It is decided in D9 and recorded at
+`context/index/decisions.md`; `pm/questions.md` Q1 is marked ANSWERED.
 
 **Not blocking:**
 
@@ -403,7 +525,11 @@ prefers to unblock the chain in two passes.
   right application id, and whether the `moneytracker` / `uangsaku` split should be
   resolved — are still unanswered and still do not gate anything here. This issue renames
   nothing.
-- Whether the sequence diagram's `pilih` label and its `createInBackground` note should be
-  corrected as part of this issue's as-built pass or left for the repo-wide sweep. Step 11
-  assumes the former, which is what `CLAUDE.md`'s close checklist says; raising it only
-  because the diagram is otherwise confirmed and untouched.
+- Whether the sequence diagram's `pilih` label should be corrected in this issue's
+  as-built pass or left for a repo-wide sweep. Step 11 assumes the former, which is what
+  `CLAUDE.md`'s close checklist says. The `createInBackground` note is no longer part of
+  this question — it is F3 and is repo-wide by its own filing.
+- **F8 is the standing one.** This issue makes the fourth screen-orphaning move and says so
+  rather than solving it. Whether a navigation host becomes its own issue before UC-01, or
+  after six more screens have each orphaned the last, is the owner's call and gates nothing
+  here.

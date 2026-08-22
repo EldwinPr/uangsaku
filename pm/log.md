@@ -19,7 +19,11 @@ unattended run is over.** The app compiles and its test suite is green (**31 tes
 modules have a DAO, a provider and a screen — UC-13's and UC-11's; UC14 was to have been
 first and is halted instead.
 
-**Active issue.** **None — nothing is runnable.** `UC11-set-budget` is **DONE 2026-08-22**
+**Active issue.** `UC02-add-account`, next in the chain. **The run resumed 2026-08-22** when
+the owner answered Q1 — changing the currency *"just changes the prefix thats all"* — which
+unhalted UC-14 and the seven issues behind it. `UC14-choose-currency` is **DONE 2026-08-22**
+(`SettingsDao`, `currencyProvider`, `SettingsNotifier`, `CurrencyScreen`; the notice fires
+only on a real change and never refuses). Previously read: nothing is runnable. `UC11-set-budget` is **DONE 2026-08-22**
 (`BudgetDao`, `BudgetNotifier`/`budgetProvider`, `Clock`, `SetBudgetScreen`, plus the budget
 group CRUD re-scoped from UC-13; no schema change, and `MaterialApp.home` now points at
 `SetBudgetScreen`). Every remaining row is behind UC14's halt.
@@ -655,3 +659,45 @@ whether this repeats before it earns a `lessons.md` entry of its own.
 reopened, no issue is created for a finding, and the halted UC-14 stays halted. What the
 owner picks up: `pm/questions.md` Q1 (which unblocks seven issues), and the five findings
 above that need a ruling rather than a change.
+
+---
+
+## 2026-08-22 — Q1 answered, UC-14 unhalted and DONE; the run resumes
+
+**[DECISION]** **The owner answered Q1: changing the currency "just changes the prefix thats
+all".** Recorded at `context/index/decisions.md`. It unhalted UC-14 and the seven issues
+behind it — eight of eleven implementation rows freed by one sentence, which is the number
+`pm/questions.md` asks for precisely so the cost of *not* answering is visible.
+
+**The answer dissolved the question rather than picking from its menu.** Q1 offered four
+options for what makes the warning fire. The ruling made two of them incoherent — a
+"setup complete" column and a cross-module count of existing amounts are both work bought to
+qualify a message about a prefix — and it removed the only objection to the third: option A
+would have warned on a first-ever IDR→USD switch, which the guard called wrong, but if the
+change is a prefix then saying so is **true**. So `opt [the chosen currency differs from the
+stored one]`. *A halt is worth its cost when the answer reshapes the options instead of
+selecting one.*
+
+**[STATUS]** **`UC14-choose-currency` is DONE.** 37 tests green, no schema change
+(`drift_schema_v1.json` byte-identical). Two tests carry the ruling: choosing the
+already-stored currency shows **no** dialog, and an `Account`'s `opening_amount` is unchanged
+after a currency change — the re-labels-never-converts rule made checkable rather than
+merely asserted in prose.
+
+**[DISCOVERY]** **The plan was a day stale and the planner caught it.** UC-14 was planned
+before UC-13 and UC-11 shipped, so **D1 and D7 had to be amended** when the halt lifted: D1
+registered the DAO under `@DriftDatabase(daos: […])` and D7 used `@Riverpod(keepAlive: true)`
+with a generated `Notifier` — neither is buildable under the rulings those two issues forced.
+Both were amended in place with what they used to say. *A halted plan keeps ageing while it
+waits, and the rest of the repo does not stop moving; re-checking every decision against what
+shipped during the halt is part of lifting it, not an optional courtesy.*
+
+**[STATUS]** **F8 confirmed a second time, as predicted.** UC-14 took `MaterialApp.home`, so
+`SetBudgetScreen` is now orphaned alongside `CategoryManagerScreen` — two dead screens, one
+reachable. UC-14's plan named the cost in advance instead of rediscovering it, which is the
+right handling and does not stop the count rising. **Five screens still queued.** F3 narrowed
+to eleven diagrams as UC-14 corrected its own isolate note.
+
+**[TODO]** Next: `UC02-add-account`, which lands the `Transactions` table's first write path
+as well as `Accounts` — FR-3's opening amount is an `adjustment` transaction per ERD D1, a
+dependency the issue's name hides.

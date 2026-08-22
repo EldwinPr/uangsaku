@@ -196,7 +196,7 @@ issues:
   - id: UC14-choose-currency
     slug: choose-currency
     title: Choose the app currency
-    status: TODO
+    status: DONE
     plan: pm/issues/uc14-choose-currency/plan.md
     depends_on: [FEAT01-foundation]
     traces_to: [UC-14]
@@ -212,6 +212,17 @@ issues:
       -> table chain end to end. If the architecture on the class diagrams is wrong, this is
       the cheapest place to find out. Changing the currency warns and proceeds, never
       refuses (NFR-4, zero refusals) - that warning is a message, not a branch that ends.
+      DONE 2026-08-22: SettingsDao, currencyProvider, SettingsNotifier/settingsProvider and
+      CurrencyScreen; 37 tests green, no schema change (drift_schema_v1.json byte-identical).
+      The notice fires only when the chosen currency differs from the stored one (D9, the
+      owner's Q1 ruling) and setCurrency runs unconditionally afterwards, matching message 10
+      sitting outside the opt box - proven by a test that chooses the already-stored value
+      and asserts no dialog. A second test asserts an Account's opening_amount is unchanged
+      after a currency change, which is the re-labels-never-converts ruling made checkable.
+      As-built pass corrected three things on seq-uc14: the opt guard now states the resolved
+      predicate, message 8's Indonesian "pilih IDR / USD" is English, and the stale isolate
+      note is fixed (F3 narrows to eleven). D3 gives home to CurrencyScreen, orphaning
+      SetBudgetScreen - the F8 pattern, recorded not fixed.
 
   - id: UC02-add-account
     slug: add-account
