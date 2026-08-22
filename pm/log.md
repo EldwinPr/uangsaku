@@ -15,19 +15,16 @@ before starting work.
 ## Current state — 2026-08-22
 
 **Phase.** Documentation complete; **implementation under way, mid-run.** The app compiles
-and its test suite is green (**56 tests**). Five modules/screens built end to end — UC-13's,
-UC-11's, UC-14's, UC-02's and UC-01's; `home` is now `BalanceSheetScreen` **permanently**
-(FR-1) and four earlier screens are orphaned (F8).
+and its test suite is green (**63 tests**). Six modules/screens built end to end — UC-13's,
+UC-11's, UC-14's, UC-02's, UC-01's and UC-10's; `home` is `BalanceSheetScreen` permanently
+(FR-1) and five screens are orphaned or unreachable (F8).
 
-**Active issue.** `UC10-debt-progress`, next runnable in tracker order. Two issues are
-HALTED at the planning gate and stay halted for the run: `UC02B-edit-account` (Q3 —
-deleted-account transaction semantics; its sequence diagram also doesn't exist yet) and
-`UC03-adjust-account` (Q4 — adjustment transaction side/sign encoding). `UC01-balance-sheet`
-is **DONE 2026-08-22**: the four FR-1 figures via the app's first cross-module SQL join,
-written inside `AccountDao` per component-overview D1; figures are sides-based sums that do
-not depend on how Q4 is answered (pinned by a dual-encoding test). Previously done this
-run: `UC02-add-account`. Before: FEAT01, UC13-categories, UC11-set-budget,
-UC14-choose-currency. Remaining runnable chain: UC10 → UC04 → UC09, UC12.
+**Active issue.** `UC04-record-money-movement` — the deliberate five-use-cases-one-form
+exception, now that both its dependencies (UC01, UC13) are Done. Two issues are HALTED at
+the planning gate for the run: `UC02B-edit-account` (Q3) and `UC03-adjust-account` (Q4).
+This run has closed `UC02-add-account`, `UC01-balance-sheet` and `UC10-debt-progress`;
+before them FEAT01, UC13-categories, UC11-set-budget and UC14-choose-currency. Remaining
+after UC04: UC09-review-and-correct and UC12-budget-consumption.
 
 **Pushed.** CI has run. The `app` job failed once on the scaffold and the guard was fixed
 rather than the commit reverted — see the entry below.
@@ -760,3 +757,32 @@ and anything not carried over by hand is silently gone.*
 **[TODO]** Next: `UC10-debt-progress` - FR-11's paid/remaining for one RECEIVABLE or PAYABLE
 account plus markSettled(). After it: UC04, then UC09 and UC12. UC02B and UC03 stay halted
 on Q3/Q4 for the rest of the run unless the owner answers.
+
+---
+
+## 2026-08-23 — UC10-debt-progress closes; the repayment filter keeps Q4 out
+
+**[STATUS]** **`UC10-debt-progress` is DONE.** FR-11's two figures plus the settle tick:
+`watchDebtProgress()` and `setSettled()` in `AccountDao`, `markSettled()` returning nothing,
+`debtProgressProvider` as a hand-written autoDispose.family, `DebtDetailScreen`. 63 tests
+green, no schema change, settle always proceeds (NFR-4 - idempotent update rather than any
+guard). The planning question this issue could have inherited from Q4 dissolved by citation:
+**paid sums only `kind='repayment'` rows**, and enums.md fixes that row independently of how
+Q4 settles adjustment encoding - so a dual-encoding test pins paid unchanged under both,
+and remaining is UC-01's sides-based balance shown via ABS. AUTO-CONFIRMED where UC03
+halts: same open question, different exposure.
+
+**[DISCOVERY]** **Repayment direction is group-dependent in this schema.** Off a RECEIVABLE
+the repayment sits on the from side (balance falls toward zero); into a PAYABLE it sits on
+the to side. The DAO's "touches either side" predicate handles both; the first test fixtures
+had it backwards and failed loudly against a correct query. Worth remembering when UC-04's
+repayment form lands.
+
+**[STATUS]** As-built pass on seq-uc10 added the read-path subscription messages the code
+has and the diagram lacked (the F2 precedent), corrected the isolate note (F3 narrows to
+nine), renumbered to 12 messages with autonumber, render inspected at full size.
+DebtDetailScreen ships unreachable from birth - F8's fifth orphan and the first never
+reachable at any point; UC09's list would have been its natural host.
+
+**[TODO]** Next: `UC04-record-money-movement` - five use cases, one form, one write path;
+both dependencies Done. After it UC09 and UC12 unblock.

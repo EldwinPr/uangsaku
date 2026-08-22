@@ -329,7 +329,7 @@ issues:
   - id: UC10-debt-progress
     slug: debt-progress
     title: See how much of a debt is paid
-    status: TODO
+    status: DONE
     plan: pm/issues/uc10-debt-progress/plan.md
     depends_on: [UC02-add-account]
     traces_to: [UC-10]
@@ -338,6 +338,16 @@ issues:
       settled. `settled` is a boolean flag and not a lifecycle (docs/statuses.md), and "how
       much is paid" is derived by summing transactions rather than stored - a third value
       here would be a stored duplicate of a derivable number, which NFR-2 forbids.
+      DONE 2026-08-22: watchDebtProgress() and setSettled() in AccountDao (Clock injected,
+      BudgetDao pattern), markSettled() on AccountsNotifier returning nothing,
+      debtProgressProvider as a hand-written autoDispose.family, DebtDetailScreen. paid =
+      SUM(kind='repayment' touching the account) - the repayment filter severs Q4's only
+      channel into the figure, so this issue was AUTO-CONFIRMED while UC03 halts on Q4,
+      pinned by a dual-encoding test. remaining = ABS(balance), no kind filter, no spending
+      predicate. Settle always proceeds (NFR-4; idempotent). DebtDetailScreen ships
+      unreachable - F8's fifth orphan and the first never reachable at all. As-built pass
+      added the read-path subscription messages to seq-uc10 and corrected its isolate note
+      (F3 narrows to nine); 12 messages numbered. 63 tests green, no schema change.
 
   - id: UC13-categories
     slug: categories

@@ -44,6 +44,17 @@ class AccountsNotifier extends Notifier<void> {
       ),
     );
   }
+
+  /// Message 3 on `seq-uc10-debt-progress.drawio`: `markSettled(accountId)`.
+  ///
+  /// Forwards to [AccountDao.setSettled] and returns nothing meaningful to
+  /// the screen — the tick arrives on the read path as
+  /// [debtProgressProvider] re-emitting with `settled: true` (message 7,
+  /// `riverpod.md`, the read/write asymmetry). No arithmetic check, no
+  /// refusal path — NFR-4 makes settling the owner's call at any moment.
+  Future<void> markSettled({required int accountId}) async {
+    await _dao.setSettled(accountId);
+  }
 }
 
 final accountsProvider = NotifierProvider<AccountsNotifier, void>(
@@ -76,4 +87,24 @@ final accountBalancesProvider =
     StreamProvider.autoDispose<List<AccountBalance>>((ref) {
       final database = ref.watch(appDatabaseProvider);
       return AccountDao(database).watchBalances();
+    });
+
+/// UC-10's two figures for one debt (FR-11), messages 2 and 7 on
+/// `seq-uc10-debt-progress.drawio`: wraps exactly one drift stream —
+/// `AccountDao.watchDebtProgress(accountId)`'s — and nothing else. Family-
+/// keyed by the account id being viewed, as `class-accounts.drawio` labels
+/// it (*StreamProvider.family · UC-10*); the family parameter is the same
+/// id `markSettled(accountId)` / `setSettled(accountId)` take.
+///
+/// Hand-written single-stream `StreamProvider.autoDispose.family`, not
+/// `@riverpod`, for the two recorded reasons (`riverpod.md`, verified
+/// UC-13/UC-14): the generator throws `InvalidTypeException` on any provider
+/// typed over a drift row class — [DebtProgress]'s fields are plain `int`s,
+/// but codegen would also rename this away from the diagram's spelling — and
+/// the UC-11 ruling bans multi-stream merging shapes, which does not bite:
+/// this is one drift stream wrapped once.
+final debtProgressProvider = StreamProvider.autoDispose
+    .family<DebtProgress, int>((ref, accountId) {
+      final database = ref.watch(appDatabaseProvider);
+      return AccountDao(database).watchDebtProgress(accountId);
     });

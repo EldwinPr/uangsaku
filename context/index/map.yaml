@@ -106,6 +106,22 @@ code:
       - app/test/accounts/balance_queries_test.dart
       - app/test/accounts/balance_sheet_screen_test.dart
 
+  # UC10-debt-progress, DONE 2026-08-22. FR-11's paid / remaining for one debt plus
+  # markSettled(). paid = SUM(kind='repayment' rows touching the account) - the
+  # repayment filter is also what severs Q4's only channel into this figure;
+  # remaining = ABS(sides-based balance) with no kind filter, UC-01's expression shown
+  # as a magnitude. settled is a boolean flag + clock-stamped date, NOT a lifecycle
+  # (docs/statuses.md); no un-settle exists on any diagram. Join inside AccountDao per
+  # component-overview D1. DebtDetailScreen ships unreachable (no navigation host) -
+  # F8's fifth orphan and the first never reachable at any point.
+  UC-10:
+    dao:       app/lib/src/accounts/account_dao.dart          # + watchDebtProgress/setSettled, DebtProgress; Clock injected
+    providers: app/lib/src/accounts/accounts_providers.dart   # + debtProgressProvider (autoDispose.family), AccountsNotifier.markSettled
+    screen:    app/lib/src/accounts/debt_detail_screen.dart   # DebtDetailScreen
+    tests:
+      - app/test/accounts/debt_progress_test.dart
+      - app/test/accounts/debt_detail_screen_test.dart
+
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
 # each other in BOTH directions (balances need Transactions; the record screen needs

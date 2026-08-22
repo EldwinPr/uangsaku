@@ -119,10 +119,10 @@ when this was filed.
 **Narrowed 2026-08-22:** `seq-uc13-categories.drawio` corrected as part of F2's as-built
 pass, because UC-13 owns that diagram.
 **Narrowed again 2026-08-22:** `seq-uc11-set-budget.drawio` in UC-11's as-built pass, then
-`seq-uc14-choose-currency.drawio` in UC-14's, then `seq-uc02-add-account.drawio` in UC-02's
-(note now reads *"drift_flutter's driftDatabase() to createBackgroundConnection"*, split
-across two lines per F6).
-**Ten remain**, one per unbuilt issue, each to be corrected by its own as-built pass at
+`seq-uc14-choose-currency.drawio` in UC-14's, then `seq-uc02-add-account.drawio` and
+`seq-uc01-balance-sheet.drawio` at their closes, then `seq-uc10-debt-progress.drawio` in
+UC-10's.
+**Nine remain**, one per unbuilt issue, each to be corrected by its own as-built pass at
 close. They stay filed rather than fixed — the run does not repair findings, and each
 belongs to an issue that has not been built yet. Anything still stale when the backlog
 finishes is a real leftover; anything fixed before then costs nothing.
@@ -240,9 +240,16 @@ question is not going away and each remaining issue adds a screen to it.
 no planned issue draws a screen meant to displace it). `AccountFormScreen` is the **fourth
 orphan**, after CategoryManager, SetBudget and Currency. The re-pointings are over; what
 remains is four built features with no route, reachable only by tests.
+**Confirmed again 2026-08-22, UC10 — a new form of the same:** `DebtDetailScreen` never
+gets a route at all — it is reachable from nothing from birth, being a family-keyed detail
+screen with no list screen to navigate from and no navigation host to host either. **Fifth
+orphan**, and unlike the other four it was never reachable at any point. Remaining screen
+issues (UC04's record form, UC09's list, UC12's consumption view) will each add another
+unless the navigation ruling lands first — and UC09's list would have been the natural
+host for this one.
 **Confidence:** certain — `grep` for `CategoryManagerScreen` outside its own file and tests
-returns only doc comments; the same is true of `SetBudgetScreen`, `CurrencyScreen` and now
-`AccountFormScreen`.
+returns only doc comments; the same is true of `SetBudgetScreen`, `CurrencyScreen`,
+`AccountFormScreen` and now `DebtDetailScreen`.
 
 ## F9 — the app carries a codegen toolchain that three issues have proved it cannot use   [OPEN]
 **Scope:** APP          **Severity:** risk
