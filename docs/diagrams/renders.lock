@@ -8,7 +8,7 @@ docs/diagrams/seq-uc01-balance-sheet.drawio:
   source_sha: f0d260edb38ec721497a52a888d4365a2481b8c476aedf3a0dc91c12d03859e0
 docs/diagrams/seq-uc02-add-account.drawio:
   render: seq-uc02-add-account.png
-  source_sha: 3a5c3a5d667e27bc68edf4e4b343d11deb30464e68a90e19f02babd2e88f6c12
+  source_sha: 1d4515f2079db2323de9f14510ceadab9778c8f747f9f8da4f79c067028822c4
 docs/diagrams/seq-uc03-adjust-account.drawio:
   render: seq-uc03-adjust-account.png
   source_sha: 4dbac13928d6d1cc61556422e3cc446c28447c94f8075e350c5d2bac4da432ab

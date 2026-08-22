@@ -12,32 +12,23 @@ before starting work.
 
 ---
 
-## Current state — 2026-08-21
+## Current state — 2026-08-22
 
-**Phase.** Documentation complete; **implementation under way, and phase 1 of the
-unattended run is over.** The app compiles and its test suite is green (**31 tests**). Two
-modules have a DAO, a provider and a screen — UC-13's and UC-11's; UC14 was to have been
-first and is halted instead.
+**Phase.** Documentation complete; **implementation under way, mid-run.** The app compiles
+and its test suite is green (**46 tests**). Four modules have a DAO, a provider and a screen
+— UC-13's, UC-11's, UC-14's and now UC-02's.
 
-**Active issue.** `UC02-add-account`, next in the chain. **The run resumed 2026-08-22** when
-the owner answered Q1 — changing the currency *"just changes the prefix thats all"* — which
-unhalted UC-14 and the seven issues behind it. `UC14-choose-currency` is **DONE 2026-08-22**
-(`SettingsDao`, `currencyProvider`, `SettingsNotifier`, `CurrencyScreen`; the notice fires
-only on a real change and never refuses). Previously read: nothing is runnable. `UC11-set-budget` is **DONE 2026-08-22**
-(`BudgetDao`, `BudgetNotifier`/`budgetProvider`, `Clock`, `SetBudgetScreen`, plus the budget
-group CRUD re-scoped from UC-13; no schema change, and `MaterialApp.home` now points at
-`SetBudgetScreen`). Every remaining row is behind UC14's halt.
-`UC14-choose-currency` is **HALTED** at the planning gate (`pm/questions.md` Q1 — the guard
-on `seq-uc14`'s `opt` fragment cites no confirmed artifact), which blocks **seven** issues
-behind it: UC02, UC03, UC01, UC10, UC04, UC09 and UC12. `UC13-categories` is **DONE
-2026-08-21** — `CategoryDao`, `categoryTreeProvider`, `CategoriesNotifier`,
-`CategoryManagerScreen`, no schema change, and `MaterialApp.home` now points at that screen
-temporarily (UC-13 D3; FR-1 gives the spot to UC-01). `FEAT01-foundation` is
-**DONE 2026-08-21**: all twelve steps, reviewed and committed by `issue-qa`. `app/` now
-holds the seven ERD tables at `schemaVersion 1` (`app/lib/src/{accounts,transactions,
-budgeting,settings}`), `AppDatabase` on a background isolate, the committed v1 schema
-snapshot, one seeded `Settings` row at `IDR`, and four passing tests. Package `uangsaku`,
-`applicationId com.eldwinpr.uangsaku`, android + ios.
+**Active issue.** `UC02B-edit-account`, next in tracker order but **blocked on its own
+sequence diagram** (none anywhere in docs/diagrams/ draws an account rename/edit/delete)
+and on the still-unanswered ruling about what happens to the transactions of a deleted
+account (`decisions.md` 2026-08-22 records that the question belongs to UC02B). The run
+resumed 2026-08-22 when the owner answered Q1, then answered Q2 the same day:
+`UC02-add-account` is **DONE 2026-08-22** (`AccountDao` with insert only,
+`AccountsNotifier`/`accountsProvider`, `AccountFormScreen`; create-only by the Q2 ruling,
+no schema change, opening amount stored signed as entered, no transaction row ever written;
+46 tests green; home re-pointed at `AccountFormScreen`). Previously done: FEAT01,
+UC13-categories, UC11-set-budget, UC14-choose-currency. Remaining chain behind UC02B's
+blockers: UC03, UC01, UC10 → UC04 → UC09, UC12.
 
 **Pushed.** CI has run. The `app` job failed once on the scaffold and the guard was fixed
 rather than the commit reverted — see the entry below.
@@ -72,9 +63,10 @@ with `build_runner` gated separately on the dependency actually being present. A
 now run against real code and were green at FEAT01's commit — **so a red `app` job means a
 real regression**, not an artefact of the project being half-built.
 
-**Audit.** `python audit.py` — green at 13 passed / 0 warnings / 0 failures. Proves the
-artifacts agree with each other; proves nothing about whether they are right
-(`lessons.md` §12).
+**Audit.** `python audit.py` — green at 14 passed / 0 warnings / 0 failures (taught the
+B-suffix issue scheme on 2026-08-22 after Q2 created UC02B as a second issue tracing to
+UC-02). Proves the artifacts agree with each other; proves nothing about whether they are
+right (`lessons.md` §12).
 
 **Open rulings:** none. Both items that stood here were answered 2026-08-21 — budget group
 CRUD moved from UC-13 to UC-11, and `note` appears on every recording screen. Recorded in
@@ -82,8 +74,10 @@ CRUD moved from UC-13 to UC-11, and `note` appears on every recording screen. Re
 run.
 
 **Open, non-blocking:** one `fr-nfr.md` §4 item — where the data lives, narrowed to
-phone-only but not closed. **Thirteen findings on file** (`pm/findings.md` F1–F13), of which
-F8–F13 come from the two end-of-run sweeps. **Four are resolved**: F2, F6, F13 fixed and
+phone-only but not closed. **Fourteen findings on file** (`pm/findings.md` F1–F14), of
+which F8–F13 come from the two end-of-run sweeps of the previous run and F14 was filed with
+the Q2 ruling (Account create-only until UC02B lands; FR-18 visibly unsatisfied for it).
+**Four are resolved**: F2, F6, F13 fixed and
 F10 accepted (the clean-checkout verification, recorded as a negative result). F3 narrowed
 twice, fourteen diagrams to **twelve**. **Eight stand, recorded and not fixed** — the ones
 that need an owner ruling are **F7** (a non-numeric budget amount is silently saved as
@@ -701,3 +695,41 @@ to eleven diagrams as UC-14 corrected its own isolate note.
 **[TODO]** Next: `UC02-add-account`, which lands the `Transactions` table's first write path
 as well as `Accounts` — FR-3's opening amount is an `adjustment` transaction per ERD D1, a
 dependency the issue's name hides.
+
+---
+
+## 2026-08-22 — UC02-add-account closes; Q2 answered; audit learns the B-suffix scheme
+
+**[DECISION]** **The owner answered Q2: Option A — UC-02 is create-only.** Account rename,
+edit and delete become `UC02B-edit-account`, a second tracked issue sharing the UC-02 code
+under a B suffix (a shape the tracker's ID scheme did not anticipate; the workbook calls
+those flows alternate flows of UC-02, but seq-uc02 draws create only, and CLAUDE.md makes
+the diagram the scope). Recorded at `context/index/decisions.md` (2026-08-22, *Account CRUD
+splits from UC-02*); F14 filed so FR-18's gap for Account is visibly tracked rather than
+accidental. The delete-FK question — what happens to a deleted account's transactions —
+travels with UC02B unanswered.
+
+**[STATUS]** **`UC02-add-account` is DONE.** `AccountDao` (insert only),
+`AccountsNotifier`/`accountsProvider`, `AccountFormScreen`; home re-pointed from
+`CurrencyScreen`. 46 tests green, no schema change (`drift_schema_v1.json`
+byte-identical). The issue's own tracker row had claimed this issue would land the
+Transactions write path — four artifacts refute it, and tests now pin the truth: inserting
+an account writes **no** transaction row, zero or non-zero opening amount alike. The
+superseding [TODO] above ("lands the Transactions table's first write path") is wrong as
+written and stands as history; seq-uc03 owns that write path. As-built pass corrected the
+diagram's isolate note (F3 narrows to ten) and confirmed messages 7-8 are UC-01's read
+path, correctly drawn ahead of build order (plan D9). F8 confirmed a third time:
+`CurrencyScreen` joins two other dead screens. F7 now covers two screens.
+
+**[DISCOVERY]** **audit.py assumed one implementation issue per use case, and Q2 broke
+it.** Three failures on the Q2 commit: the one-owner rule, an id-must-map-1:1 rule that read
+UC02B as implying "UC-02B", and a last-wins dict comprehension that silently reassigned
+seq-uc02's render to the UC02B folder. All three were the checker lagging a legitimate
+owner ruling, not defects in the artifacts; audit.py now knows B-suffixed issues share a
+UC, keeps the render with the primary owner, and reports the split as information. CI ran
+red exactly once, on the intermediate commit, and green from the fix onward.
+
+**[TODO]** Next: `UC02B-edit-account` sits first in tracker order but is blocked twice — no
+sequence diagram covers account rename/edit/delete anywhere, and the deleted-account
+transactions ruling is unanswered. If those do not clear, the run proceeds to
+UC03-adjust-account, which has both its diagram and its scope already settled.

@@ -116,14 +116,16 @@ fourteen, i.e. it is a repo-wide nit and not one issue's defect. Fixing it insid
 would have meant editing thirteen diagrams UC-13 does not own, so it is filed instead.
 **Confidence:** certain — `grep -rl createInBackground docs/diagrams/` returned all fourteen
 when this was filed.
-**Narrowed again 2026-08-22:** `seq-uc11-set-budget.drawio` corrected in UC-11's as-built
-pass, then `seq-uc14-choose-currency.drawio` in UC-14's. **Eleven remain**, one per
-unbuilt issue, each to be corrected by its own as-built pass.
-**Narrowed 2026-08-22:** `seq-uc13-categories.drawio` was corrected as part of F2's as-built
-pass, because UC-13 owns that diagram. **Thirteen remain**, and they stay filed rather than
-fixed — the run does not repair findings, and each belongs to an issue that has not been
-built yet, so each will be corrected by its own as-built pass at close. Anything still stale
-when the backlog finishes is a real leftover; anything fixed before then costs nothing.
+**Narrowed 2026-08-22:** `seq-uc13-categories.drawio` corrected as part of F2's as-built
+pass, because UC-13 owns that diagram.
+**Narrowed again 2026-08-22:** `seq-uc11-set-budget.drawio` in UC-11's as-built pass, then
+`seq-uc14-choose-currency.drawio` in UC-14's, then `seq-uc02-add-account.drawio` in UC-02's
+(note now reads *"drift_flutter's driftDatabase() to createBackgroundConnection"*, split
+across two lines per F6).
+**Ten remain**, one per unbuilt issue, each to be corrected by its own as-built pass at
+close. They stay filed rather than fixed — the run does not repair findings, and each
+belongs to an issue that has not been built yet. Anything still stale when the backlog
+finishes is a real leftover; anything fixed before then costs nothing.
 
 ## F4 — the NFR-4 enabled-controls test can pass vacuously for the rename control   [OPEN]
 **Scope:** APP          **Severity:** risk
@@ -195,6 +197,10 @@ amount, treat empty as "no budget set" and delete the row, or write the zero and
 **That is the owner's call**, which is why this is filed rather than fixed.
 **Confidence:** certain that it happens; worth checking whether it matters, since the same
 parse will be needed by every amount field UC-04 introduces.
+**Confirmed again 2026-08-22, UC02:** `AccountFormScreen` ships the same
+`int.tryParse(...) ?? 0` (plan D7, following the shipped precedent deliberately rather than
+inventing a validation rule NFR-4 would forbid). **The owner's ruling now covers two
+screens**, and UC04's record form will make it the third unless it lands first.
 
 ---
 
@@ -224,9 +230,13 @@ diagram, so no issue can invent one without a ruling.
 **Confirmed again 2026-08-22:** UC-14 D3 re-pointed `home` at `CurrencyScreen`, so
 **`SetBudgetScreen` is now orphaned too** — two dead screens, one reachable, exactly as this
 entry predicted. UC-14's plan named the cost in advance rather than rediscovering it, which
-is the right handling, but it does not stop the count rising. Five screens remain queued.
+is the right handling, but it does not stop the count rising.
+**Confirmed again 2026-08-22, UC02:** `home` re-pointed at `AccountFormScreen`, orphaning
+`CurrencyScreen` — **three dead screens, one reachable**, five screen-building issues still
+queued (UC01, UC03, UC04, UC09, UC12). The pattern is now three-for-three; the navigation
+question is not going away and each remaining issue adds a screen to it.
 **Confidence:** certain — `grep` for `CategoryManagerScreen` outside its own file and tests
-returns only doc comments; the same is now true of `SetBudgetScreen`.
+returns only doc comments; the same is true of `SetBudgetScreen` and now `CurrencyScreen`.
 
 ## F9 — the app carries a codegen toolchain that three issues have proved it cannot use   [OPEN]
 **Scope:** APP          **Severity:** risk

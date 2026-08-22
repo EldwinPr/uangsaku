@@ -227,7 +227,7 @@ issues:
   - id: UC02-add-account
     slug: add-account
     title: Set up a place money lives
-    status: TODO
+    status: DONE
     plan: pm/issues/uc02-add-account/plan.md
     depends_on: [UC14-choose-currency]
     traces_to: [UC-02]
@@ -246,6 +246,14 @@ issues:
       built from it.
       SCOPE SETTLED 2026-08-22 (pm/questions.md Q2): create only, as the diagram draws.
       Renaming, editing and deleting an account are UC02B-edit-account.
+      DONE 2026-08-22: AccountDao (insert only), AccountsNotifier/accountsProvider and
+      AccountFormScreen; home re-pointed from CurrencyScreen (F8 grows to three dead
+      screens). No schema change (drift_schema_v1.json byte-identical); the opening amount
+      is the column, stored signed as entered with no group-based negation, and tests pin
+      that no transaction row is ever written for zero or non-zero alike. Save always
+      enabled, all three groups selectable (NFR-4). 46 tests green. As-built pass corrected
+      the isolate note on seq-uc02 (F3 narrows to ten); messages 7-8 remain UC-01's read
+      path, unbuilt by design (plan D9).
 
   - id: UC02B-edit-account
     slug: edit-account

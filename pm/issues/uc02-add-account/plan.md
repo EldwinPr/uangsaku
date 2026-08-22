@@ -1,19 +1,23 @@
 # UC02-add-account — Set up a place money lives
 
-**Status:** **HALTED 2026-08-22 — awaiting owner ruling.** Nine of the ten decisions
-below are derived and cited and stand as written. **D10 cannot be derived from any
-confirmed artifact**, and it changes what files this issue creates and whether it needs a
-schema migration, so it is not deferrable to the close. The question is
-`pm/questions.md` **Q2**. Everything already worked out is kept in place so the research
-is not repeated when the ruling lands; on an answer this file becomes `AUTO-CONFIRMED`
-(or `PROPOSED`, if the owner is present) with D10 filled in and the steps unchanged.
+**Status:** DONE 2026-08-22. Planned under unattended mode (AUTO-CONFIRMED the same
+day): halted at D10 (`pm/questions.md` **Q2**), then the owner answered **Option A** — this
+issue is create-only, and account rename / edit / delete moves to the new tracked issue
+`UC02B-edit-account`. Every decision below cites an already-confirmed artifact: D1–D9 cite
+their diagrams, workbook rows, FRs and shipped code; D10 cites the owner's own Q2 answer as
+recorded at `context/index/decisions.md` (2026-08-22, *Account CRUD splits from UC-02*) and
+`pm/tracker.yaml`'s UC02B row. Built to D1's three files plus the one `app.dart` line;
+46 tests green; no schema change (`drift_schema_v1.json` byte-identical). The as-built pass
+corrected this diagram's isolate note only — messages 7–8 are UC-01's read path and were
+correctly drawn ahead of the build order (D9).
 
 **Traces to:** UC-02 (`docs/workbook.xlsx` → `UC FR`), FR-3, FR-4, FR-5.
 **Depends on:** `UC14-choose-currency` — **DONE** 2026-08-22 in `pm/tracker.yaml`.
 **Preflight:** passes. The one declared dependency is Done; `FEAT01-foundation`,
 `UC13-categories` and `UC11-set-budget` are also Done. No other issue is active, and no
 Done issue has written anything under `app/lib/src/accounts/` except
-`accounts_table.dart` (FEAT01). The halt is a content halt, not a preflight failure.
+`accounts_table.dart` (FEAT01). The halt was a content halt, not a preflight failure;
+the new `UC02B-edit-account` row depends on this issue, so there is no scope overlap.
 
 ---
 
@@ -85,16 +89,20 @@ session owns diagram edits):
    producers exists until UC-01 (D9). The diagram is right about the architecture and
    ahead of the build order.
 3. **The diagram draws no rename / edit / delete flow**, while the workbook's UC-02 row
-   says those are alternate flows of this very use case. That is the halt — see below.
+   says those are alternate flows of this very use case. **Resolved by Q2** (see below):
+   the diagram was a boundary, not an omission — the flows belong to `UC02B-edit-account`.
 
 ---
 
-## The halt
+## The halt — resolved 2026-08-22 (Q2, Option A)
 
-**One decision cannot be cited, and it is D10: does this issue build renaming, editing
-and deleting an account?**
+This issue halted 2026-08-22 because one decision could not be cited: **does this issue
+build renaming, editing and deleting an account?** The owner answered
+**`pm/questions.md` Q2: Option A — create-only**, recorded at
+`context/index/decisions.md` (2026-08-22, *Account CRUD splits from UC-02*) with the
+`UC02B-edit-account` row added to `pm/tracker.yaml`. What had blocked:
 
-Two owner-confirmed artifacts disagree, and this is not a case where one is obviously
+Two owner-confirmed artifacts disagreed, and this was not a case where one is obviously
 stale prose:
 
 - **`docs/workbook.xlsx`, UC-02 `Deskripsi`, verbatim:** *"Alternate flows: renaming an
@@ -142,14 +150,23 @@ an `Account` that violates FR-18 with no issue in the backlog that would ever fi
 That is the entire remaining backlog: the other chain (UC13, UC11, UC14) is already Done,
 so nothing else can run while this is open.
 
-Question filed as **Q2** in `pm/questions.md`.
+Question filed as **Q2** in `pm/questions.md`; answered **Option A** the same day.
+
+**What the ruling changes here, and what it does not.** The FR-18 gap is real and
+accepted: until `UC02B-edit-account` lands, `Account` is create-only and FR-18 is
+unsatisfied for it — filed as `pm/findings.md` **F14**, on the record, not an oversight.
+The workbook's UC-02 `Deskripsi` still promises the alternate flows; correcting it is
+UC02B's close business (its tracker row says so), not this issue's. The delete-FK
+question — what happens to a deleted account's transactions — was **not** answered by
+Q2; it moves to `UC02B-edit-account` with its own sequence-diagram prerequisite. None of
+that touches this issue: it stays exactly D1's three files plus the `app.dart` line,
+no schema change, no `AccountDao.delete()`.
 
 ---
 
 ## Decisions
 
-D1–D9 are derived and cited; they do not depend on the answer to D10 and are not expected
-to change. D10 is the halt.
+D1–D9 are derived and cited and were unaffected by Q2. D10 records the ruling.
 
 ### D1 — Three new files, and nothing else
 
@@ -326,35 +343,43 @@ them do not exist yet and `UC01-balance-sheet` is sequenced after this issue. Th
 build-order artifact of the tracker's own dependency (`UC01 depends_on UC02`), not a
 scope cut, and the as-built pass records it.
 
-### D10 — **BLOCKED.** Whether account rename / edit / delete is in this issue
+### D10 — **RESOLVED (owner, 2026-08-22): rename / edit / delete is OUT.** This issue is create-only
 
-Cannot be cited; see *The halt* above and `pm/questions.md` **Q2**. What is already
-derived and will not need re-deriving whichever way the ruling goes:
+*Cites:* **`pm/questions.md` Q2, ANSWERED — Option A**, the owner's ruling of
+2026-08-22; recorded at `context/index/decisions.md` (2026-08-22, *Account CRUD splits
+from UC-02*) and in `pm/tracker.yaml`'s corrected UC02 row (*"SCOPE SETTLED 2026-08-22
+(pm/questions.md Q2): create only, as the diagram draws"*) plus the new
+`UC02B-edit-account` row. The gap FR-18 leaves open is tracked as `pm/findings.md`
+**F14**.
 
-- If **out** — this issue is exactly D1's three files, and `Account`'s missing update and
-  delete becomes its own tracked row with its own sequence diagram before FR-18 can be
-  called satisfied.
-- If **in** — add `renameAccount()` / `deleteAccount()` to `AccountsNotifier` and
-  `update()` / `delete()` to `AccountDao`. `update()` is already on
-  `class-accounts.drawio`; **`delete()` is not**, so the class diagram needs an edit
-  (a finding to raise, not an invention). `seq-uc02-add-account.drawio` needs the alternate
-  flows drawn. And the FK question above must be answered first, because on the current
-  schema a delete of a referenced account **fails**, which NFR-4 forbids — so this branch
-  carries a `schemaVersion 2` migration and a new snapshot, and this issue stops being
-  a no-schema-change issue.
+Consequences, all following from that ruling:
+
+- This issue stays **exactly D1's three files** (`account_dao.dart`,
+  `accounts_providers.dart`, `account_form_screen.dart`) **plus the one `app.dart` line**
+  (D8). No schema change: `schemaVersion` stays 1, no migration, no new snapshot.
+- **No `AccountDao.delete()` is written here**, and no `renameAccount()` /
+  `deleteAccount()` on `AccountsNotifier`. The DAO's `insert()` remains its only method
+  in this issue (D1, D2).
+- The sequence diagram needed **no redrawing**: it already draws create and nothing else,
+  which the ruling confirms was a boundary, not an omission. Discrepancy 3 under *Scope*
+  closes with this ruling.
+- **FR-18 for `Account` is discharged by `UC02B-edit-account`**, not by this issue.
+  UC02B depends on this one in the tracker, needs its own sequence diagram before it can
+  be planned (no diagram anywhere covers account rename/edit/delete), and carries the
+  still-unanswered delete question about a deleted account's transactions — the FKs have
+  no `onDelete`, so every non-refusing delete is a `schemaVersion 2` migration. That is
+  UC02B's planning problem, deliberately not answered here.
 
 ---
 
 ## Steps
 
-Executable in order **once Q2 is answered and this file is re-marked.** Step 0 is the gate.
+Executable in order. Q2 is answered and the file is re-marked, so the planning gate is
+satisfied.
 
-0. **Do not start.** `general-rules.md`'s planning gate is not satisfied by a `HALTED`
-   plan. When the owner answers Q2: record the answer at its canonical home
-   (`context/index/decisions.md` for a design ruling, `docs/fr-nfr.md` §4 if it changes a
-   requirement), mark Q2 ANSWERED with a pointer, fill in D10, and set this status line.
 1. `AccountDao` in `app/lib/src/accounts/account_dao.dart` — a plain class composing
-   `AppDatabase` (D3), with `insert()` (D2). No `watch*` methods (D9).
+   `AppDatabase` (D3), with `insert()` (D2). No `watch*` methods (D9). No `update()` or
+   `delete()` — those are UC02B's (D10).
 2. `AccountsNotifier` in `app/lib/src/accounts/accounts_providers.dart`, exposed as
    `accountsProvider`, with `addAccount(name, group, openingAmount)` (D2), hand-written,
    no `@riverpod` (D3). It reads no stream, so `decisions.md`'s 2026-08-22
@@ -385,9 +410,10 @@ Executable in order **once Q2 is answered and this file is re-marked.** Step 0 i
      `CurrencyScreen`, the fifth screen in the chain. Recorded, **not fixed**.
    - **`pm/findings.md` F7** — append that a second amount field now shares the same
      parse, so the owner's ruling covers two screens rather than one.
-   - **`pm/tracker.yaml`** — Done plus a one-line summary, **and correct this issue's own
-     row**, whose `adjustment`-transaction claim D4 refutes. A tracker row nobody corrects
-     is exactly `lessons.md` §1.
+   - **`pm/tracker.yaml`** — Done plus a one-line summary. This issue's own row has
+     **already been corrected** (2026-08-22, while planning): the wrong
+     `adjustment`-transaction claim is gone and the Q2 scope ruling is recorded there, so
+     only the status and summary change now.
    - **`context/index/map.yaml`** — a `UC-02 → app/lib/src/accounts/` entry under `code:`,
      in FEAT01's shape.
    - **`context/index/decisions.md`** — only if the toolchain forced a durable ruling, as
@@ -437,15 +463,21 @@ Plus: `git diff --stat app/drift_schemas/` is **empty** (step 7).
   the zero-refusals criterion asserted directly.
 - **Widget** — the screen renders and `addAccount` reaches the database, via a
   `ProviderScope` override over an in-memory `AppDatabase`.
-- **FR-18** — *deferred to D10.* If D10 lands **in**, this issue owes an edit test and a
-  delete test on `Account`, the pair `testing.md` names for FR-18. If it lands **out**,
-  FR-18 for `Account` is discharged by the issue that gets the alternate flows, and this
-  file says so rather than leaving the requirement looking covered.
+- **FR-18** — *resolved by Q2 / D10.* The edit test and delete test on `Account` that
+  `testing.md` names for FR-18 **belong to `UC02B-edit-account`**, not to this issue. This
+  file writes no edit or delete code and asserts none. FR-18 for `Account` stays
+  unsatisfied until UC02B lands — the gap is accepted on the record as
+  `pm/findings.md` F14, so it must not be mistaken here for a covered requirement.
 
 ---
 
 ## Out of scope
 
+- **Renaming, editing or deleting an account.** Resolved OUT of this issue by Q2 / D10.
+  It is `UC02B-edit-account` in `pm/tracker.yaml`, TODO, with its own sequence-diagram
+  prerequisite and its own open question about a deleted account's transactions. No
+  `renameAccount()` / `deleteAccount()` on the notifier, no `update()` / `delete()` on
+  the DAO, no edit UI, and no schema change for delete here.
 - **UC-03's adjustment path.** `adjustAccount()`, `kind=adjustment`, and any write to
   `Transactions` (D4). `seq-uc03-adjust-account.drawio` owns that flow.
 - **The `Transactions` table entirely.** No read, no write, no join. The tracker row for
@@ -471,20 +503,24 @@ Plus: `git diff --stat app/drift_schemas/` is **empty** (step 7).
 
 ## Contradictions found while planning — for the owner, not fixed here
 
-1. **`pm/tracker.yaml`'s UC02 row is wrong about this issue's scope** and cites a source
-   that does not support it. It says the opening amount is an `adjustment` transaction
+1. **`pm/tracker.yaml`'s UC02 row was wrong about this issue's scope** and cited a source
+   that does not support it. It said the opening amount is an `adjustment` transaction
    *"per ERD D1"*; ERD D1's own table assigns `Adjustment` to **UC-03**, `docs/enums.md`
    traces it to **FR-18, UC-03**, the workbook's UC-02 row lists **one** entity
    (`Account`), the sequence diagram writes only an account row, and `FEAT01` shipped
    `Accounts.opening_amount` as a real column. Four artifacts against one prose summary.
    `lessons.md` §1 — the register that carries a rationale is not the one that gets
-   corrected when the rationale stops being true. Fix at close (step 9).
+   corrected when the rationale stops being true. **Already corrected 2026-08-22**, while
+   planning this issue; recorded here because D4's reasoning is why it was wrong.
 2. **No sequence diagram in the project covers account rename, edit or delete**, while
    FR-18 says no entity is create-only and no entity has an exception, and the workbook
-   puts those flows in UC-02. This is the halt (Q2).
+   puts those flows in UC-02. **Resolved by Q2 (Option A)**: the flows move to
+   `UC02B-edit-account`; until that lands, FR-18 is unsatisfied for `Account` by
+   accepted decision, tracked as `pm/findings.md` F14.
 3. **`class-accounts.drawio` gives `AccountDao` an `update()` that no sequence diagram
    calls.** Consistent with the workbook's alternate flows and inconsistent with the
-   diagrams. Part of the same question; resolves with Q2.
+   diagrams. Resolved with Q2: `update()` belongs to UC02B; this issue implements only
+   `insert()`. The class diagram needs no edit for this issue.
 
 ---
 
