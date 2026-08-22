@@ -263,6 +263,10 @@ issues:
     depends_on: [UC02-add-account]
     traces_to: [UC-02]
     summary: >-
+      HALTED 2026-08-22 at the planning gate, before a planner was spent on it: the halt
+      condition was already on the record and dispatching feat-planner to rediscover it
+      would only burn the spawn. Question filed as pm/questions.md Q3. A halted issue
+      stays halted for the whole run.
       Added 2026-08-22 by the owner's ruling on pm/questions.md Q2. THE SECOND ISSUE TRACING
       TO UC-02, which the ID scheme above did not anticipate - the workbook calls renaming,
       editing and deleting an account "alternate flows of this use case", while seq-uc02

@@ -229,3 +229,48 @@ so UC-11's null-the-tag precedent does not transfer.
 lands**, and `Account` is until then the one entity in the project that is create-only. That
 is a known gap on the record rather than an accident, and it is filed as `pm/findings.md`
 **F14** so it cannot be mistaken for an oversight when the backlog next looks complete.
+
+---
+
+## Q3 — What happens to the transactions of a deleted account?          [OPEN]
+
+**Raised by:** UC02B-edit-account, 2026-08-22 (deferred here by the Q2 ruling, which
+recorded that the question "is not UC-02's to answer")
+**Blocks:** UC02B-edit-account directly. Nothing else depends on it — UC03, UC01 and UC10
+are runnable behind it — but FR-18 stays unsatisfied for `Account` while it stands (F14),
+and UC02B is the issue that discharges that gap.
+
+`UC02B-edit-account` cannot be planned, and its sequence diagram cannot even be drawn,
+until this is answered: every non-refusing delete is a schema change, and which schema
+change it is decides what the delete flow looks like.
+
+**Why it cannot be derived:**
+
+- **The shipped schema refuses deletes outright.** `Transactions.from_account_id` and
+  `to_account_id` reference `Accounts` with no `onDelete`
+  (`app/lib/src/transactions/transactions_table.dart`), so SQLite's default `NO ACTION`
+  makes deleting a referenced account FAIL. A failure is a refusal; NFR-4's fit criterion
+  is *zero* refusals. So "just add a delete button" is not on the menu.
+- **Every escape is a migration.** `ON DELETE SET NULL`, `ON DELETE CASCADE`, or a
+  hand-written pre-delete all alter the table or its constraints: `schemaVersion 2`, a
+  migration, a new `drift_schemas/` snapshot (`lessons.md` §8 is the cost estimate for
+  anything schema-shaped).
+- **UC-11's precedent does not transfer** (`decisions.md` 2026-08-22): deleting a budget
+  group nulls `budget_group_id` because that column is an optional *tag*. A transaction's
+  from/to account is its *identity* — a transaction with neither side records nothing.
+- `docs/statuses.md` lists no status values, so nothing gates a delete; `docs/enums.md`,
+  FR-18 and the workbook are silent on the data consequence.
+
+**Options, with their cost:**
+
+- **A — CASCADE: deleting an account deletes its transactions.** The money history goes
+  with the account. No null states to interpret; FR-1's figures stay correct. Cost:
+  irreversible data loss from one tap in an app whose data cannot be regenerated.
+- **B — SET NULL: the transactions survive without an account side.** Cost: a transaction
+  row whose from/to is NULL contradicts the ERD's identity argument above, and every
+  balance query has to decide what such a row contributes.
+- **C — refuse the delete while transactions exist** (a guardrail). Cheapest — no
+  migration at all — but it is a refusal, which NFR-4 forbids by name ("no exceptions"),
+  so choosing C means amending NFR-4 as well.
+- **D — something else the owner names.** The options above are shapes, not a menu that
+  closes the space.
