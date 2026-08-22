@@ -128,3 +128,104 @@ converted, no other table is read or written, and no exponent arithmetic runs. U
 So `opt [the chosen currency differs from the stored one]`. **The diagram's guard text is
 corrected at UC-14's as-built pass**, not silently reinterpreted — the fragment stays, one
 message stays inside it, and nothing is skipped.
+
+---
+
+## Q2 — Does UC-02 build renaming, editing and deleting an account — and what happens to the transactions of a deleted account?          [ANSWERED]
+
+**Raised by:** UC02-add-account, 2026-08-22
+**Blocks:** UC02-add-account directly, and **six issues transitively** —
+`UC03-adjust-account`, `UC01-balance-sheet` and `UC10-debt-progress` behind it, then
+`UC04-record-money-movement`, then `UC09-review-and-correct` and `UC12-budget-consumption`.
+That is **the entire remaining backlog**: the other chain (UC13, UC11, UC14) is already
+Done, so unlike Q1 there is nothing else the run can continue on.
+
+Two confirmed artifacts disagree about UC-02's scope, and a stated requirement sides with
+one of them.
+
+- **`docs/workbook.xlsx`, UC-02 `Deskripsi`, verbatim:** *"Alternate flows: renaming an
+  account, changing its details, or deleting it are alternate flows of this use case, not
+  separate use cases (owner's decision, 2026-08-19: only transactions get their own
+  correction use case). Correcting the amount an account holds is UC-03."*
+- **`docs/diagrams/seq-uc02-add-account.drawio`** draws create and nothing else — eight
+  messages, one flow, no `alt` and no `opt`. `CLAUDE.md` makes that diagram the scope.
+
+**Why it cannot be derived:**
+
+- **`docs/fr-nfr.md` FR-18** — *"Full CRUD across transactions, accounts, budgets,
+  categories and subcategories, people, and debts. No entity is create-only, and **no
+  entity has an exception**."* This sides with the workbook, and sharply: on the
+  diagram-is-the-scope reading, `Account` becomes the one entity in the project that no
+  issue ever gives update or delete.
+- **Every sequence diagram in `docs/diagrams/` was checked.** None draws an account
+  rename, edit or delete. `seq-uc03` writes an `adjustment` **transaction**, not an account
+  update; `seq-uc10` calls `setSettled()`. `seq-uc11` and `seq-uc13` *do* draw rename and
+  delete for their own entities, so the project's convention is that this gets drawn when
+  it is in scope — which makes its absence here readable either way: an omission, or a
+  boundary.
+- **`docs/diagrams/class-accounts.drawio`** gives `AccountDao` an `update()` that no
+  sequence diagram calls, and gives it **no `delete()` at all**. So the class diagram
+  half-anticipates the answer and cannot supply it.
+- **`context/index/decisions.md`**, **`docs/enums.md`**, **`docs/statuses.md`** — silent.
+  `statuses.md` deliberately lists no values for any entity, so nothing gates a delete.
+- **NFR-4 does not choose between the two, but it does forbid one implementation.**
+  `Transactions.fromAccountId` and `toAccountId` reference `Accounts` with **no
+  `onDelete`** (`app/lib/src/transactions/transactions_table.dart`), so SQLite's default
+  `NO ACTION` makes deleting a referenced account **fail**. A failure is a refusal, and
+  NFR-4's fit criterion is *zero* refusals. **So "add a delete button" is not a one-line
+  answer** — it forces a second ruling about what happens to those transactions.
+- **UC-11's precedent does not transfer.** Deleting a budget group nulls `budget_group_id`
+  so the money reappears under Others (FR-17). `budget_group_id` is an optional tag;
+  `from_account_id` / `to_account_id` are the transaction's identity, and a transaction
+  with neither side is not a record of anything.
+
+**Why it cannot wait until after UC-02 ships:** it changes the deliverable
+(`AccountFormScreen` is a create-only form or a create/edit/delete one), it adds methods to
+`AccountsNotifier` and a `delete()` that is on no class diagram, and every non-refusing
+delete is a **schema change** — `ON DELETE SET NULL` or `CASCADE` both alter the table,
+which means `schemaVersion` 2, a migration and a new `drift_schemas/` snapshot.
+`lessons.md` §8 is the cost estimate. Answering later means reopening a Done issue, which
+`pm/findings.md` opens by warning against.
+
+**Options, with their cost:**
+
+- **A — UC-02 is create-only; account update/delete becomes its own tracked issue** with
+  its own sequence diagram, before FR-18 can be called satisfied. Cost: UC-02 unblocks
+  immediately at three files and no schema change; FR-18 stays visibly unsatisfied for
+  `Account` until that issue lands, and the workbook's UC-02 `Deskripsi` needs correcting
+  so it stops promising flows UC-02 does not deliver.
+- **B — UC-02 carries the alternate flows, as the workbook says.** Cost: the sequence
+  diagram must be redrawn with them (a diagram edit before coding, which the main session
+  owns), `class-accounts.drawio` gains `AccountDao.delete()`, and the delete question below
+  must be answered in the same breath — so UC-02 becomes a schema-migration issue, not the
+  no-schema-change issue every use-case issue since FEAT01 has been.
+- **C — rename and edit are in, delete is out for now.** Cost: cheapest of the three
+  (renaming touches no FK and needs no migration) and it is a partial FR-18 exception,
+  which FR-18 says by name it does not have.
+
+**And, whichever of the above:** if an account can be deleted, what happens to a
+transaction that references it — the reference is nulled, the transactions are deleted with
+it, or something else? Each is a different migration, and doing nothing is a refusal.
+
+**Answer:** *(pending)*
+
+**Answer (Q2):** **Option A — UC-02 is create-only; account update/delete becomes its own
+tracked issue.** Owner's ruling, 2026-08-22, choosing from the options above. Recorded at
+`context/index/decisions.md` (2026-08-22, "Account CRUD splits from UC-02").
+
+**What it settles.** UC-02 builds exactly what `seq-uc02-add-account.drawio` draws — create,
+eight messages, no `alt`. **The schema does not change**: `schemaVersion` stays 1, no
+migration, no new snapshot. UC-03, UC-01, UC-10, UC-04, UC-09 and UC-12 all unblock
+immediately.
+
+**What it defers, deliberately and on the record.** `UC02B-edit-account` is added to
+`pm/tracker.yaml` as TODO with a NOT PLANNED placeholder. It needs its own sequence diagram
+before it can be planned, and it carries the second half of this question — **what happens to
+the transactions of a deleted account** — which is still unanswered and is not UC-02's to
+answer. `from_account_id`/`to_account_id` are a transaction's identity, not an optional tag,
+so UC-11's null-the-tag precedent does not transfer.
+
+**The cost the owner accepted:** **FR-18 is not satisfied for `Account` until that issue
+lands**, and `Account` is until then the one entity in the project that is create-only. That
+is a known gap on the record rather than an accident, and it is filed as `pm/findings.md`
+**F14** so it cannot be mistaken for an oversight when the backlog next looks complete.

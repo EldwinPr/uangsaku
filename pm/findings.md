@@ -330,3 +330,25 @@ carried the app's only lifecycle"), and `lessons.md` §1 is explicit that only c
 asserted in the present tense go stale. Verified after save that the history sentence
 survives and the open-claim is gone.
 **Confidence:** certain — reloaded and re-read the cell after writing.
+
+---
+
+*F14 was filed during phase 1 at the Q2 ruling (2026-08-22): the answer creates a known,
+accepted gap rather than an accident, and is recorded here so the backlog can look
+complete without FR-18 being satisfied.*
+
+## F14 — `Account` is create-only until UC02B lands; FR-18 is unsatisfied for it   [OPEN]
+**Scope:** APP          **Severity:** risk
+**Where:** `pm/tracker.yaml`, row `UC02B-edit-account`; `docs/fr-nfr.md` FR-18
+**Violates:** FR-18 — *"Full CRUD across transactions, accounts, budgets, categories and
+subcategories … No entity is create-only, and no entity has an exception."*
+**What it is:** the owner's Q2 ruling (2026-08-22, Option A) makes `UC02-add-account`
+create-only and moves account rename / edit / delete to `UC02B-edit-account`. Until that
+lands, `Account` is the one entity in the project with no update or delete path — exactly
+what FR-18 forbids by name. The gap is accepted and tracked, not an oversight, and FR-18
+was deliberately not amended: the requirement stays whole, and this entry is what stops the
+backlog looking complete while it exists.
+**Blocks nothing in the run** — every remaining issue depends on UC02, not UC02B — but
+FR-18 must not be reported satisfied while this is OPEN.
+**Confidence:** certain — the ruling and its cost were stated by the owner before UC-02
+was built (`context/index/decisions.md`, 2026-08-22).

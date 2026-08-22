@@ -233,10 +233,47 @@ issues:
     traces_to: [UC-02]
     summary: >-
       One form for all three account groups - HOLDING, RECEIVABLE, PAYABLE (FR-3, FR-4,
-      FR-5). CARRIES A DEPENDENCY ITS NAME HIDES: FR-3's opening amount is an `adjustment`
-      transaction per ERD D1, so this issue lands the Transactions table and one write path,
-      not just the Accounts module. Re-cutting the backlog by use case did not remove this -
-      it lives in the schema, not in the slicing.
+      FR-5).
+      CORRECTED 2026-08-22. This row previously claimed "a dependency its name hides: FR-3's
+      opening amount is an `adjustment` transaction per ERD D1, so this issue lands the
+      Transactions table and one write path". THAT WAS WRONG, AND IT CITED A SOURCE THAT
+      REFUTES IT: ERD D1's table assigns Adjustment to UC-03, enums.md traces it to FR-18 and
+      UC-03, the workbook lists one entity for this row (Account), seq-uc02 writes only an
+      account row, and FEAT01 shipped Accounts.opening_amount as a real column. The opening
+      amount is that column; no transaction is written here. seq-uc03 lands the Transactions
+      write path. Found by feat-planner while planning this issue, having been repeated into
+      two agent briefs first - a wrong claim in a tracker summary propagates into every brief
+      built from it.
+      SCOPE SETTLED 2026-08-22 (pm/questions.md Q2): create only, as the diagram draws.
+      Renaming, editing and deleting an account are UC02B-edit-account.
+
+  - id: UC02B-edit-account
+    slug: edit-account
+    title: Rename, edit and delete an account
+    status: TODO
+    plan: pm/issues/uc02b-edit-account/plan.md
+    depends_on: [UC02-add-account]
+    traces_to: [UC-02]
+    summary: >-
+      Added 2026-08-22 by the owner's ruling on pm/questions.md Q2. THE SECOND ISSUE TRACING
+      TO UC-02, which the ID scheme above did not anticipate - the workbook calls renaming,
+      editing and deleting an account "alternate flows of this use case", while seq-uc02
+      draws create and nothing else, so the use case needs two issues rather than the
+      diagram being widened. Hence the B suffix instead of a new UC code: there is no new
+      workbook row and inventing one would misrepresent the workbook.
+      BLOCKED ON ITS OWN DIAGRAM: no sequence diagram anywhere in docs/diagrams/ covers an
+      account rename, edit or delete. One must be drawn before this can be planned, because
+      CLAUDE.md makes the diagram the scope. class-accounts.drawio also needs AccountDao to
+      gain a delete() - it currently has an update() that no diagram calls and no delete()
+      at all.
+      CARRIES AN UNANSWERED RULING: what happens to the transactions of a deleted account.
+      UC-11's null-the-tag precedent DOES NOT TRANSFER - budget_group_id is an optional tag,
+      but from_account_id/to_account_id are the transaction's identity. Every non-refusing
+      delete is a schema change (schemaVersion 2, a migration and a new snapshot), because
+      the FKs carry no onDelete and SQLite's default NO ACTION makes the delete FAIL, which
+      NFR-4's zero-refusals criterion forbids.
+      UNTIL THIS LANDS, FR-18 IS NOT SATISFIED FOR Account - see pm/findings.md F14. The gap
+      is accepted and tracked, not an oversight, and FR-18 was deliberately not amended.
 
   - id: UC03-adjust-account
     slug: adjust-account

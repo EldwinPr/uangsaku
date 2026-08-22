@@ -992,3 +992,30 @@ reinterpreted silently.
 **Still true, and worth keeping in view:** this is the reason NFR-4's zero refusals costs
 nothing here. There is no data-loss scenario to protect the owner from, so the notice is a
 message and never a branch that ends.
+
+## 2026-08-22 — Account CRUD splits from UC-02, and the schema does not change
+
+Owner's ruling answering `pm/questions.md` Q2. The workbook calls renaming, editing and
+deleting an account *"alternate flows of this use case"*; `seq-uc02-add-account.drawio`
+draws create and nothing else. **The diagram wins for UC-02, and the rest becomes its own
+issue** — `UC02B-edit-account`, TODO, with its own sequence diagram still to be drawn.
+
+**Why the split rather than widening UC-02.** Deleting is the expensive half.
+`Transactions.from_account_id` and `to_account_id` reference `Accounts` with **no
+`onDelete`**, so SQLite's default `NO ACTION` makes deleting a referenced account fail — and
+a failure is a refusal, which NFR-4's fit criterion forbids outright. Every non-refusing fix
+alters the table: `ON DELETE SET NULL` or `CASCADE` both mean `schemaVersion` 2, a migration
+and a new snapshot, in an app whose data cannot be regenerated. Buying that inside an issue
+whose diagram draws only create would have been the widening `general-rules.md` forbids.
+
+**What is still open, and belongs to `UC02B-edit-account`:** what happens to the transactions
+of a deleted account. **UC-11's precedent does not transfer.** Deleting a budget group nulls
+`budget_group_id` and the money reappears under "Others" (FR-17) because that column is an
+optional *tag*. A transaction's from/to account is its *identity* — a transaction with
+neither side is not a record of anything — so the same move is not available and the answer
+has to be made rather than derived.
+
+**The accepted cost, stated so it is not rediscovered as a bug:** **FR-18 says "no entity is
+create-only, and no entity has an exception", and until `UC02B` lands, `Account` is exactly
+that exception.** Filed as `pm/findings.md` F14. The requirement is not amended — the gap is
+temporary and tracked, which is different from a requirement that was quietly narrowed.
