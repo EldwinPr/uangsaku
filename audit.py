@@ -280,10 +280,20 @@ for i in tr:
             r'(?i)\*\*status:\*\*\s*(done|superseded)', head):
         W('{}: tracker says DONE but the plan.md status line does not'.format(i['id']))
 planned = sum(1 for i in tr if os.path.exists(i['plan']) and not is_stub(i['plan']))
-# ---------- every use case is owned by exactly one issue ----------
+# ---------- every use case is owned by exactly one primary issue ----------
 # The backlog is UC-coded as of 2026-08-20, which is a claim worth enforcing: a use
 # case with no issue is unbuilt work nobody has noticed, and one claimed twice is two
-# issues editing the same screen.
+# issues editing the same screen. Since the Q2 ruling of 2026-08-22 a UC may carry a
+# second issue with a letter suffix on its id (UC02B-edit-account -> UC-02): one
+# PRIMARY issue per UC keeps the 1:1 claim, and any number of suffixed ones may share
+# it -- but never two primaries.
+def _issue_uc(issue_id):
+    m = re.match(r'UC(\d+)', issue_id.split('-')[0])
+    return 'UC-' + m.group(1) if m else None
+
+def _is_primary(issue_id):
+    return re.fullmatch(r'UC\d+-[a-z0-9-]+', issue_id) is not None
+
 owner_of = {}
 for i in tr:
     for uc in i.get('traces_to') or []:
@@ -295,21 +305,33 @@ for i in impl:
         impl_ucs.setdefault(uc, []).append(i['id'])
 for uc in sorted(allucs - set(impl_ucs)):
     F('{} is in the workbook but no implementation issue claims it'.format(uc))
+splits = 0
 for uc, owners in sorted(impl_ucs.items()):
     if uc not in allucs:
         F('issue(s) {} claim {}, which is not a workbook UC'.format(owners, uc))
-    elif len(owners) > 1:
-        F('{} is claimed by more than one implementation issue: {}'.format(uc, owners))
-# An implementation issue's id should match a UC it traces to, or be a FEAT.
+        continue
+    primaries = [x for x in owners if _is_primary(x)]
+    if len(primaries) > 1:
+        F('{} is claimed by more than one primary implementation issue: {}'.format(uc, owners))
+    else:
+        if len(owners) > 1:
+            splits += 1
+            O('{} is shared by {} (primary) and {} (Q2 ruling 2026-08-22: '
+              'alternate flows split out under the B-suffix scheme)'.format(
+                  uc, primaries[0], ', '.join(x for x in owners if x != primaries[0])))
+# An implementation issue's id should match the UC it traces to, or be a FEAT.
+# A letter suffix on the id's UC code (UC02B -> UC-02) is the Q2-ruling scheme, not a
+# mismatch.
 for i in impl:
     if i['id'].startswith('FEAT'):
         continue
-    code = i['id'].split('-')[0]
-    expect = 'UC-' + code[2:]
-    if expect not in (i.get('traces_to') or []):
-        F('{}: id implies {} but traces_to is {}'.format(i['id'], expect, i.get('traces_to')))
-O('all {} use cases owned by exactly one of {} implementation issues; '
-  'ids match their use case'.format(len(allucs), len(impl)))
+    expect = _issue_uc(i['id'])
+    if expect is None or expect not in (i.get('traces_to') or []):
+        F('{}: id implies {} but traces_to is {}'.format(
+            i['id'], expect or 'no UC', i.get('traces_to')))
+O('all {} use cases owned by exactly one primary of {} implementation issues '
+  '({} shared under the B-suffix scheme); ids match their use case'.format(
+      len(allucs), len(impl), splits))
 
 O('{} tracker issues ({} planned, {} still TODO and unplanned by design): '
   'dependencies satisfied, summaries present'.format(
@@ -322,7 +344,15 @@ O('{} tracker issues ({} planned, {} still TODO and unplanned by design): '
 # check can see that -- mtimes do not survive a clone -- so the export records the hash
 # of the source it was made from, and this compares.
 RENDER_LOCK = 'docs/diagrams/renders.lock'
-owner_of = {uc: i['id'] for i in impl for uc in (i.get('traces_to') or [])}
+# A UC shared under the B-suffix scheme keeps its sequence render with its PRIMARY
+# issue -- the suffixed one draws flows the base diagram deliberately does not, and
+# gets its own diagram when one is drawn for it.
+owner_of = {}
+for i in impl:
+    for uc in (i.get('traces_to') or []):
+        prev = owner_of.get(uc)
+        if prev is None or (_is_primary(i['id']) and not _is_primary(prev)):
+            owner_of[uc] = i['id']
 lock = {}
 if os.path.exists(RENDER_LOCK):
     lock = yaml.safe_load(open(RENDER_LOCK, encoding='utf-8')) or {}
