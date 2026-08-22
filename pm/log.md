@@ -15,20 +15,19 @@ before starting work.
 ## Current state — 2026-08-22
 
 **Phase.** Documentation complete; **implementation under way, mid-run.** The app compiles
-and its test suite is green (**46 tests**). Four modules have a DAO, a provider and a screen
-— UC-13's, UC-11's, UC-14's and now UC-02's.
+and its test suite is green (**56 tests**). Five modules/screens built end to end — UC-13's,
+UC-11's, UC-14's, UC-02's and UC-01's; `home` is now `BalanceSheetScreen` **permanently**
+(FR-1) and four earlier screens are orphaned (F8).
 
-**Active issue.** `UC02B-edit-account`, next in tracker order but **blocked on its own
-sequence diagram** (none anywhere in docs/diagrams/ draws an account rename/edit/delete)
-and on the still-unanswered ruling about what happens to the transactions of a deleted
-account (`decisions.md` 2026-08-22 records that the question belongs to UC02B). The run
-resumed 2026-08-22 when the owner answered Q1, then answered Q2 the same day:
-`UC02-add-account` is **DONE 2026-08-22** (`AccountDao` with insert only,
-`AccountsNotifier`/`accountsProvider`, `AccountFormScreen`; create-only by the Q2 ruling,
-no schema change, opening amount stored signed as entered, no transaction row ever written;
-46 tests green; home re-pointed at `AccountFormScreen`). Previously done: FEAT01,
-UC13-categories, UC11-set-budget, UC14-choose-currency. Remaining chain behind UC02B's
-blockers: UC03, UC01, UC10 → UC04 → UC09, UC12.
+**Active issue.** `UC10-debt-progress`, next runnable in tracker order. Two issues are
+HALTED at the planning gate and stay halted for the run: `UC02B-edit-account` (Q3 —
+deleted-account transaction semantics; its sequence diagram also doesn't exist yet) and
+`UC03-adjust-account` (Q4 — adjustment transaction side/sign encoding). `UC01-balance-sheet`
+is **DONE 2026-08-22**: the four FR-1 figures via the app's first cross-module SQL join,
+written inside `AccountDao` per component-overview D1; figures are sides-based sums that do
+not depend on how Q4 is answered (pinned by a dual-encoding test). Previously done this
+run: `UC02-add-account`. Before: FEAT01, UC13-categories, UC11-set-budget,
+UC14-choose-currency. Remaining runnable chain: UC10 → UC04 → UC09, UC12.
 
 **Pushed.** CI has run. The `app` job failed once on the scaffold and the guard was fixed
 rather than the commit reverted — see the entry below.
@@ -733,3 +732,31 @@ red exactly once, on the intermediate commit, and green from the fix onward.
 sequence diagram covers account rename/edit/delete anywhere, and the deleted-account
 transactions ruling is unanswered. If those do not clear, the run proceeds to
 UC03-adjust-account, which has both its diagram and its scope already settled.
+
+---
+
+## 2026-08-22 — UC01-balance-sheet closes; the primary screen exists
+
+**[STATUS]** **`UC01-balance-sheet` is DONE.** The four FR-1 figures and the per-account
+list, via the app's first cross-module SQL join - written inside `AccountDao` against the
+`Transactions` table, never calling another module's DAO (component-overview D1). 56 tests
+green, no schema change, read-only issue (seq-uc01 draws no write path). The figures are
+sides-based sums over `Account.group`: **no `kind` predicate and no
+`to_account_id IS NULL` anywhere**, so the four figures are provably independent of how Q4
+settles adjustment encoding - a test drives one account to the same balance under both
+candidate encodings, which is what let this issue be AUTO-CONFIRMED while UC03 halts on the
+same question. `home` is `BalanceSheetScreen` **permanently** (FR-1); AccountFormScreen is
+F8's fourth orphan, and the era of temporary re-pointings is over.
+
+**[DISCOVERY]** **Regenerating a Mermaid-authored diagram from scratch silently dropped the
+step-number circles.** The as-built note edit on seq-uc02/seq-uc01 was done by re-authoring
+the .mmd and re-running the CLI; the first regeneration lost every numbered circle because
+`autonumber` was never in any committed source (the .mmd files are deleted after conversion,
+so the numbers lived only in the generated XML). Caught by looking at the render against the
+previous one, restored with `autonumber`, re-exported, re-checked. *The conversion source is
+not persisted anywhere, so "re-author in Mermaid" really means re-derive it from the XML -
+and anything not carried over by hand is silently gone.*
+
+**[TODO]** Next: `UC10-debt-progress` - FR-11's paid/remaining for one RECEIVABLE or PAYABLE
+account plus markSettled(). After it: UC04, then UC09 and UC12. UC02B and UC03 stay halted
+on Q3/Q4 for the rest of the run unless the owner answers.

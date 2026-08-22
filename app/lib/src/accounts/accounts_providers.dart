@@ -49,3 +49,31 @@ class AccountsNotifier extends Notifier<void> {
 final accountsProvider = NotifierProvider<AccountsNotifier, void>(
   AccountsNotifier.new,
 );
+
+/// UC-01's four figures (FR-1), messages 2–7 on
+/// `seq-uc01-balance-sheet.drawio`: wraps exactly one drift stream —
+/// `AccountDao.watchPosition()`'s — and nothing else.
+///
+/// Hand-written single-stream `StreamProvider.autoDispose`, not `@riverpod`:
+/// `riverpod_generator` throws `InvalidTypeException` on any provider typed
+/// over a drift row class, and codegen would rename this away from the
+/// class diagram's spelling (`riverpod.md`, verified UC-13/UC-14). Not a
+/// combining notifier either — the UC-11 ruling (`context/index/decisions.md`
+/// 2026-08-22) bans multi-stream merging shapes; this is the single-stream
+/// shape that closes cleanly.
+final financialPositionProvider = StreamProvider.autoDispose<FinancialPosition>(
+  (ref) {
+    final database = ref.watch(appDatabaseProvider);
+    return AccountDao(database).watchPosition();
+  },
+);
+
+/// Per-account current amounts (FR-2), messages 8–13 on
+/// `seq-uc01-balance-sheet.drawio`: wraps exactly one drift stream —
+/// `AccountDao.watchBalances()`'s — same shape and reasoning as
+/// [financialPositionProvider] (D8).
+final accountBalancesProvider =
+    StreamProvider.autoDispose<List<AccountBalance>>((ref) {
+      final database = ref.watch(appDatabaseProvider);
+      return AccountDao(database).watchBalances();
+    });

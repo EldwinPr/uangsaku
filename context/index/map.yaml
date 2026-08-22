@@ -89,6 +89,23 @@ code:
       - app/test/accounts/account_dao_test.dart
       - app/test/accounts/account_form_screen_test.dart
 
+  # UC01-balance-sheet, DONE 2026-08-22. The primary screen (FR-1) and the app's
+  # first cross-module SQL join - written inside AccountDao against the Transactions
+  # table, never calling TransactionDao (component-overview D1). Read-only: no write
+  # path exists on seq-uc01, so schemaVersion stays 1. Figures are sides-based sums
+  # over Account.group with NO kind predicate and NO spending predicate - pinned
+  # encoding-independent by a test that drives the same balance under both of Q4's
+  # candidate adjustment encodings. No stored balance anywhere (NFR-2): every figure
+  # is derived in SQL at read time. home is now BalanceSheetScreen permanently
+  # (FR-1); AccountFormScreen joins F8's orphaned set.
+  UC-01:
+    dao:       app/lib/src/accounts/account_dao.dart          # + watchPosition/watchBalances, FinancialPosition, AccountBalance
+    providers: app/lib/src/accounts/accounts_providers.dart   # + financialPositionProvider, accountBalancesProvider
+    screen:    app/lib/src/accounts/balance_sheet_screen.dart # BalanceSheetScreen
+    tests:
+      - app/test/accounts/balance_queries_test.dart
+      - app/test/accounts/balance_sheet_screen_test.dart
+
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
 # each other in BOTH directions (balances need Transactions; the record screen needs

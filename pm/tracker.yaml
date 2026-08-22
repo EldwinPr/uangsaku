@@ -308,7 +308,7 @@ issues:
   - id: UC01-balance-sheet
     slug: balance-sheet
     title: View financial position
-    status: TODO
+    status: DONE
     plan: pm/issues/uc01-balance-sheet/plan.md
     depends_on: [UC02-add-account]
     traces_to: [UC-01]
@@ -317,6 +317,14 @@ issues:
       merged, because money sitting with Budi cannot buy lunch. One query joining Accounts
       to Transactions with no stored balance (NFR-2), which makes this the first issue that
       writes the cross-module SQL join the component diagram's D1 describes.
+      CORRECTED 2026-08-22 at close: the diagram draws TWO queries, not one - watchPosition()
+      and watchBalances(), messages 3 and 9 (the row above understated rather than lied).
+      DONE 2026-08-22: both watched customSelects live inside AccountDao (ISSUE-005 D1 -
+      SQL join, never another module's DAO); figures are sides-based sums over Account.group,
+      no kind predicate and no to_account_id IS NULL anywhere, so the four figures do not
+      depend on how Q4 settles adjustment encoding - pinned by a test that drives one account
+      to the same balance under both encodings. home is BalanceSheetScreen permanently (FR-1);
+      AccountFormScreen is F8's fourth orphan. 56 tests green, no schema change.
 
   - id: UC10-debt-progress
     slug: debt-progress

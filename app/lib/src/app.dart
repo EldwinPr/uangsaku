@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 
-import 'accounts/account_form_screen.dart';
+import 'accounts/balance_sheet_screen.dart';
 
 /// `MaterialApp` root.
 ///
-/// `home` is `AccountFormScreen`, temporarily (UC02 D8) — this app has no
-/// navigation host and no class diagram draws one, so message 1 on
-/// `seq-uc02-add-account.drawio` (the owner enters name, group and opening
-/// amount) is only satisfiable by pointing `home` here, replacing
-/// `CurrencyScreen` (UC14's screen since 2026-08-22, temporarily), exactly
-/// as UC14 D3 anticipated a later screen issue would. This orphans
-/// `CurrencyScreen` — no route, no reference from any live widget — the
-/// same pattern `pm/findings.md` F8 already tracks. UC01's balance sheet
-/// takes this spot permanently once it lands (FR-1); `CurrencyScreen`,
-/// `SetBudgetScreen` and `CategoryManagerScreen` have no route until then.
+/// `home` is `BalanceSheetScreen`, permanently (UC01 D7) — FR-1 makes the
+/// balance sheet *the primary screen, not a report behind a menu*, and
+/// message 1 on `seq-uc01-balance-sheet.drawio` (the owner reaches it by
+/// opening the app) is only satisfiable by pointing `home` here, replacing
+/// `AccountFormScreen` (UC02's temporary occupant since 2026-08-22), exactly
+/// as UC02 D8 anticipated: *"Explicitly temporary … Re-pointing `home` is
+/// UC-01's business."* Unlike the three previous re-pointings this one is
+/// not temporary — no planned issue draws a screen meant to displace it.
+/// This orphans `AccountFormScreen`, the fourth dead screen after
+/// `CurrencyScreen`, `SetBudgetScreen` and `CategoryManagerScreen` — the
+/// same pattern `pm/findings.md` F8 tracks. There is still no navigation
+/// host: no class diagram draws one, so none can be invented here.
 class App extends StatelessWidget {
   const App({super.key});
 
@@ -24,7 +26,7 @@ class App extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const AccountFormScreen(),
+      home: const BalanceSheetScreen(),
     );
   }
 }

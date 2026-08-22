@@ -235,8 +235,14 @@ is the right handling, but it does not stop the count rising.
 `CurrencyScreen` — **three dead screens, one reachable**, five screen-building issues still
 queued (UC01, UC03, UC04, UC09, UC12). The pattern is now three-for-three; the navigation
 question is not going away and each remaining issue adds a screen to it.
+**Confirmed again 2026-08-22, UC01 — with a difference:** `home` is now
+`BalanceSheetScreen` **permanently** (FR-1: the primary screen, not a report behind a menu;
+no planned issue draws a screen meant to displace it). `AccountFormScreen` is the **fourth
+orphan**, after CategoryManager, SetBudget and Currency. The re-pointings are over; what
+remains is four built features with no route, reachable only by tests.
 **Confidence:** certain — `grep` for `CategoryManagerScreen` outside its own file and tests
-returns only doc comments; the same is true of `SetBudgetScreen` and now `CurrencyScreen`.
+returns only doc comments; the same is true of `SetBudgetScreen`, `CurrencyScreen` and now
+`AccountFormScreen`.
 
 ## F9 — the app carries a codegen toolchain that three issues have proved it cannot use   [OPEN]
 **Scope:** APP          **Severity:** risk

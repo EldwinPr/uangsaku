@@ -5,10 +5,10 @@
 # is worse than a missing one. See drawio-general-guide.md.
 docs/diagrams/seq-uc01-balance-sheet.drawio:
   render: seq-uc01-balance-sheet.png
-  source_sha: f0d260edb38ec721497a52a888d4365a2481b8c476aedf3a0dc91c12d03859e0
+  source_sha: a1621b41413e4be344fad15ea00836f3be94d62ff75d25520b26f36bb0e9dc49
 docs/diagrams/seq-uc02-add-account.drawio:
   render: seq-uc02-add-account.png
-  source_sha: 1d4515f2079db2323de9f14510ceadab9778c8f747f9f8da4f79c067028822c4
+  source_sha: 4593fc6db062fcbad7f9e69e511afd545d0901ae3f3aec4a899485442419929f
 docs/diagrams/seq-uc03-adjust-account.drawio:
   render: seq-uc03-adjust-account.png
   source_sha: 4dbac13928d6d1cc61556422e3cc446c28447c94f8075e350c5d2bac4da432ab
