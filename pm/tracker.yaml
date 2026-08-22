@@ -298,6 +298,12 @@ issues:
       The second `adjustment` path - correcting a balance after the fact. Small on its own
       because UC02 already built the form and the write path; kept separate because it is
       its own workbook row and its own sequence diagram.
+      HALTED 2026-08-22 at the planning gate: pm/questions.md Q4 - which side(s) of an
+      adjustment transaction carry the account and whether the amount is signed. enums.md
+      and ERD D1 deliberately hedge ("the account, or null") and no artifact settles the
+      sign; option A would make a downward correction count as spending under
+      to_account_id IS NULL, landing in UC-12's Others. Plan written to HALTED with seven
+      derived decisions kept in place. Blocks UC03 only; nothing depends on it.
 
   - id: UC01-balance-sheet
     slug: balance-sheet

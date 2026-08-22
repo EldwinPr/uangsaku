@@ -274,3 +274,57 @@ change it is decides what the delete flow looks like.
   so choosing C means amending NFR-4 as well.
 - **D — something else the owner names.** The options above are shapes, not a menu that
   closes the space.
+
+---
+
+## Q4 — Which sides of an adjustment transaction carry the account, and is the amount signed?          [OPEN]
+
+**Raised by:** UC03-adjust-account, 2026-08-23
+**Blocks:** UC03-adjust-account directly. Nothing in `pm/tracker.yaml` depends on UC03, so
+the run continues elsewhere (UC01-balance-sheet and UC10-debt-progress are runnable behind
+UC02; the Budgeting chain is independent). But the answer semantically bears on three later
+issues' queries — UC-01 (how corrections sit in the four figures), UC-09 (how the row
+displays), UC-12 (whether a downward correction counts into "Others" spending) — and a late
+answer could force query rewrites or row migrations there.
+
+`seq-uc03-adjust-account.drawio` message 10 inserts `kind=adjustment` with a computed
+`diff`. The schema has two account-side columns and one amount column, and nothing decides
+how a direction-carrying correction maps onto them.
+
+**Why it cannot be derived:**
+
+- **`docs/enums.md` / ERD ISSUE-001 D1**, the kind table:
+  `adjustment | the account, or *null* | *null*, or the account`. Every other kind's row
+  fixes its sides exactly (`expense | the wallet | null`); this row deliberately hedges
+  between two shapes and states no rule for choosing.
+- **The workbook UC-03 row** says it outright: *"How the adjustment is represented is an
+  ERD decision, not settled here."* The ERD decision settled that the correction is a
+  ledger row with `kind=adjustment`; it stopped short of the encoding.
+- **`docs/diagrams/seq-uc03-adjust-account.drawio`**, message 10 — names no column.
+- **`context/index/decisions.md`, `docs/statuses.md`, `fr-nfr.md`** — silent. No artifact
+  says whether `Transaction.amount` may be negative.
+- **NFR-2 / ISSUE-001 D1 make the consequence real rather than cosmetic:** "is this
+  spending?" is `to_account_id IS NULL`, so the encodings classify a *downward*
+  adjustment differently inside every spending total — including UC-12's Others bucket.
+  The workbook's own Output demands the adjustment be *"recorded and visible rather than
+  silent"*, which at least one reading defeats silently.
+- The error would live in stored rows, not queries — unfixable at the query layer
+  (`lessons.md` §7's shape), and re-encoding existing rows later is a migration.
+
+**Options, with their cost:**
+
+- **A — side follows the sign of the diff.** Increase → `to_account_id = the account`,
+  `from = null`; decrease → `from_account_id = the account`, `to = null`; `amount` stores
+  `|diff|`, always non-negative. Matches every other kind, where direction lives entirely
+  in the sides and never in a sign. Cost: a downward correction satisfies
+  `to_account_id IS NULL` and therefore **counts as spending** — a cash-count fix shows up
+  in UC-12's "Others" as if money had been spent.
+- **B — one fixed side with a signed amount.** E.g. always `to_account_id = the account`,
+  `amount = signed diff`. Never counts as spending in either direction, keeping
+  corrections out of spending totals. Cost: introduces the ledger's only negative-amount
+  kind — a shape none of the other six rows produce — and every future query touching
+  amounts must remember adjustments can be negative even though their side says "arrival".
+- **C — something else the owner names.** The options above are shapes, not a menu that
+  closes the space.
+
+**Answer:** *(pending)*
