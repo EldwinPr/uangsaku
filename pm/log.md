@@ -996,3 +996,31 @@ F8 confirmed final for this run — eight built screens, one reachable; F14 clos
 **[TODO]** **Nothing is runnable.** The entire backlog planned at run start (FEAT01
 through UC02B) is DONE. **Phase 2 — the repo-wide APP + TRAIL sweep — runs again**, since
 two issues (UC03, UC02B) closed since the last sweep touched anything. Then the run stops.
+
+---
+
+## 2026-08-24 — CI's `docs` job was red for four commits; fixed a real `_slugdir` bug
+
+**[DISCOVERY]** The owner flagged CI as broken. `docs` (runs `audit.py`) had failed on
+every commit since `6e7b15b` (2026-08-23) — four commits in a row — while `app` stayed
+green and every local `python audit.py` run, including a fresh Windows clone and a real
+Linux checkout reproduced in WSL, passed cleanly. The owner pasted the actual failing
+step's output, which local reproduction alone could not surface: `FAIL sequence render
+missing or unrecorded: seq-uc02-add-account.drawio -> pm/issues/uc02b-edit-account/
+seq-uc02-add-account.png` — a render genuinely present at the correct path, failing
+because `audit.py`'s `_slugdir()` resolved the wrong directory.
+
+**Root cause:** `_slugdir()` matched a tracker id to its `pm/issues/` folder with
+`base.lower().startswith(prefix)` over an unsorted `glob.glob()`. That was safe as long
+as each UC-prefix matched exactly one directory; once `uc02b-edit-account/` started
+existing alongside `uc02-add-account/`, both satisfied `startswith('uc02')`, and which one
+won depended on `glob.glob`'s filesystem-dependent enumeration order — alphabetical on
+this project's Windows dev machine (and, coincidentally, every WSL/Linux test run
+attempted afterward), not guaranteed on GitHub Actions' runner. Fixed to match the exact
+first hyphen-separated token instead of a prefix, and to sort the glob so the fallback is
+deterministic everywhere. Recorded in `context/index/lessons.md` §5 as a sixth instance —
+notably one where thorough local reproduction (including a real Linux checkout) still
+failed to surface the bug, because reproducing it needed the actual adverse enumeration
+order, not just the same platform family.
+
+**[TODO]** Verify the next CI run on `main` is green after this pushes.

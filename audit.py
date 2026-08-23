@@ -75,10 +75,20 @@ def _sha(path):
 
 
 def _slugdir(issue_id):
-    """pm/issues/ folder name for a tracker id -- the tracker does not store the path."""
-    for d in glob.glob('pm/issues/*'):
+    """pm/issues/ folder name for a tracker id -- the tracker does not store the path.
+
+    Matches on the exact first hyphen-separated token, not a prefix: `startswith`
+    let `UC02-add-account` match either `uc02-add-account` or `uc02b-edit-account`
+    (both satisfy `.startswith('uc02')`), and `glob.glob`'s return order is
+    filesystem-dependent -- stable enough on this project's Windows dev machine to
+    pick the right one by luck, but not guaranteed on Linux (CI), which sometimes
+    picked the wrong directory and broke a render-path lookup that passed locally
+    every time. `sorted()` also makes the fallback loop itself deterministic.
+    """
+    prefix = issue_id.lower().split('-')[0]
+    for d in sorted(glob.glob('pm/issues/*')):
         base = os.path.basename(d)
-        if base.lower().startswith(issue_id.lower().split('-')[0]):
+        if base.split('-')[0] == prefix:
             return base
     return issue_id.lower()
 

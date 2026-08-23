@@ -155,6 +155,26 @@ a *green* result, which is why none of them announced itself.
   scaffold exists before its dependencies do. Split into two probes; the other four steps
   turned out to pass on the scaffold, so the job now does real work instead of staying inert.
 
+**A sixth, from 2026-08-23/24, and it stayed green on Windows for a full day of local
+runs while CI failed four commits in a row.** `audit.py`'s `_slugdir()` resolved a tracker
+id to its `pm/issues/` folder with `base.lower().startswith(prefix)` over an unsorted
+`glob.glob('pm/issues/*')`. That worked as long as `UC02-add-account`'s prefix `uc02`
+matched only one directory — the moment `uc02b-edit-account/` was created alongside it,
+**both** directories satisfied the `startswith` check, and which one `_slugdir` returned
+depended on `glob.glob`'s enumeration order, which this project's Windows dev machine
+happened to produce alphabetically and GitHub Actions' Linux runner did not. CI reported
+`seq-uc02-add-account.drawio` looking for its render under the *wrong sibling issue's*
+folder (`uc02b-edit-account` instead of `uc02-add-account`) — a render genuinely present
+at the correct path, failing because the check looked in the wrong one. **Every local run (`python audit.py`, a fresh Windows clone, even a real Linux
+checkout reproduced in WSL) passed, because none of them happened to hit the adverse
+enumeration order** — reproducing the exact failure needed the actual CI log, not a local
+retest, however thorough. Fixed by matching the exact first hyphen-separated token
+(`base.split('-')[0] == prefix`) instead of a prefix, and sorting the glob so the fallback
+path is deterministic too. **The general form, sharpened further:** an ambiguous match
+that resolves by iteration order is not "usually right" — it is unverified everywhere the
+order happens to cooperate, and a local pass proves nothing about environments whose
+enumeration order you have not actually observed.
+
 **A fifth, from 2026-08-22, and it was a *render* check rather than a script.** A
 Mermaid-generated sequence diagram's `note over` was rendering its last characters outside
 its own yellow box. The close check asked whether the note was **clipped at the canvas
