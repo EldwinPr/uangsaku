@@ -25,7 +25,8 @@ enum AccountFormMode { create, adjust, edit }
 /// has emitted) alongside a target-amount field and calls `adjustAccount`;
 /// edit shows a rename field and group selector alongside a delete control
 /// and calls `editAccount`/`deleteAccount`. Reaching this screen with an id
-/// is F8's standing question — this file draws no navigation, only the flow
+/// is F8's resolution — `BalanceSheetScreen`'s row tap opens edit mode
+/// (FEAT02 plan D3); this file draws no navigation of its own, only the flow
 /// the sequence diagrams show.
 ///
 /// One form serves all three groups (`plan.md` D5) — a credit card or a
@@ -145,6 +146,12 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(_title)),
       floatingActionButton: FloatingActionButton.extended(
+        // Explicit tag (FEAT02 plan D1): reached with `AppShell`'s
+        // `IndexedStack` still mounted underneath, whose Balance Sheet tab
+        // has its own FAB — the shared default tag would otherwise collide
+        // (Flutter's Hero identity requirement), not a business-logic
+        // change.
+        heroTag: 'account-form-fab',
         tooltip: _isAdjustFlow
             ? 'Save correction'
             : (_isEditFlow ? 'Save changes' : 'Save account'),
@@ -205,9 +212,10 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     );
   }
 
-  /// Messages 1, 7, 8: designate an existing account (via [widget.accountId],
-  /// F8's reachability question), show its current derived amount and accept
-  /// the corrected target — save always enabled (D6, D7).
+  /// Messages 1, 7, 8: designate an existing account (via [widget.accountId]),
+  /// show its current derived amount and accept the corrected target — save
+  /// always enabled (D6, D7). No entry point in `AppShell` reaches this mode
+  /// (FEAT02 plan D3, out of scope) — it is exercised only by tests.
   Widget _buildAdjustFlow() {
     // Message 7: the current derived amount, once accountBalancesProvider
     // has emitted (UC-01, shipped). No read blocks the save — the flow

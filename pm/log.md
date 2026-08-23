@@ -14,21 +14,22 @@ before starting work.
 
 ## Current state — 2026-08-24
 
-**Phase.** **The entire runnable backlog is DONE.** The app compiles and its test suite
-is green (**122 tests**). Nine modules/screens built end to end — UC-13's, UC-11's,
-UC-14's, UC-02's, UC-01's, UC-10's, UC-04's record form, UC-09's transaction list,
-UC-12's budget overview, plus UC-03's adjust flow and UC02B's edit/delete flow (both
-reusing UC-02's `AccountFormScreen`); `home` is `BalanceSheetScreen` permanently (FR-1)
-and eight screens are orphaned or unreachable (F8, final for this run).
+**Phase.** **The entire backlog, including one owner-requested addition, is DONE.** The
+app compiles and its test suite is green (**128 tests**). Nine screens built end to end,
+and — since `FEAT02-navigation-host` — **all reachable except one deliberately unrouted
+flow** (UC-03's adjust mode). `home` is `AppShell`: a four-tab `NavigationBar`
+(Balance Sheet, Record, Transactions, Budget) with every other screen reached from
+within a tab. `pm/findings.md` F8 (no navigation) is fixed.
 
 **Active issue.** None. The owner answered both outstanding questions 2026-08-23 (Q3:
 soft delete; Q4: fixed side + signed amount for adjustments), unhalting the last two
 issues; both are now DONE — `UC03-adjust-account` on 2026-08-23, `UC02B-edit-account` on
 2026-08-24 (the project's first schema change: `schemaVersion` 1→2, drift guided
-migrations, `Accounts.deleted`/`deleted_at`). This run has closed UC02, UC01, UC10, UC04,
-UC09, UC12, UC03 and UC02B; before them FEAT01, UC13, UC11, UC14. **Nothing is runnable —
-phase 2 (the repo-wide APP + TRAIL sweep) runs again**, since two issues closed since it
-last ran.
+migrations, `Accounts.deleted`/`deleted_at`). CI was found broken after that (a real
+`_slugdir` bug in `audit.py`, fixed and confirmed green). The owner then asked directly
+for a navigation host so the app could actually be tried, closed the same day as
+`FEAT02-navigation-host`. This run has closed UC02, UC01, UC10, UC04, UC09, UC12, UC03,
+UC02B and FEAT02; before them FEAT01, UC13, UC11, UC14. **Nothing is runnable.**
 
 **Pushed.** CI has run. The `app` job failed once on the scaffold and the guard was fixed
 rather than the commit reverted — see the entry below.
@@ -73,18 +74,19 @@ create-only) resolved 2026-08-24 at `UC02B`'s close. `pm/questions.md` has nothi
 
 **Open, non-blocking:** one `fr-nfr.md` §4 item — where the data lives, narrowed to
 phone-only but not closed. **Fifteen findings on file** (`pm/findings.md` F1–F15).
-**Seven are resolved**: F2, F3, F6, F13, F14 fixed and F10 accepted (the clean-checkout
-verification, recorded as a negative result). F3 fixed 2026-08-23 — every sequence
-diagram in the repo now names the correct isolate mechanism. F14 fixed 2026-08-24 —
-`Account` has full CRUD, FR-18 satisfied for every entity in the project.
-**Eight stand, recorded and not fixed** (F1, F4, F5, F7, F8, F9, F11, F12) — the ones
-that need an owner ruling are **F7** (a non-numeric amount is silently saved as zero, now
-five live instances across four screens), **F8** (every screen issue orphans the
-previous screen; eight built, one reachable, final for this run), **F9** (a codegen
-toolchain the app has proved it cannot use, still carried as a runtime dependency and a
-suppressed lint), **F11** (`decisions.md` still calls open the very question
-`lessons.md` §1 was written about), **F12** (the orchestration guide describes a process
-this run stopped following) and **F15** (a copy-pasted date formatter).
+**Eight are resolved**: F2, F3, F6, F8, F13, F14 fixed and F10 accepted (the
+clean-checkout verification, recorded as a negative result). F3 fixed 2026-08-23 — every
+sequence diagram in the repo now names the correct isolate mechanism. F14 fixed
+2026-08-24 — `Account` has full CRUD, FR-18 satisfied for every entity. **F8 fixed
+2026-08-24** — `FEAT02-navigation-host`, the owner's direct request, gave every screen
+but one a real route.
+**Eight stand, recorded and not fixed** (F1, F4, F5, F7, F9, F11, F12, F15) — the ones
+that need an owner ruling are **F7** (a non-numeric amount is silently saved as zero,
+five live instances across four screens), **F9** (a codegen toolchain the app has proved
+it cannot use, still carried as a runtime dependency and a suppressed lint), **F11**
+(`decisions.md` still calls open the very question `lessons.md` §1 was written about),
+**F12** (the orchestration guide describes a process this run stopped following) and
+**F15** (a copy-pasted date formatter).
 
 **Unattended mode is live, and has now been exercised both ways.** `feat-planner` may mark
 a plan `AUTO-CONFIRMED` when every decision in it cites an already-confirmed artifact, and
@@ -1024,3 +1026,31 @@ failed to surface the bug, because reproducing it needed the actual adverse enum
 order, not just the same platform family.
 
 **[TODO]** Verify the next CI run on `main` is green after this pushes.
+
+---
+
+## 2026-08-24 — FEAT02-navigation-host closes; F8 resolved, the app is now click-through-able
+
+**[STATUS]** **`FEAT02-navigation-host` is DONE** — owner's direct request in this
+session ("add a navigation host so I can actually try it"), resolving `pm/findings.md`
+F8, which had tracked the app's total lack of routing since UC-11's close. `AppShell`
+(`app/lib/src/app.dart`) is now `home`: a Material 3 `NavigationBar` with four primary
+tabs (Balance Sheet, Record, Transactions, Budget) over an `IndexedStack`, so switching
+tabs never rebuilds a tab's provider subscriptions from scratch. Contextual entry points
+wired inside `BalanceSheetScreen` (FAB → create account, row tap → edit account,
+RECEIVABLE/PAYABLE row icon → debt detail, two app-bar actions → categories/currency)
+and `BudgetOverviewScreen` (app-bar action → set budget). No UC owns this — infrastructure,
+the same class as FEAT01 — and no screen's own business logic, DAO, or provider changed.
+
+**[DISCOVERY]** `IndexedStack` keeps every tab mounted simultaneously, which meant every
+`FloatingActionButton` in the app (five of them, once a pushed screen sits on top of a
+mounted tab) shared Flutter's implicit default hero tag and crashed at runtime with
+"multiple heroes share the same tag" — an architecture consequence of the brief, not a
+business-logic bug, fixed with an explicit unique `heroTag` on each.
+
+**[STATUS]** 128 tests green, `flutter analyze` clean, no schema change, `audit.py`
+14/0/0. All nine screens are now reachable except UC-03's adjust flow, deliberately left
+without an entry point (not asked for).
+
+**[TODO]** Nothing is runnable. This is genuinely the end of the run — every tracker
+issue, including this owner-requested addition, is DONE.

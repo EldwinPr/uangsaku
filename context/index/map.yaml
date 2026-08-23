@@ -26,9 +26,8 @@ code:
     budgeting:    app/lib/src/budgeting/    # BudgetGroups, BudgetPeriods
     settings:     app/lib/src/settings/     # Settings, Currency
     entrypoint:   app/lib/main.dart         # + app/lib/src/app.dart (MaterialApp root;
-                                            # its home is UC-14's screen since 2026-08-22,
-                                            # temporarily - FR-1 gives it to UC-01. Each
-                                            # screen issue orphans the last: findings F8)
+                                            # home is AppShell since FEAT02, 2026-08-24 -
+                                            # F8's resolution, see the FEAT02 entry below)
     schema:       app/drift_schemas/        # generated snapshots, committed (drift.md)
     tests:        app/test/database/app_database_test.dart
 
@@ -223,6 +222,27 @@ code:
       - app/test/accounts/account_form_screen_test.dart
       - app/test/transactions/transaction_dao_test.dart
       - app/test/drift/app_database/migration_test.dart
+
+  # FEAT02-navigation-host, DONE 2026-08-24. No UC - infrastructure, same as FEAT01.
+  # Resolves F8: eight of nine screens shipped with no route to them. Owner's direct
+  # request in an interactive session ("add a navigation host so I can actually try it").
+  # AppShell: Material 3 NavigationBar, four primary tabs (Balance Sheet, Record,
+  # Transactions, Budget) over an IndexedStack so switching tabs never rebuilds a tab's
+  # provider subscriptions. Contextual entry points wired inside BalanceSheetScreen
+  # (FAB -> AccountFormScreen create; row tap -> edit mode; RECEIVABLE/PAYABLE row icon
+  # -> DebtDetailScreen; app-bar actions -> CategoryManagerScreen/CurrencyScreen) and
+  # BudgetOverviewScreen (app-bar action -> SetBudgetScreen). No screen's own business
+  # logic, DAO or provider changed; no schema change. UC-03's adjust flow deliberately
+  # has no entry point (plan D3, out of scope). 128 tests green - every FAB needed an
+  # explicit heroTag once IndexedStack kept every tab's FAB mounted simultaneously
+  # (Flutter's implicit default tag collided across tabs).
+  FEAT02:
+    entrypoint: app/lib/src/app.dart # App + AppShell
+    screens:
+      - app/lib/src/accounts/balance_sheet_screen.dart   # + contextual entry points
+      - app/lib/src/budgeting/budget_overview_screen.dart # + SetBudgetScreen link
+    tests:
+      - app/test/app_shell_test.dart
 
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on

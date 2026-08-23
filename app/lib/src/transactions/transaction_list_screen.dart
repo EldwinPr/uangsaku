@@ -22,9 +22,8 @@ import 'transactions_table.dart';
 /// Save proceeds under empty pickers, zero amounts and blank tags exactly as
 /// `RecordTransactionScreen`'s Save ships (F7 precedent).
 ///
-/// Ships unreachable at runtime like every screen before it — no navigation
-/// host exists and none is drawn on any class diagram (UC-09 D8, findings
-/// F8); `home` stays `BalanceSheetScreen`. Exercised by its tests.
+/// Reached as the Transactions tab of `AppShell` (FEAT02 plan D1) — F8's
+/// answer.
 class TransactionListScreen extends ConsumerWidget {
   const TransactionListScreen({super.key});
 

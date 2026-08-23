@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'budget_dao.dart';
 import 'budgeting_providers.dart';
+import 'set_budget_screen.dart';
 
 /// `BudgetOverviewScreen` — UC-12 (FR-13, FR-17): the current month's amount,
 /// spent and remaining for every budget group, plus an "Others" line for
@@ -15,8 +16,9 @@ import 'budgeting_providers.dart';
 /// no "over budget" modal. A negative `remaining` is rendered exactly like a
 /// positive one; overspending is a data value, never a block (FR-12, NFR-4).
 ///
-/// Ships unreachable — no navigation host exists yet (`plan.md` D9, F8);
-/// exercisable only by tests until the owner rules on navigation.
+/// Reached as the Budget tab of `AppShell` (FEAT02 plan D1) — F8's answer.
+/// Its own app-bar action opens `SetBudgetScreen`, where the amounts are set
+/// (FEAT02 plan D1).
 class BudgetOverviewScreen extends ConsumerWidget {
   const BudgetOverviewScreen({super.key});
 
@@ -25,7 +27,18 @@ class BudgetOverviewScreen extends ConsumerWidget {
     final consumptionAsync = ref.watch(budgetConsumptionProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Budget this month')),
+      appBar: AppBar(
+        title: const Text('Budget this month'),
+        actions: [
+          IconButton(
+            tooltip: 'Set budget',
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const SetBudgetScreen()),
+            ),
+          ),
+        ],
+      ),
       body: consumptionAsync.when(
         data: _list,
         loading: () => const Center(child: CircularProgressIndicator()),

@@ -220,6 +220,12 @@ class _RecordTransactionScreenState
     return Scaffold(
       appBar: AppBar(title: const Text('Record money movement')),
       floatingActionButton: FloatingActionButton.extended(
+        // Explicit tag (FEAT02 plan D1): `AppShell`'s `IndexedStack` keeps
+        // every tab mounted at once, so this FAB and Balance Sheet's FAB
+        // coexist in the same subtree — the implicit default tag they'd
+        // otherwise share collides (Flutter's Hero identity requirement),
+        // not a business-logic change.
+        heroTag: 'record-transaction-fab',
         tooltip: 'Save',
         onPressed: _save,
         icon: const Icon(Icons.save),

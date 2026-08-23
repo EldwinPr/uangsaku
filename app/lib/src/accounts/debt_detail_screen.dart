@@ -26,9 +26,8 @@ import 'accounts_providers.dart';
 /// scope). The header shows no account name: no drawn message fetches one,
 /// so it would be an undrawn read; noted as a known gap in the plan.
 ///
-/// Ships unreachable — no navigation host exists yet, making this F8's fifth
-/// orphaned screen and the first never reachable at any point (`plan.md`
-/// D9); exercisable only by tests until the owner rules on navigation.
+/// Reached from the Balance Sheet tab's `RECEIVABLE`/`PAYABLE` rows, via
+/// their trailing icon (FEAT02 plan D1) — F8's answer.
 class DebtDetailScreen extends ConsumerWidget {
   const DebtDetailScreen({super.key, required this.accountId});
 

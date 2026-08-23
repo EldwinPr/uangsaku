@@ -27,6 +27,12 @@ class CategoryManagerScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Categories and subcategories')),
       floatingActionButton: FloatingActionButton(
+        // Explicit tag (FEAT02 plan D1): reached with `AppShell`'s
+        // `IndexedStack` still mounted underneath, whose Balance Sheet tab
+        // has its own FAB — the shared default tag would otherwise collide
+        // (Flutter's Hero identity requirement), not a business-logic
+        // change.
+        heroTag: 'category-manager-fab',
         onPressed: () => _promptAdd(context, ref, categoryId: null),
         tooltip: 'Add category',
         child: const Icon(Icons.add),

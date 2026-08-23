@@ -234,7 +234,7 @@ Both sweeps ask questions per-issue review is structurally blind to: `issue-qa` 
 diff against one plan, and whether three issues add up to one coherent app, or whether the
 documentation still describes what was built, are properties of the whole.*
 
-## F8 — every screen issue orphans the previous screen; UC-13's is now unreachable   [OPEN]
+## F8 — every screen issue orphans the previous screen; UC-13's is now unreachable   [FIXED]
 **Scope:** APP          **Severity:** risk
 **Where:** `app/lib/src/app.dart` — `home: const SetBudgetScreen()`
 **Violates:** nothing stated. It is the accumulating cost of a decision each issue made
@@ -290,8 +290,16 @@ navigation. **Eight built features, one reachable, zero routes.**
 than building a new screen** (an adjust mode, then an edit/delete mode), so neither adds
 a ninth orphan. The count stays at eight; this closes the entire runnable backlog, so it
 is final for this run. Navigation remains the owner's open call.
-**Confidence:** certain — `grep` for `RecordTransactionScreen` outside its own file and tests
-returns only doc comments; `grep` for `BudgetOverviewScreen` likewise.
+**FIXED 2026-08-24 — `FEAT02-navigation-host`.** The owner's direct request, in an
+interactive session: "add a navigation host so I can actually try it." `AppShell`
+(`app/lib/src/app.dart`) is now `home` — a `NavigationBar` with four primary tabs
+(Balance Sheet, Record, Transactions, Budget) over an `IndexedStack`, plus every
+contextual entry point (create/edit account, debt detail, category manager, currency,
+set budget) wired from inside `BalanceSheetScreen`/`BudgetOverviewScreen`. All nine
+screens are reachable now except UC-03's adjust flow, which was deliberately left with
+no entry point (not asked for, no route drawn). No screen's own logic changed.
+**Confidence:** certain — `app/test/app_shell_test.dart` exercises every destination and
+entry point named above against a real in-memory database.
 
 ## F9 — the app carries a codegen toolchain that three issues have proved it cannot use   [OPEN]
 **Scope:** APP          **Severity:** risk

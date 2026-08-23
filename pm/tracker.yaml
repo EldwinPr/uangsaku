@@ -519,3 +519,28 @@ issues:
       write gets no reply arrow because results arrive on the read path as a stream
       emission. diagram-drawio-author's scope extended to match.
 
+  - id: FEAT02-navigation-host
+    slug: navigation-host
+    title: Wire every screen into a reachable app shell
+    status: DONE
+    plan: pm/issues/feat02-navigation-host/plan.md
+    depends_on: [UC01-balance-sheet, UC02B-edit-account, UC03-adjust-account, UC04-record-money-movement, UC09-review-and-correct, UC10-debt-progress, UC11-set-budget, UC12-budget-consumption, UC13-categories, UC14-choose-currency]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-24. No UC owns this - infrastructure, same as FEAT01. Resolves
+      pm/findings.md F8: eight of nine screens shipped with no route to them. Owner's
+      direct request in an interactive session ("add a navigation host so I can actually
+      try it"), the standing question F8 tracked since UC-11's close. AppShell
+      (app/lib/src/app.dart) is now home: a Material 3 NavigationBar with four primary
+      tabs (Balance Sheet, Record, Transactions, Budget) over an IndexedStack, so
+      switching tabs never rebuilds a tab's provider subscriptions. Contextual entry
+      points wired inside BalanceSheetScreen (FAB -> AccountFormScreen create; row tap ->
+      edit mode; RECEIVABLE/PAYABLE row icon -> DebtDetailScreen; app-bar actions ->
+      CategoryManagerScreen/CurrencyScreen) and BudgetOverviewScreen (app-bar action ->
+      SetBudgetScreen). No screen's own business logic, DAO or provider changed; no
+      schema change. UC-03's adjust flow deliberately has no entry point (plan D3, out of
+      scope - not asked for). 128 tests green - every FAB needed an explicit heroTag once
+      IndexedStack kept every tab's FAB mounted simultaneously at once (Flutter's
+      implicit default hero tag collided across tabs, a real runtime crash caught and
+      fixed, not a business-logic change). Closes pm/findings.md F8.
+

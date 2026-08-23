@@ -27,6 +27,12 @@ class SetBudgetScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Set the monthly budget')),
       floatingActionButton: FloatingActionButton(
+        // Explicit tag (FEAT02 plan D1): reached with `AppShell`'s
+        // `IndexedStack` still mounted underneath, whose Balance Sheet tab
+        // has its own FAB — the shared default tag would otherwise collide
+        // (Flutter's Hero identity requirement), not a business-logic
+        // change.
+        heroTag: 'set-budget-fab',
         onPressed: () => _promptAddGroup(context, ref),
         tooltip: 'Add budget group',
         child: const Icon(Icons.add),

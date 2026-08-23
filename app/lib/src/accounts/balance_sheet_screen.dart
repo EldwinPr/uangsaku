@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../settings/currency_screen.dart';
+import '../transactions/category_manager_screen.dart';
 import 'account_dao.dart';
+import 'account_form_screen.dart';
 import 'accounts_providers.dart';
+import 'accounts_table.dart';
+import 'debt_detail_screen.dart';
 
 /// `BalanceSheetScreen` — the primary screen (FR-1), UC-01.
 ///
@@ -39,7 +44,40 @@ class BalanceSheetScreen extends ConsumerWidget {
     final balancesAsync = ref.watch(accountBalancesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('uangsaku')),
+      appBar: AppBar(
+        title: const Text('uangsaku'),
+        actions: [
+          IconButton(
+            tooltip: 'Categories',
+            icon: const Icon(Icons.category_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const CategoryManagerScreen(),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Currency',
+            icon: const Icon(Icons.attach_money),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const CurrencyScreen()),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        // Explicit tag (FEAT02 plan D1): `AppShell`'s `IndexedStack` keeps
+        // every tab mounted at once, so this FAB and Record's FAB coexist
+        // in the same subtree — the implicit default tag they'd otherwise
+        // share collides (Flutter's Hero identity requirement), not a
+        // business-logic change.
+        heroTag: 'balance-sheet-fab',
+        tooltip: 'Add account',
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const AccountFormScreen()),
+        ),
+        child: const Icon(Icons.add),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -51,7 +89,7 @@ class BalanceSheetScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           Text('Accounts', style: Theme.of(context).textTheme.titleMedium),
           ...balancesAsync.when(
-            data: _accountRows,
+            data: (balances) => _accountRows(context, balances),
             loading: () => const [Text('Loading accounts…')],
             error: (_, _) => const [Text('The accounts could not be loaded.')],
           ),
@@ -86,7 +124,14 @@ class BalanceSheetScreen extends ConsumerWidget {
     ),
   ];
 
-  List<Widget> _accountRows(List<AccountBalance> balances) => [
+  /// Row tap opens [AccountFormScreen] in edit mode (FEAT02 plan D3 — never
+  /// adjust mode; UC-03's adjust flow has no entry point in this shell). A
+  /// trailing icon on `RECEIVABLE`/`PAYABLE` rows opens [DebtDetailScreen]
+  /// (FEAT02 plan D1) — the screen is meaningless for `HOLDING` accounts.
+  List<Widget> _accountRows(
+    BuildContext context,
+    List<AccountBalance> balances,
+  ) => [
     if (balances.isEmpty)
       const Text('No accounts yet.', key: ValueKey('no-accounts'))
     else
@@ -94,7 +139,32 @@ class BalanceSheetScreen extends ConsumerWidget {
         ListTile(
           title: Text(entry.account.name),
           subtitle: Text(entry.account.group.name),
-          trailing: Text('${entry.balance}'),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => AccountFormScreen(
+                mode: AccountFormMode.edit,
+                accountId: entry.account.accountId,
+              ),
+            ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('${entry.balance}'),
+              if (entry.account.group == AccountGroup.RECEIVABLE ||
+                  entry.account.group == AccountGroup.PAYABLE)
+                IconButton(
+                  tooltip: 'Debt details',
+                  icon: const Icon(Icons.info_outline),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          DebtDetailScreen(accountId: entry.account.accountId),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
   ];
 }
