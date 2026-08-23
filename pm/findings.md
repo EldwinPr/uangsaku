@@ -204,6 +204,16 @@ parse will be needed by every amount field UC-04 introduces.
 `int.tryParse(...) ?? 0` (plan D7, following the shipped precedent deliberately rather than
 inventing a validation rule NFR-4 would forbid). **The owner's ruling now covers two
 screens**, and UC04's record form will make it the third unless it lands first.
+**Confirmed twice more by the phase-2 sweep, 2026-08-23 — this entry itself went stale
+by lessons.md §1's mechanism (a register not updated as the pattern it tracks recurred):**
+`RecordTransactionScreen` (UC-04) and `TransactionListScreen`'s amend sheet (UC-09) both
+shipped the identical `int.tryParse(_amountController.text) ?? 0`, neither close revisited
+this entry. **Four screens now share the pattern** — `set_budget_screen.dart`,
+`account_form_screen.dart`, `record_transaction_screen.dart`,
+`transaction_list_screen.dart` — and every remaining amount field on the current backlog
+(none — this was the last one, UC-12 has no input controls) would have made it five. The
+owner's call from 2026-08-20 has not been asked again since; it is the same open question,
+now with more weight behind it.
 
 ---
 
@@ -393,3 +403,25 @@ backlog looking complete while it exists.
 FR-18 must not be reported satisfied while this is OPEN.
 **Confidence:** certain — the ruling and its cost were stated by the owner before UC-02
 was built (`context/index/decisions.md`, 2026-08-22).
+
+---
+
+*F15 was filed during phase 2's APP sweep (2026-08-23), run in the main session at the
+end of the run per the owner's standing direction.*
+
+## F15 — the `YYYY-MM-DD` date formatter is copy-pasted into three places   [OPEN]
+**Scope:** APP          **Severity:** risk
+**Where:** `app/lib/src/transactions/record_transaction_screen.dart:280-282`,
+`app/lib/src/transactions/transaction_list_screen.dart:72-74` (`_dateText` getter) and
+`transaction_list_screen.dart:285-287` (the edit sheet's date-picker label) — three
+identical `'${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2,
+'0')}'` expressions.
+**Violates:** nothing stated. `lessons.md` §8's shape at a smaller scale — no artifact
+names a shared date-formatting helper, so each screen issue wrote its own.
+**What it is:** three copies of the same six-line expression, one added per screen issue
+(UC-04, then UC-09 twice within its own file). Not wrong today — all three render
+identically — but a fourth screen or a locale/format change would need finding and editing
+all three by hand, and nothing would fail loudly if one were missed; the class diagrams
+draw no shared formatting utility, so no issue has had a place to put one.
+**Confidence:** certain — grepped verbatim; worth checking whether the owner wants a
+shared helper before any further screen adds a fourth copy.

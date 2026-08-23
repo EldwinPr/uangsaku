@@ -281,11 +281,16 @@ change it is decides what the delete flow looks like.
 
 **Raised by:** UC03-adjust-account, 2026-08-23
 **Blocks:** UC03-adjust-account directly. Nothing in `pm/tracker.yaml` depends on UC03, so
-the run continues elsewhere (UC01-balance-sheet and UC10-debt-progress are runnable behind
-UC02; the Budgeting chain is independent). But the answer semantically bears on three later
-issues' queries — UC-01 (how corrections sit in the four figures), UC-09 (how the row
-displays), UC-12 (whether a downward correction counts into "Others" spending) — and a late
-answer could force query rewrites or row migrations there.
+the rest of the backlog ran to completion behind it (UC01-balance-sheet, UC09-review-and-
+correct, UC10-debt-progress and UC12-budget-consumption all shipped DONE while this stayed
+open). **Updated 2026-08-23, phase-2 sweep:** this paragraph originally warned the answer
+"semantically bears on three later issues' queries" and "could force query rewrites or row
+migrations there" — that risk did not materialize. All four of UC-01/UC-09/UC-10/UC-12
+were built provably **encoding-independent**: each cites `to_account_id IS NULL` with no
+`kind` filter (D2-shaped decisions in each plan) and each is pinned by a dual-encoding
+test asserting identical output under both of this question's candidate encodings. So Q4
+no longer blocks or endangers anything already shipped — it only still blocks UC03 itself,
+which creates the adjustment rows this question is about.
 
 `seq-uc03-adjust-account.drawio` message 10 inserts `kind=adjustment` with a computed
 `diff`. The schema has two account-side columns and one amount column, and nothing decides
