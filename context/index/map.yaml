@@ -155,6 +155,25 @@ code:
       - app/test/transactions/transactions_notifier_test.dart
       - app/test/transactions/transaction_list_screen_test.dart
 
+  # UC12-budget-consumption, DONE 2026-08-23. Closes FR-13/FR-17 for Budgeting: the
+  # remaining backlog issue. Read-only, no write path (the diagram draws none). spent =
+  # SUM(Transactions.amount) WHERE to_account_id IS NULL, in-month, grouped by
+  # budget_group_id - NO kind filter (D2), same predicate UC-01/UC-10 already use for
+  # spending. One customSelect in BudgetDao joins BudgetGroups/BudgetPeriods/Transactions
+  # directly (ISSUE-005 D1); the "Others" row (budget_group_id IS NULL) is always present
+  # via UNION ALL, its label applied by the screen, never stored (D4). No carry-forward
+  # (FR-14): amount is 0 when the month has no BudgetPeriods row. Neither OPEN question
+  # (Q3/Q4) touches this issue's query. BudgetOverviewScreen has zero controls - nothing
+  # to refuse, overspending renders as a negative remaining (FR-12/NFR-4). Ships
+  # unreachable - F8's eighth orphan; home stays BalanceSheetScreen (not re-pointed).
+  UC-12:
+    dao:       app/lib/src/budgeting/budget_dao.dart           # + watchConsumption(), BudgetConsumption
+    providers: app/lib/src/budgeting/budgeting_providers.dart  # + budgetConsumptionProvider
+    screen:    app/lib/src/budgeting/budget_overview_screen.dart # BudgetOverviewScreen
+    tests:
+      - app/test/budgeting/budget_dao_test.dart
+      - app/test/budgeting/budget_overview_screen_test.dart
+
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
 # each other in BOTH directions (balances need Transactions; the record screen needs

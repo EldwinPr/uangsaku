@@ -252,6 +252,224 @@ void main() {
     expect(transaction.amount, 50000);
   });
 
+  group('UC-12: watchConsumption()', () {
+    Future<int> insertTransaction(
+      DateTime occurredOn,
+      int amount, {
+      TransactionKind kind = TransactionKind.expense,
+      int? fromAccountId,
+      int? toAccountId,
+      int? budgetGroupId,
+    }) {
+      return database
+          .into(database.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              kind: kind,
+              amount: amount,
+              occurredOn: occurredOn,
+              fromAccountId: Value(fromAccountId),
+              toAccountId: Value(toAccountId),
+              budgetGroupId: Value(budgetGroupId),
+            ),
+          );
+    }
+
+    test('FR-13: a group with an amount and partial spending shows amount, spent and remaining = amount - spent', () async {
+      final dao = daoOn(DateTime(2026, 8, 21));
+      final groupId = await insertGroup(dao, 'Groceries');
+      await dao.upsert(groupId: groupId, amount: 1000000);
+      await insertTransaction(
+        DateTime(2026, 8, 5),
+        300000,
+        budgetGroupId: groupId,
+      );
+
+      final rows = await dao.watchConsumption().first;
+      final row = rows.firstWhere((row) => row.groupId == groupId);
+      expect(row.amount, 1000000);
+      expect(row.spent, 300000);
+      expect(row.remaining, 700000);
+    });
+
+    test(
+      'a group with an amount and no spending: spent 0, remaining == amount',
+      () async {
+        final dao = daoOn(DateTime(2026, 8, 21));
+        final groupId = await insertGroup(dao, 'Groceries');
+        await dao.upsert(groupId: groupId, amount: 500000);
+
+        final rows = await dao.watchConsumption().first;
+        final row = rows.firstWhere((row) => row.groupId == groupId);
+        expect(row.amount, 500000);
+        expect(row.spent, 0);
+        expect(row.remaining, 500000);
+      },
+    );
+
+    test('a group with spending and no period row for the month: amount 0, negative remaining', () async {
+      final dao = daoOn(DateTime(2026, 8, 21));
+      final groupId = await insertGroup(dao, 'Groceries');
+      await insertTransaction(
+        DateTime(2026, 8, 5),
+        150000,
+        budgetGroupId: groupId,
+      );
+
+      final rows = await dao.watchConsumption().first;
+      final row = rows.firstWhere((row) => row.groupId == groupId);
+      expect(row.amount, 0);
+      expect(row.spent, 150000);
+      expect(row.remaining, -150000);
+    });
+
+    test(
+      'FR-17: untagged spending appears only under Others, never under a group',
+      () async {
+        final dao = daoOn(DateTime(2026, 8, 21));
+        final groupId = await insertGroup(dao, 'Groceries');
+        await dao.upsert(groupId: groupId, amount: 100000);
+        await insertTransaction(DateTime(2026, 8, 10), 40000);
+
+        final rows = await dao.watchConsumption().first;
+        final group = rows.firstWhere((row) => row.groupId == groupId);
+        expect(group.spent, 0);
+
+        final others = rows.firstWhere((row) => row.groupId == null);
+        expect(others.name, isNull);
+        expect(others.amount, 0);
+        expect(others.spent, 40000);
+      },
+    );
+
+    test('Others is present with 0/0/0 when nothing is untagged', () async {
+      final dao = daoOn(DateTime(2026, 8, 21));
+      final groupId = await insertGroup(dao, 'Groceries');
+      await dao.upsert(groupId: groupId, amount: 100000);
+      await insertTransaction(
+        DateTime(2026, 8, 10),
+        40000,
+        budgetGroupId: groupId,
+      );
+
+      final rows = await dao.watchConsumption().first;
+      final others = rows.firstWhere((row) => row.groupId == null);
+      expect(others.amount, 0);
+      expect(others.spent, 0);
+      expect(others.remaining, 0);
+    });
+
+    test('FR-8/FR-9: a transfer, a lend and an income all set to_account_id and contribute nothing to spent', () async {
+      final dao = daoOn(DateTime(2026, 8, 21));
+      final groupId = await insertGroup(dao, 'Wallet');
+
+      // transfer: both sides set.
+      await insertTransaction(
+        DateTime(2026, 8, 3),
+        10000,
+        kind: TransactionKind.transfer,
+        fromAccountId: 1,
+        toAccountId: 2,
+        budgetGroupId: groupId,
+      );
+      // lend: to the receivable account, toAccountId set.
+      await insertTransaction(
+        DateTime(2026, 8, 4),
+        20000,
+        kind: TransactionKind.lend,
+        fromAccountId: 1,
+        toAccountId: 3,
+        budgetGroupId: groupId,
+      );
+      // income: toAccountId set, fromAccountId null.
+      await insertTransaction(
+        DateTime(2026, 8, 5),
+        30000,
+        kind: TransactionKind.income,
+        toAccountId: 1,
+        budgetGroupId: groupId,
+      );
+
+      final rows = await dao.watchConsumption().first;
+      final row = rows.firstWhere((row) => row.groupId == groupId);
+      expect(row.spent, 0);
+    });
+
+    test('FR-14: spending dated in the previous or next month contributes nothing to this month', () async {
+      final dao = daoOn(DateTime(2026, 8, 21));
+      final groupId = await insertGroup(dao, 'Groceries');
+      await insertTransaction(
+        DateTime(2026, 7, 31),
+        10000,
+        budgetGroupId: groupId,
+      );
+      await insertTransaction(
+        DateTime(2026, 9, 1),
+        20000,
+        budgetGroupId: groupId,
+      );
+      await insertTransaction(
+        DateTime(2026, 8, 15),
+        5000,
+        budgetGroupId: groupId,
+      );
+
+      final rows = await dao.watchConsumption().first;
+      final row = rows.firstWhere((row) => row.groupId == groupId);
+      expect(row.spent, 5000);
+    });
+
+    test('an adjustment row with to_account_id NULL counts as spending — the predicate is column-only, pinned per D7', () async {
+      final dao = daoOn(DateTime(2026, 8, 21));
+      final groupId = await insertGroup(dao, 'Groceries');
+      await insertTransaction(
+        DateTime(2026, 8, 12),
+        70000,
+        kind: TransactionKind.adjustment,
+        fromAccountId: 1,
+        budgetGroupId: groupId,
+      );
+
+      final rows = await dao.watchConsumption().first;
+      final row = rows.firstWhere((row) => row.groupId == groupId);
+      expect(row.spent, 70000);
+    });
+
+    test('FR-12/NFR-4: spending past the amount emits a negative remaining, nothing blocked', () async {
+      final dao = daoOn(DateTime(2026, 8, 21));
+      final groupId = await insertGroup(dao, 'Groceries');
+      await dao.upsert(groupId: groupId, amount: 100000);
+      await insertTransaction(
+        DateTime(2026, 8, 12),
+        150000,
+        budgetGroupId: groupId,
+      );
+
+      final rows = await dao.watchConsumption().first;
+      final row = rows.firstWhere((row) => row.groupId == groupId);
+      expect(row.remaining, -50000);
+    });
+
+    test('no groups at all — only the Others row is emitted', () async {
+      final dao = daoOn(DateTime(2026, 8, 21));
+
+      final rows = await dao.watchConsumption().first;
+      expect(rows, hasLength(1));
+      expect(rows.single.groupId, isNull);
+      expect(rows.single.amount, 0);
+      expect(rows.single.spent, 0);
+    });
+
+    test('ordering: groups ascending by id, Others last', () async {
+      final dao = daoOn(DateTime(2026, 8, 21));
+      final first = await insertGroup(dao, 'Groceries');
+      final second = await insertGroup(dao, 'Transport');
+
+      final rows = await dao.watchConsumption().first;
+      expect(rows.map((row) => row.groupId), [first, second, null]);
+    });
+  });
+
   group('Empty and boundary states', () {
     test('no groups at all — watchGroups() emits an empty list', () async {
       final dao = daoOn(DateTime(2026, 8, 21));

@@ -160,3 +160,24 @@ final budgetProvider =
     NotifierProvider.autoDispose<BudgetNotifier, AsyncValue<List<BudgetRow>>>(
       BudgetNotifier.new,
     );
+
+/// UC-12's per-group figures (FR-13, FR-17), messages 2–6 on
+/// `seq-uc12-budget-consumption.drawio`: wraps exactly one drift stream —
+/// `BudgetDao.watchConsumption()`'s — and nothing else. Screen passes no
+/// argument, so it always shows the current month (`monthsAgo: 0`); no month
+/// picker is drawn (plan Out of scope).
+///
+/// Hand-written single-stream `StreamProvider.autoDispose`, not `@riverpod`,
+/// for the two recorded reasons (`riverpod.md`, verified UC-13/UC-14):
+/// `riverpod_generator` throws `InvalidTypeException` on any provider typed
+/// over a drift row class, and codegen would rename this away from the class
+/// diagram's spelling (*StreamProvider · UC-12*). Not a combining notifier
+/// either — the UC-11 ruling (`context/index/decisions.md` 2026-08-22) bans
+/// multi-stream merging shapes only when a screen reads more than one
+/// stream; this screen reads one, matching `financialPositionProvider` /
+/// `accountBalancesProvider`'s shape.
+final budgetConsumptionProvider =
+    StreamProvider.autoDispose<List<BudgetConsumption>>((ref) {
+      final database = ref.watch(appDatabaseProvider);
+      return BudgetDao(database).watchConsumption();
+    });

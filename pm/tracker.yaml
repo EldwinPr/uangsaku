@@ -465,15 +465,29 @@ issues:
   - id: UC12-budget-consumption
     slug: budget-consumption
     title: See what is left of this month's budget
-    status: TODO
+    status: DONE
     plan: pm/issues/uc12-budget-consumption/plan.md
     depends_on: [UC11-set-budget, UC04-record-money-movement]
     traces_to: [UC-12]
     summary: >-
       FR-13's remaining amount, draining as spending is recorded. Untagged spending appears
       under "Others", which is the null budget_group_id and not a row (FR-17, ERD D5).
-      Depends on both halves for a real reason: without UC11 there is no amount, without UC04
-      there is nothing consuming it.
+      DONE 2026-08-23: AUTO-CONFIRMED plan, the last runnable issue in this run. Read-only,
+      no write path (the diagram draws none). BudgetDao.watchConsumption() is one
+      customSelect joining BudgetGroups/BudgetPeriods/Transactions directly (ISSUE-005 D1);
+      spent = SUM(amount) WHERE to_account_id IS NULL, in-month, grouped by
+      budget_group_id - NO kind filter, the same predicate UC-01/UC-10 use for spending, so
+      neither OPEN question (Q3/Q4) touches this figure. The Others row (budget_group_id IS
+      NULL) is always present via UNION ALL, its "Others" label applied by the screen, never
+      stored. No carry-forward (FR-14): a group's amount is 0 when the month has no
+      BudgetPeriods row. BudgetOverviewScreen has zero controls, so there is nothing to
+      refuse; overspending renders as a negative remaining rather than blocking (FR-12,
+      NFR-4). 104 tests green, no schema change. Ships unreachable - F8's eighth orphan;
+      home stays BalanceSheetScreen (not re-pointed). As-built pass added the elided
+      Screen->provider watch() message and corrected the isolate note (F3 narrows to two:
+      seq-uc03 - HALTED, stale until Q4 unblocks it - and the not-yet-drawn seq-uc02b).
+      Only UC02B-edit-account (Q3) and UC03-adjust-account (Q4) remain HALTED; nothing else
+      is runnable. Phase 2 (the repo-wide sweep) is next.
 
   - id: ISSUE-008
     slug: sequence-conventions

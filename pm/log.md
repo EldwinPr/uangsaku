@@ -14,16 +14,17 @@ before starting work.
 
 ## Current state — 2026-08-23
 
-**Phase.** Documentation complete; **implementation under way, mid-run.** The app compiles
-and its test suite is green (**89 tests**). Eight modules/screens built end to end — UC-13's,
-UC-11's, UC-14's, UC-02's, UC-01's, UC-10's, UC-04's record form and UC-09's transaction
-list; `home` is `BalanceSheetScreen` permanently (FR-1) and seven screens are orphaned or
-unreachable (F8).
+**Phase.** Documentation complete; **implementation runnable-backlog complete — phase 2
+next.** The app compiles and its test suite is green (**104 tests**). Nine modules/screens
+built end to end — UC-13's, UC-11's, UC-14's, UC-02's, UC-01's, UC-10's, UC-04's record
+form, UC-09's transaction list and UC-12's budget overview; `home` is `BalanceSheetScreen`
+permanently (FR-1) and eight screens are orphaned or unreachable (F8).
 
-**Active issue.** None — `UC09-review-and-correct` just closed. Two issues are HALTED at
-the planning gate for the run: `UC02B-edit-account` (Q3) and `UC03-adjust-account` (Q4).
-This run has closed UC02, UC01, UC10, UC04 and UC09; before them FEAT01, UC13, UC11, UC14.
-Only `UC12-budget-consumption` remains runnable; after it, phase 2's repo sweep.
+**Active issue.** None — `UC12-budget-consumption` just closed and nothing is runnable.
+Two issues are HALTED at the planning gate for the run: `UC02B-edit-account` (Q3) and
+`UC03-adjust-account` (Q4). This run has closed UC02, UC01, UC10, UC04, UC09 and UC12;
+before them FEAT01, UC13, UC11, UC14. **Phase 2 — the repo-wide APP + TRAIL sweep — is
+next**, then the run stops.
 
 **Pushed.** CI has run. The `app` job failed once on the scaffold and the guard was fixed
 rather than the commit reverted — see the entry below.
@@ -74,11 +75,11 @@ which F8–F13 come from the two end-of-run sweeps of the previous run and F14 w
 the Q2 ruling (Account create-only until UC02B lands; FR-18 visibly unsatisfied for it).
 **Four are resolved**: F2, F6, F13 fixed and
 F10 accepted (the clean-checkout verification, recorded as a negative result). F3 narrowed
-repeatedly, fourteen diagrams to **three** (`seq-uc03`, `seq-uc12`, the not-yet-drawn
-`seq-uc02b`) as of UC-09's close. **Eight stand, recorded and not fixed** — the ones
-that need an owner ruling are **F7** (a non-numeric budget amount is silently saved as
-zero), **F8** (every screen issue orphans the previous screen; UC-13's is already
-unreachable, and six more screens are queued behind the same pattern), **F9** (a codegen
+repeatedly, fourteen diagrams to **two** (`seq-uc03` and the not-yet-drawn `seq-uc02b`),
+both now on issues HALTED rather than TODO — neither moves again this run. **Eight stand,
+recorded and not fixed** — the ones that need an owner ruling are **F7** (a non-numeric
+budget amount is silently saved as zero), **F8** (every screen issue orphans the previous
+screen; eight now built, one reachable), **F9** (a codegen
 toolchain the app has proved it cannot use, still carried as a runtime dependency and a
 suppressed lint), **F11** (`decisions.md` still calls open the very question `lessons.md`
 §1 was written about) and **F12** (the orchestration guide describes a process this run
@@ -845,3 +846,37 @@ to a later UC-09 surface.
 
 **[TODO]** Only `UC12-budget-consumption` remains runnable. `UC02B-edit-account` (Q3) and
 `UC03-adjust-account` (Q4) stay HALTED pending the owner.
+
+---
+
+## 2026-08-23 — UC12-budget-consumption closes; only the two halted issues remain
+
+**[STATUS]** **`UC12-budget-consumption` is DONE — the last runnable issue in this run.**
+`BudgetDao.watchConsumption()` is one watched `customSelect` joining `BudgetGroups`,
+`BudgetPeriods` and `Transactions` directly (ISSUE-005 D1). `spent` = `SUM(amount) WHERE
+to_account_id IS NULL`, in-month, grouped by `budget_group_id` — **no `kind` filter**, the
+same spending predicate UC-01/UC-10 already use, which is why neither OPEN question (Q3,
+Q4) touches this figure. The "Others" row (`budget_group_id IS NULL`) is always present via
+`UNION ALL`; its label is applied by the screen, never stored. No carry-forward (FR-14): a
+group's `amount` is 0 when the month has no `BudgetPeriods` row. `BudgetOverviewScreen` has
+zero controls, so there is nothing to refuse — overspending renders as a negative
+`remaining` rather than blocking (FR-12, NFR-4). 104 tests green, no schema change
+(`drift_schema_v1.json` byte-identical). Ships unreachable — F8's **eighth** orphan; `home`
+stays `BalanceSheetScreen`, not re-pointed. One SQL-dialect snag handled in scope: SQLite
+rejects an expression directly in `ORDER BY` on a compound `UNION ALL` select, fixed by
+wrapping the union in a subquery — no schema or scope change.
+
+**[STATUS]** As-built pass added the elided `BudgetOverviewScreen → budgetConsumptionProvider`
+`watch()` subscription and corrected the stale isolate note; render re-inspected, clean.
+F3 narrows to two, and both are now on issues HALTED at the planning gate rather than TODO:
+`seq-uc03-adjust-account.drawio` (drawn, stale, blocked behind Q4) and `seq-uc02b` (not yet
+drawn — UC02B is blocked on its own diagram per Q3). Neither will move until the owner
+answers.
+
+**[STATUS]** Per the owner's mid-run direction (2026-08-23): planning and diagram authoring
+now happen in the main orchestrator session rather than via `feat-planner`/diagram-author
+subagents, extending the 2026-08-22 direction that already moved QA and diagram work
+in-session (F12). `flutter-coder` remains the one dispatched subagent.
+
+**[TODO]** Nothing is runnable. `UC02B-edit-account` (Q3) and `UC03-adjust-account` (Q4)
+stay HALTED pending the owner. **Phase 2 — the repo-wide APP + TRAIL sweep — is next.**

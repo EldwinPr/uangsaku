@@ -123,10 +123,12 @@ pass, because UC-13 owns that diagram.
 `seq-uc01-balance-sheet.drawio` at their closes.
 **Narrowed 2026-08-23:** `seq-uc10-debt-progress.drawio` in UC-10's, then all five
 recording diagrams (`seq-uc04`–`seq-uc08`) at UC04's close, then `seq-uc09-review-and-
-correct.drawio` in UC-09's. **Three remain**, on the issues that are still
-TODO-or-halted: `seq-uc03`, `seq-uc12`, and the not-yet-drawn `seq-uc02b`. Each will be
-corrected by its own issue's as-built pass; anything still stale when the run ends is a
-real leftover for the sweep.
+correct.drawio` in UC-09's, then `seq-uc12-budget-consumption.drawio` in UC-12's — the
+last runnable issue in this run. **Two remain**, both on issues HALTED at the planning
+gate rather than TODO: `seq-uc03-adjust-account.drawio` (drawn, stale, blocked behind Q4)
+and `seq-uc02b` (not yet drawn at all — UC02B is blocked on its own diagram per Q3, so it
+cannot get an as-built pass until it is planned). Neither will be corrected by this run;
+both are real leftovers for the sweep and stay stale until the owner answers Q3/Q4.
 
 ## F4 — the NFR-4 enabled-controls test can pass vacuously for the rename control   [OPEN]
 **Scope:** APP          **Severity:** risk
@@ -258,8 +260,14 @@ and it is reachable from nothing. UC09 and UC12 each add one more on the current
 been the natural navigation host for UC-10's `DebtDetailScreen` (noted at UC-10's close),
 but no navigation host exists on any class diagram, so this issue does not invent one
 either. Only UC12 remains on the current backlog to add another orphan.
+**Confirmed again 2026-08-23, UC12 — the last runnable issue in this run:**
+`BudgetOverviewScreen` joins the set — **eighth orphan**, and `home` again deliberately
+stays `BalanceSheetScreen`. Every screen this run has built since UC-01 has shipped
+unreachable; the backlog's only remaining issues are the two HALTED on Q3/Q4, so this
+count does not move again until the owner either answers one of those or rules on
+navigation. **Eight built features, one reachable, zero routes.**
 **Confidence:** certain — `grep` for `RecordTransactionScreen` outside its own file and tests
-returns only doc comments.
+returns only doc comments; `grep` for `BudgetOverviewScreen` likewise.
 
 ## F9 — the app carries a codegen toolchain that three issues have proved it cannot use   [OPEN]
 **Scope:** APP          **Severity:** risk

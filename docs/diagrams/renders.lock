@@ -38,7 +38,7 @@ docs/diagrams/seq-uc11-set-budget.drawio:
   source_sha: 1b67a29e2ae64c782ab945601906e1c3719a9112ac24a3072cd52c91481e3558
 docs/diagrams/seq-uc12-budget-consumption.drawio:
   render: seq-uc12-budget-consumption.png
-  source_sha: 469c4369b82967d9bb03681ca2e405836513957d2ac36660f514c3ff4d5a2c3b
+  source_sha: 1748408c3575c30a8523bb4c37150ce86c5455f13eb6a043d1736ad90f07c135
 docs/diagrams/seq-uc13-categories.drawio:
   render: seq-uc13-categories.png
   source_sha: 1a31fa2c5cf6f3255bae5770967a07847db499fcbf4f5a90ef15abb165c426a2
