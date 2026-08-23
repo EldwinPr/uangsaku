@@ -120,12 +120,12 @@ when this was filed.
 pass, because UC-13 owns that diagram.
 **Narrowed again 2026-08-22:** `seq-uc11-set-budget.drawio` in UC-11's as-built pass, then
 `seq-uc14-choose-currency.drawio` in UC-14's, then `seq-uc02-add-account.drawio` and
-`seq-uc01-balance-sheet.drawio` at their closes, then `seq-uc10-debt-progress.drawio` in
-UC-10's.
-**Nine remain**, one per unbuilt issue, each to be corrected by its own as-built pass at
-close. They stay filed rather than fixed — the run does not repair findings, and each
-belongs to an issue that has not been built yet. Anything still stale when the backlog
-finishes is a real leftover; anything fixed before then costs nothing.
+`seq-uc01-balance-sheet.drawio` at their closes.
+**Narrowed 2026-08-23:** `seq-uc10-debt-progress.drawio` in UC-10's, then all five
+recording diagrams (`seq-uc04`–`seq-uc08`) at UC04's close. **Four remain**, on the issues
+that are still TODO-or-halted: `seq-uc03`, `seq-uc09`, `seq-uc12`, and the not-yet-drawn
+`seq-uc02b`. Each will be corrected by its own issue's as-built pass; anything still stale
+when the run ends is a real leftover for the sweep.
 
 ## F4 — the NFR-4 enabled-controls test can pass vacuously for the rename control   [OPEN]
 **Scope:** APP          **Severity:** risk
@@ -247,9 +247,11 @@ orphan**, and unlike the other four it was never reachable at any point. Remaini
 issues (UC04's record form, UC09's list, UC12's consumption view) will each add another
 unless the navigation ruling lands first — and UC09's list would have been the natural
 host for this one.
-**Confidence:** certain — `grep` for `CategoryManagerScreen` outside its own file and tests
-returns only doc comments; the same is true of `SetBudgetScreen`, `CurrencyScreen`,
-`AccountFormScreen` and now `DebtDetailScreen`.
+**Confirmed again 2026-08-23, UC04:** `RecordTransactionScreen` joins the set — **sixth
+orphan**. The record form is the app's core feature (FR-6, "the fastest path in the app")
+and it is reachable from nothing. UC09 and UC12 each add one more on the current pattern.
+**Confidence:** certain — `grep` for `RecordTransactionScreen` outside its own file and tests
+returns only doc comments.
 
 ## F9 — the app carries a codegen toolchain that three issues have proved it cannot use   [OPEN]
 **Scope:** APP          **Severity:** risk

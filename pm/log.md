@@ -15,16 +15,15 @@ before starting work.
 ## Current state — 2026-08-22
 
 **Phase.** Documentation complete; **implementation under way, mid-run.** The app compiles
-and its test suite is green (**63 tests**). Six modules/screens built end to end — UC-13's,
-UC-11's, UC-14's, UC-02's, UC-01's and UC-10's; `home` is `BalanceSheetScreen` permanently
-(FR-1) and five screens are orphaned or unreachable (F8).
+and its test suite is green (**77 tests**). Seven modules/screens built end to end — UC-13's,
+UC-11's, UC-14's, UC-02's, UC-01's, UC-10's and UC-04's record form; `home` is
+`BalanceSheetScreen` permanently (FR-1) and six screens are orphaned or unreachable (F8).
 
-**Active issue.** `UC04-record-money-movement` — the deliberate five-use-cases-one-form
-exception, now that both its dependencies (UC01, UC13) are Done. Two issues are HALTED at
+**Active issue.** `UC09-review-and-correct` — the transaction list plus edit/delete, the
+issue the brief itself flags as likeliest to violate NFR-4 quietly. Two issues are HALTED at
 the planning gate for the run: `UC02B-edit-account` (Q3) and `UC03-adjust-account` (Q4).
-This run has closed `UC02-add-account`, `UC01-balance-sheet` and `UC10-debt-progress`;
-before them FEAT01, UC13-categories, UC11-set-budget and UC14-choose-currency. Remaining
-after UC04: UC09-review-and-correct and UC12-budget-consumption.
+This run has closed UC02, UC01, UC10 and UC04; before them FEAT01, UC13, UC11, UC14.
+Remaining after UC09: UC12-budget-consumption.
 
 **Pushed.** CI has run. The `app` job failed once on the scaffold and the guard was fixed
 rather than the commit reverted — see the entry below.
@@ -786,3 +785,29 @@ reachable at any point; UC09's list would have been its natural host.
 
 **[TODO]** Next: `UC04-record-money-movement` - five use cases, one form, one write path;
 both dependencies Done. After it UC09 and UC12 unblock.
+
+---
+
+## 2026-08-23 — UC04-record-money-movement closes; the ledger gets its first write path
+
+**[STATUS]** **`UC04-record-money-movement` is DONE.** Six writable kinds across five use
+cases through ONE insert: `TransactionDao.insert()` is the Transactions table's first write
+path, sides per enums.md's kind table, amount an exact int magnitude, no validation and no
+refusal anywhere (NFR-4). The tracker row's own summary undercounted ("five kinds") - the
+workbook gives UC-07 lend OR borrow and UC-08 repayment separately; corrected at close,
+which is the same failure shape the UC02 row had (a wrong summary propagating into briefs -
+the planner's dispatch brief repeated it). 77 tests green, no schema change. The screen
+ships unreachable (F8's sixth orphan); class-transactions' TransactionDao box gained
+watchAccounts()/watchBudgetGroups(); all five recording diagrams' isolate notes corrected
+(F3 narrows to four), renders inspected at full size.
+
+**[DISCOVERY]** **The .mmd sources do not exist for any committed sequence diagram, so
+"re-author in Mermaid" means reconstructing the edge graph from the XML.** For the five
+recording diagrams this was done by extracting every UserObject label plus every mxCell
+edge source/target pair rather than trusting the label order - fragment membership and
+edge directions are not recoverable from labels alone. All five reconstructions rendered
+identical structure to their predecessors with only the isolate note changed. The
+autonumber loss from UC01's pass would have happened five times here without that care.
+
+**[TODO]** Next: `UC09-review-and-correct`. After it, only UC12 remains runnable; UC02B
+and UC03 stay halted on Q3/Q4 unless the owner answers.

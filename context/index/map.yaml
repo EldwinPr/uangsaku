@@ -122,6 +122,22 @@ code:
       - app/test/accounts/debt_progress_test.dart
       - app/test/accounts/debt_detail_screen_test.dart
 
+  # UC04-record-money-movement, DONE 2026-08-23. THE deliberate five-use-cases-one-form
+  # exception: six writable kinds (expense/income/transfer/lend/borrow/repayment) through
+  # ONE insert - the Transactions table's first write path. Sides come from enums.md's kind
+  # table; no spending predicate appears anywhere in this module (FR-8/FR-9 fall out of the
+  # row shape). TransactionDao also carries the two picker reads the component diagram
+  # assigns here (watchAccounts/watchBudgetGroups) because ISSUE-005 D1 forbids calling
+  # another module's DAO. The screen ships unreachable (F8, sixth orphan).
+  UC-04:
+    dao:       app/lib/src/transactions/transaction_dao.dart          # insert() + watchAccounts()/watchBudgetGroups()
+    providers: app/lib/src/transactions/transactions_providers.dart   # + TransactionsNotifier/transactionsProvider (six record methods), accountPickerProvider, budgetGroupPickerProvider
+    screen:    app/lib/src/transactions/record_transaction_screen.dart # RecordTransactionScreen
+    tests:
+      - app/test/transactions/transaction_dao_test.dart
+      - app/test/transactions/transactions_notifier_test.dart
+      - app/test/transactions/record_transaction_screen_test.dart
+
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
 # each other in BOTH directions (balances need Transactions; the record screen needs

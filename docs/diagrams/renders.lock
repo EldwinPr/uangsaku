@@ -14,19 +14,19 @@ docs/diagrams/seq-uc03-adjust-account.drawio:
   source_sha: 4dbac13928d6d1cc61556422e3cc446c28447c94f8075e350c5d2bac4da432ab
 docs/diagrams/seq-uc04-record-expense.drawio:
   render: seq-uc04-record-expense.png
-  source_sha: 028a7c720a329a114bd8ba53bec72b6bfb82ee1b1f9c7b1844156f3c2408f8f5
+  source_sha: b69b0adbfa71ca1b46f789173714bfed0f939bd33ff1a7e396f8d1681127da78
 docs/diagrams/seq-uc05-record-income.drawio:
   render: seq-uc05-record-income.png
-  source_sha: c2fd14b6886011c8f432a1df42194ba0b3a8c1e42c2ab5f0d36dffb4775fcea7
+  source_sha: 830edb9444189113795df72bb0cb7351bbf5569242bca92a128fa85ae2663d3b
 docs/diagrams/seq-uc06-move-money.drawio:
   render: seq-uc06-move-money.png
-  source_sha: c0be853e06cf5cf16335f016495d873dde9f802a0468626a7c4cef15f3e6d50d
+  source_sha: 00a0e3586d2429336e8c6cb639b8b753c697e898b1b1ac4d77b95a41d87fc5c9
 docs/diagrams/seq-uc07-lend-borrow.drawio:
   render: seq-uc07-lend-borrow.png
-  source_sha: f52053b96d3f4f97d11ac5fb8cbcc0818047fd38866d885e8984400447747c52
+  source_sha: 0dca62097b40f0bca8b3050e34643e3a6b68761e57e7a971b9d4bebdcd4ffaa4
 docs/diagrams/seq-uc08-repayment.drawio:
   render: seq-uc08-repayment.png
-  source_sha: dc21eae18c6e048ee8b92a11735b40100556377c2b51a01af52d3083bdd56e4d
+  source_sha: be18fb3e594ee32214e5c4d370a8cebee75dd4d9714d8ff03239221e6038283d
 docs/diagrams/seq-uc09-review-and-correct.drawio:
   render: seq-uc09-review-and-correct.png
   source_sha: 93af2bb60a1afc7da301d1e1c5006d47ee01b1521f5e566ebe4c0a50e15bd41f

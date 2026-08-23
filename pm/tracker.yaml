@@ -378,7 +378,7 @@ issues:
   - id: UC04-record-money-movement
     slug: record-money-movement
     title: Record money movement - all five recording use cases
-    status: TODO
+    status: DONE
     plan: pm/issues/uc04-record-money-movement/plan.md
     depends_on: [UC01-balance-sheet, UC13-categories]
     traces_to: [UC-04, UC-05, UC-06, UC-07, UC-08]
@@ -390,6 +390,19 @@ issues:
       file. FR-6's "fastest path in the app" is also a property of the whole form.
       Correctness test: transfers and lending never count as spending, which falls out of
       to_account_id IS NULL rather than a rule repeated in every query.
+      CORRECTED 2026-08-23 at close: the summary above undercounts - the workbook gives
+      UC-07 lend OR borrow (one alt) and UC-08 repayment its own row, so this issue is SIX
+      writable kinds across FIVE use cases, not five kinds.
+      DONE 2026-08-23: TransactionDao (plain class, first ledger write path, plus
+      watchAccounts()/watchBudgetGroups() picker reads per component-overview D1),
+      TransactionsNotifier with six diagram-verbatim methods,
+      accountPickerProvider/budgetGroupPickerProvider, RecordTransactionScreen (one form:
+      kind dropdown carries seq-uc07/uc08's alt; tags only where drawn; note everywhere;
+      blanks become nulls; repay's two arms resolved by the debt account's group). Save
+      always enabled, nothing refused (NFR-4). RecordTransactionScreen ships unreachable -
+      F8's sixth orphan. As-built pass corrected isolate notes on all five recording
+      diagrams (F3 narrows to four); class-transactions' TransactionDao box gained the two
+      picker reads. 77 tests green, no schema change.
 
   - id: UC09-review-and-correct
     slug: review-and-correct
