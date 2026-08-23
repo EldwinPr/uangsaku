@@ -95,4 +95,85 @@ void main() {
       expect(await database.select(database.transactions).get(), isEmpty);
     },
   );
+
+  Future<void> pumpAdjustScreen(WidgetTester tester, int accountId) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [appDatabaseProvider.overrideWithValue(database)],
+        child: MaterialApp(home: AccountFormScreen(accountId: accountId)),
+      ),
+    );
+    // pumpAndSettle, not a single pump: the adjust flow watches
+    // accountBalancesProvider (message 7), a real drift stream.
+    await tester.pumpAndSettle();
+  }
+
+  // drift's `watch()` cancellation schedules a zero-duration `Timer`
+  // (`StreamQueryStore.markAsClosed`) that only fires on a later pump; the
+  // test body flushes it before returning (`testing.md`, verified UC13,
+  // UC01's `balance_sheet_screen_test.dart`).
+  Future<void> unmountAndFlushTimers(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+  }
+
+  testWidgets(
+    'NFR-4 / UC-03: on the adjust flow, the save control is enabled with the target field empty and pressing it proceeds',
+    (tester) async {
+      final accountId = await database
+          .into(database.accounts)
+          .insert(
+            AccountsCompanion.insert(
+              name: 'Wallet',
+              group: AccountGroup.HOLDING,
+              openingAmount: 100000,
+            ),
+          );
+
+      await pumpAdjustScreen(tester, accountId);
+
+      final button = tester.widget<FloatingActionButton>(saveButton());
+      expect(button.onPressed, isNotNull);
+
+      // Nothing entered — saving proceeds anyway (D7): an empty target
+      // parses as 0, and the DAO still writes its diff row unconditionally
+      // (D4). Refusing until the field is filled would be a requirements
+      // violation, not a UI choice.
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      final rows = await database.select(database.transactions).get();
+      expect(rows, hasLength(1));
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'UC-03: the adjust flow reaches the database — adjustAccount writes one Transactions row targeting the designated account',
+    (tester) async {
+      final accountId = await database
+          .into(database.accounts)
+          .insert(
+            AccountsCompanion.insert(
+              name: 'Wallet',
+              group: AccountGroup.HOLDING,
+              openingAmount: 100000,
+            ),
+          );
+
+      await pumpAdjustScreen(tester, accountId);
+
+      await tester.enterText(find.byType(TextField), '150000');
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      final row = await database.select(database.transactions).getSingle();
+      expect(row.toAccountId, accountId);
+      expect(row.fromAccountId, isNull);
+      expect(row.amount, 50000);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
 }

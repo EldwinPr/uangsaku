@@ -88,18 +88,21 @@ class DebtProgress {
 /// `AccountDao` — queries and writes for accounts.
 ///
 /// Reads: `watchPosition()` and `watchBalances()` (UC-01),
-/// `watchDebtProgress(accountId)` (UC-10). Writes: `insert()` from UC-02 and
-/// `setSettled(accountId)` from UC-10. `update()` remains UC-02B's and is
-/// deliberately absent (`pm/findings.md` F14).
+/// `watchDebtProgress(accountId)` (UC-10). Writes: `insert()` from UC-02,
+/// `insertAdjustment()` from UC-03 and `setSettled(accountId)` from UC-10.
+/// `update()` remains UC-02B's and is deliberately absent (`pm/findings.md`
+/// F14).
 ///
 /// **The join below is written here, inside `AccountDao`, against the
 /// `Transactions` table** — ISSUE-005 D1 (`context/index/decisions.md`
 /// 2026-08-20): modules reach each other's data by SQL join, never by calling
 /// another module's DAO. `TransactionDao` is not imported and no Dart-side
 /// stitching in Dart happens; the sums are SQLite's, so each figure has
-/// exactly one source (NFR-2). The ledger is **read** here and never
-/// **written** — the first write to `Transactions` belongs to UC-03/UC-04
-/// (D6).
+/// exactly one source (NFR-2). **The ledger is written here too** —
+/// `insertAdjustment()` is this module's first write into `Transactions`
+/// (UC-03 plan D1, D3), the same ISSUE-005 D1 licence read the other
+/// direction: `AccountDao` reaches `Transactions` directly rather than
+/// calling `TransactionDao`.
 ///
 /// **Not a `@DriftAccessor`/`DatabaseAccessor` subtype** — a plain
 /// composition over `AppDatabase`, the shape every DAO in this project uses
@@ -301,5 +304,65 @@ class AccountDao {
   /// the UI (`riverpod.md`, the read/write asymmetry).
   Future<int> insert(AccountsCompanion account) {
     return _db.into(_db.accounts).insert(account);
+  }
+
+  /// Message 10 on `seq-uc03-adjust-account.drawio`: the diagram's
+  /// `insert(kind=adjustment, account, diff)`, renamed because Dart has no
+  /// overloading and [insert] already exists (UC-03 plan D2).
+  ///
+  /// Nothing above this method reads the current balance (messages 9→10 draw
+  /// no read between them) — `AccountDao` derives it itself, inside one
+  /// drift transaction, from the same expression [watchBalances] reads:
+  /// `opening_amount` plus the signed movement sum over `Transactions` (D3).
+  /// `diff = targetAmount − current` is then written as one `Transactions`
+  /// row: `kind = adjustment`, `toAccountId = accountId` always,
+  /// `fromAccountId` always null, `amount = diff` — signed, negative for a
+  /// downward correction (Q4's resolved encoding, `context/index/
+  /// decisions.md` 2026-08-23 "Adjustment encodes as fixed side + signed
+  /// amount"). `adjustment` is the **only** `TransactionKind` whose `amount`
+  /// may be negative.
+  ///
+  /// Unconditional (D4): a target equal to the current amount still writes a
+  /// row with `amount = 0` — no guard skips a zero-diff correction.
+  /// `occurredOn` comes from the injected `Clock`, not `DateTime.now()` (D7).
+  ///
+  /// Returns `Future<void>`; message 13 is `ok` and nothing reaches the
+  /// screen — the corrected balance arrives on the read path instead
+  /// (`riverpod.md`, the read/write asymmetry).
+  Future<void> insertAdjustment({
+    required int accountId,
+    required int targetAmount,
+  }) {
+    return _db.transaction(() async {
+      final row = await _db
+          .customSelect(
+            '''
+            SELECT
+              accounts.opening_amount
+                + COALESCE((SELECT SUM(t.amount) FROM transactions t
+                            WHERE t.to_account_id = accounts.account_id), 0)
+                - COALESCE((SELECT SUM(t.amount) FROM transactions t
+                            WHERE t.from_account_id = accounts.account_id), 0)
+                AS current_amount
+            FROM accounts
+            WHERE accounts.account_id = ?
+            ''',
+            variables: [Variable.withInt(accountId)],
+            readsFrom: {_db.accounts, _db.transactions},
+          )
+          .getSingle();
+      final diff = targetAmount - row.read<int>('current_amount');
+
+      await _db
+          .into(_db.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              kind: TransactionKind.adjustment,
+              amount: diff,
+              occurredOn: _clock.today(),
+              toAccountId: Value(accountId),
+            ),
+          );
+    });
   }
 }

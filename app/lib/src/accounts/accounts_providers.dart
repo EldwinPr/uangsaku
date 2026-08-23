@@ -45,6 +45,24 @@ class AccountsNotifier extends Notifier<void> {
     );
   }
 
+  /// Message 9 on `seq-uc03-adjust-account.drawio`: `adjustAccount(accountId,
+  /// targetAmount)`.
+  ///
+  /// Forwards to [AccountDao.insertAdjustment] and returns nothing to the
+  /// screen — message 13 is `ok`; the corrected balance arrives on the read
+  /// path once `accountBalancesProvider` re-emits (`riverpod.md`, the
+  /// read/write asymmetry; UC-03 plan D5). No arithmetic happens here — the
+  /// DAO derives the diff itself (D3).
+  Future<void> adjustAccount({
+    required int accountId,
+    required int targetAmount,
+  }) async {
+    await _dao.insertAdjustment(
+      accountId: accountId,
+      targetAmount: targetAmount,
+    );
+  }
+
   /// Message 3 on `seq-uc10-debt-progress.drawio`: `markSettled(accountId)`.
   ///
   /// Forwards to [AccountDao.setSettled] and returns nothing meaningful to

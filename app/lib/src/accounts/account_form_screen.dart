@@ -6,27 +6,42 @@ import 'accounts_providers.dart';
 
 /// `AccountFormScreen` — UC-02: name an account, choose which of FR-1's
 /// three groups it belongs to, and enter what is in it today (FR-3, FR-4,
-/// FR-5).
+/// FR-5); UC-03: designate an existing account and correct what it holds
+/// (`class-accounts.drawio`: *UC-02, UC-03*).
+///
+/// One form serves both flows, chosen by whether [accountId] is given (UC-03
+/// plan D6): with no id this is UC-02's "new account" form; with one it is
+/// UC-03's adjust flow — the current derived amount (message 7, read through
+/// [accountBalancesProvider] once it has emitted) is shown alongside a
+/// target-amount field, and saving calls `adjustAccount` instead of
+/// `addAccount`. Reaching this screen with an id is F8's standing question —
+/// this file draws no navigation, only the flow the sequence diagram shows.
 ///
 /// One form serves all three groups (`plan.md` D5) — a credit card or a
 /// person who owes money is set up exactly like a wallet; only the enum
 /// value differs. The opening amount is stored exactly as entered, signed
 /// (D6, FR-4 — "it just holds a negative amount"): the field accepts a
 /// leading minus sign and the app applies no group-based negation. Amounts
-/// are int minor units of `Settings.currency`, never a double.
+/// are int minor units of `Settings.currency`, never a double — the adjust
+/// flow's target amount follows the same rule; the DAO derives the signed
+/// `diff` (UC-03 plan D3).
 ///
 /// **Nothing on this screen is disabled and nothing is refused** (D7,
 /// NFR-4's zero-refusals fit criterion): the save control is enabled even
 /// with every field empty — an empty amount saves as 0 and an unparseable
 /// one follows UC-11's shipped precedent (`int.tryParse(...) ?? 0`,
-/// `pm/findings.md` F7) — and all three `AccountGroup` values are selectable
-/// at all times.
+/// `pm/findings.md` F7, now this flow's own instance of that pattern) — and
+/// all three `AccountGroup` values are selectable at all times.
 ///
-/// Firing the save never renders what `addAccount` returns; nothing comes
-/// back on this screen (`plan.md` D9 — messages 7 and 8 are UC-01's read
-/// path, not yet built).
+/// Firing the save never renders what `addAccount`/`adjustAccount` returns;
+/// nothing comes back on this screen (`riverpod.md`, the read/write
+/// asymmetry) — the corrected amount arrives on the read path instead.
 class AccountFormScreen extends ConsumerStatefulWidget {
-  const AccountFormScreen({super.key});
+  const AccountFormScreen({super.key, this.accountId});
+
+  /// The account being corrected (UC-03). Null selects the UC-02 "new
+  /// account" flow instead.
+  final int? accountId;
 
   @override
   ConsumerState<AccountFormScreen> createState() => _AccountFormScreenState();
@@ -35,28 +50,43 @@ class AccountFormScreen extends ConsumerStatefulWidget {
 class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _openingAmountController;
+  late final TextEditingController _targetAmountController;
 
   /// Message 1 offers all three groups from the start; HOLDING is the
   /// initial selection, changeable at any time (D7).
   AccountGroup _group = AccountGroup.HOLDING;
+
+  bool get _isAdjustFlow => widget.accountId != null;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController();
     _openingAmountController = TextEditingController();
+    _targetAmountController = TextEditingController();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _openingAmountController.dispose();
+    _targetAmountController.dispose();
     super.dispose();
   }
 
   void _save() {
     // D7 / F7: an empty or unparseable amount proceeds as 0 rather than
     // refusing — the same shape UC-11's screen ships.
+    if (_isAdjustFlow) {
+      final targetAmount = int.tryParse(_targetAmountController.text) ?? 0;
+      ref
+          .read(accountsProvider.notifier)
+          .adjustAccount(
+            accountId: widget.accountId!,
+            targetAmount: targetAmount,
+          );
+      return;
+    }
     final openingAmount = int.tryParse(_openingAmountController.text) ?? 0;
     ref
         .read(accountsProvider.notifier)
@@ -70,51 +100,96 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('New account')),
+      appBar: AppBar(
+        title: Text(_isAdjustFlow ? 'Correct account' : 'New account'),
+      ),
       floatingActionButton: FloatingActionButton.extended(
-        tooltip: 'Save account',
+        tooltip: _isAdjustFlow ? 'Save correction' : 'Save account',
         onPressed: _save,
         icon: const Icon(Icons.save),
         label: const Text('Save'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: ListView(
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                hintText: 'Wallet, credit card, person…',
-              ),
-            ),
-            const SizedBox(height: 16),
-            SegmentedButton<AccountGroup>(
-              segments: [
-                for (final value in AccountGroup.values)
-                  ButtonSegment<AccountGroup>(
-                    value: value,
-                    label: Text(value.name),
-                    // No `enabled:` anywhere — all three groups stay
-                    // selectable at all times (D7, NFR-4).
-                  ),
-              ],
-              selected: {_group},
-              onSelectionChanged: (chosen) =>
-                  setState(() => _group = chosen.single),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _openingAmountController,
-              keyboardType: const TextInputType.numberWithOptions(signed: true),
-              decoration: const InputDecoration(
-                labelText: 'Opening amount',
-                hintText: 'What is in it today (minus allowed)',
-              ),
-            ),
-          ],
-        ),
+        child: _isAdjustFlow ? _buildAdjustFlow() : _buildNewAccountFlow(),
       ),
+    );
+  }
+
+  Widget _buildNewAccountFlow() {
+    return ListView(
+      children: [
+        TextField(
+          controller: _nameController,
+          decoration: const InputDecoration(
+            labelText: 'Name',
+            hintText: 'Wallet, credit card, person…',
+          ),
+        ),
+        const SizedBox(height: 16),
+        SegmentedButton<AccountGroup>(
+          segments: [
+            for (final value in AccountGroup.values)
+              ButtonSegment<AccountGroup>(
+                value: value,
+                label: Text(value.name),
+                // No `enabled:` anywhere — all three groups stay
+                // selectable at all times (D7, NFR-4).
+              ),
+          ],
+          selected: {_group},
+          onSelectionChanged: (chosen) =>
+              setState(() => _group = chosen.single),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _openingAmountController,
+          keyboardType: const TextInputType.numberWithOptions(signed: true),
+          decoration: const InputDecoration(
+            labelText: 'Opening amount',
+            hintText: 'What is in it today (minus allowed)',
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Messages 1, 7, 8: designate an existing account (via [widget.accountId],
+  /// F8's reachability question), show its current derived amount and accept
+  /// the corrected target — save always enabled (D6, D7).
+  Widget _buildAdjustFlow() {
+    // Message 7: the current derived amount, once accountBalancesProvider
+    // has emitted (UC-01, shipped). No read blocks the save — the flow
+    // degrades gracefully to showing nothing yet, exactly as D3 requires
+    // nothing above the DAO to depend on this value.
+    final balances = ref.watch(accountBalancesProvider);
+    final currentAmount = balances.maybeWhen(
+      data: (rows) {
+        for (final row in rows) {
+          if (row.account.accountId == widget.accountId) return row.balance;
+        }
+        return null;
+      },
+      orElse: () => null,
+    );
+
+    return ListView(
+      children: [
+        Text(
+          currentAmount == null
+              ? 'Current amount: —'
+              : 'Current amount: $currentAmount',
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _targetAmountController,
+          keyboardType: const TextInputType.numberWithOptions(signed: true),
+          decoration: const InputDecoration(
+            labelText: 'What it should actually be',
+            hintText: 'Target amount (minus allowed)',
+          ),
+        ),
+      ],
     );
   }
 }

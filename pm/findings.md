@@ -102,7 +102,7 @@ crops: the `opt` box's top border was checked to fall *below* message 13 rather 
 enclosing it, and the note was checked pixel-wise at the right margin for clipping — the last
 two pixel columns are blank, so it is complete.
 
-## F3 — every sequence diagram's isolate note names a mechanism one wrapper stale   [OPEN]
+## F3 — every sequence diagram's isolate note names a mechanism one wrapper stale   [FIXED]
 **Scope:** TRAIL          **Severity:** risk
 **Where:** eleven of the fourteen `docs/diagrams/seq-uc*.drawio` — the note reading *"DAO to
 AppDatabase crosses the isolate boundary (NativeDatabase.createInBackground, 2026-08-20)"*
@@ -123,12 +123,12 @@ pass, because UC-13 owns that diagram.
 `seq-uc01-balance-sheet.drawio` at their closes.
 **Narrowed 2026-08-23:** `seq-uc10-debt-progress.drawio` in UC-10's, then all five
 recording diagrams (`seq-uc04`–`seq-uc08`) at UC04's close, then `seq-uc09-review-and-
-correct.drawio` in UC-09's, then `seq-uc12-budget-consumption.drawio` in UC-12's — the
-last runnable issue in this run. **Two remain**, both on issues HALTED at the planning
-gate rather than TODO: `seq-uc03-adjust-account.drawio` (drawn, stale, blocked behind Q4)
-and `seq-uc02b` (not yet drawn at all — UC02B is blocked on its own diagram per Q3, so it
-cannot get an as-built pass until it is planned). Neither will be corrected by this run;
-both are real leftovers for the sweep and stay stale until the owner answers Q3/Q4.
+correct.drawio` in UC-09's, then `seq-uc12-budget-consumption.drawio` in UC-12's.
+**Owner answered Q3 and Q4 the same day**, unhalting both remaining issues:
+`seq-uc03-adjust-account.drawio` corrected in UC03's own close, and
+`seq-uc02b-edit-account.drawio` was drawn fresh (never stale — authored with the correct
+mechanism from the start, since it postdates the fix). **F3 is now fully clear**: every
+sequence diagram in the repo names the correct isolate mechanism. Recorded as **FIXED**.
 
 ## F4 — the NFR-4 enabled-controls test can pass vacuously for the rename control   [OPEN]
 **Scope:** APP          **Severity:** risk
@@ -211,9 +211,19 @@ shipped the identical `int.tryParse(_amountController.text) ?? 0`, neither close
 this entry. **Four screens now share the pattern** — `set_budget_screen.dart`,
 `account_form_screen.dart`, `record_transaction_screen.dart`,
 `transaction_list_screen.dart` — and every remaining amount field on the current backlog
-(none — this was the last one, UC-12 has no input controls) would have made it five. The
-owner's call from 2026-08-20 has not been asked again since; it is the same open question,
-now with more weight behind it.
+(none — this was thought to be the last one, UC-12 has no input controls) would have made
+it five. The owner's call from 2026-08-20 has not been asked again since; it is the same
+open question, now with more weight behind it.
+**Confirmed a fifth time, 2026-08-23 — UC03-adjust-account, unhalted the same day this
+entry was last touched:** the adjust flow's target-amount field ships the identical
+`int.tryParse(_targetAmountController.text) ?? 0` inside `account_form_screen.dart` — a
+second occurrence in an already-counted file, not a fifth file, but a fifth live instance
+of the pattern (`_openingAmountController` and `_targetAmountController` now both exist
+on that one screen). **This is worth its own line, not just a count bump**: the entry's
+own previous update declared the field count closed ("none — this was the last one"),
+and it was wrong within the same day, because UC03 was still HALTED when that sentence
+was written and unhalted an hour later. The lesson generalises: a finding's "this is the
+last one" claim is only as good as the backlog state it was checked against.
 
 ---
 

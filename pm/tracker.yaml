@@ -285,7 +285,7 @@ issues:
   - id: UC03-adjust-account
     slug: adjust-account
     title: Correct what an account holds
-    status: TODO
+    status: DONE
     plan: pm/issues/uc03-adjust-account/plan.md
     depends_on: [UC02-add-account]
     traces_to: [UC-03]
@@ -293,13 +293,21 @@ issues:
       The second `adjustment` path - correcting a balance after the fact. Small on its own
       because UC02 already built the form and the write path; kept separate because it is
       its own workbook row and its own sequence diagram.
-      UNHALTED 2026-08-23: pm/questions.md Q4 answered - to_account_id is always the
-      corrected account, from_account_id always null, amount carries the signed diff
-      (Option B, decisions.md 2026-08-23). Chosen because Option A's downward correction
-      would read as spending under to_account_id IS NULL, landing wrongly in UC-12's
-      Others; requires no change to any shipped query since UC-01/UC-09/UC-10/UC-12 were
-      all built encoding-independent. Plan CONFIRMED with all seven prior decisions
-      unchanged - only step 1's column values were waiting on Q4. Ready to build.
+      DONE 2026-08-23: UNHALTED same day pm/questions.md Q4 was answered - to_account_id
+      is always the corrected account, from_account_id always null, amount carries the
+      signed diff (Option B, decisions.md 2026-08-23). Chosen because Option A's downward
+      correction would read as spending under to_account_id IS NULL, landing wrongly in
+      UC-12's Others; requires no change to any shipped query since UC-01/UC-09/UC-10/
+      UC-12 were all built encoding-independent. AccountDao.insertAdjustment() is the
+      Accounts module's first write into Transactions (ISSUE-005 D1's licence read the
+      other direction), deriving diff = targetAmount - current itself in one drift
+      transaction - nothing above the DAO reads the current balance. Unconditional: a
+      zero-diff correction still writes a row. AccountFormScreen extended with an adjust
+      flow selected by a non-null accountId, reusing UC-02's screen rather than building
+      a new one. 112 tests green, no schema change (drift_schema_v1.json byte-identical).
+      As-built pass corrected seq-uc03's stale isolate note (F3 now fully clear).
+      Built in parallel with UC02B-edit-account by design - the two share three files
+      under app/lib/src/accounts/ but UC02B's own coder run was held until this closed.
 
   - id: UC01-balance-sheet
     slug: balance-sheet

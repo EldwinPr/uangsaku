@@ -1,13 +1,12 @@
 # UC03-adjust-account — Correct what an account holds
 
-**Status:** HALTED — awaiting owner ruling (**`pm/questions.md` Q4**). Planned under
-unattended mode 2026-08-23. Preflight passed and every decision below except one cites an
-already-confirmed artifact, so the derivation is kept in full here — the work should not
-have to be repeated. The one decision that cannot be cited is **how the adjustment row
-encodes direction** (which of `from_account_id` / `to_account_id` carries the account, and
-whether `amount` is stored signed). It is a storage-level choice with cross-cutting query
-consequences that no confirmed artifact settles; filed as **Q4** with its blast radius.
-Per the halt rule nothing is built until it is answered.
+**Status:** DONE 2026-08-23. Was CONFIRMED — Q4 answered (`pm/questions.md`, `context/index/
+decisions.md` "Adjustment encodes as fixed side + signed amount"). Planned under
+unattended mode 2026-08-23, halted on one decision, now resolved: **`to_account_id` is
+always the corrected account, `from_account_id` is always `null`, `amount` carries the
+signed diff** (Option B — negative for a downward correction). Every other decision below
+already cited an already-confirmed artifact and stands unchanged; only step 1's column
+values were waiting on Q4.
 
 **Traces to:** UC-03 (`docs/workbook.xlsx` → `UC FR`), FR-18.
 **Depends on:** `UC02-add-account` — **DONE** 2026-08-22 in `pm/tracker.yaml`.
@@ -94,47 +93,24 @@ session owns diagram edits):
 3. **Message 10's label names `diff` as if it arrived as an argument.** Read with
    message 9 — which passes `targetAmount`, not `diff` — and with the absence of any
    read message between them, the label describes what the inserted row contains, not a
-   value computed above the DAO. D3 resolves this reading; flagged here because it is a
-   reading, and the owner can veto it cheaply when answering Q4.
+   value computed above the DAO. D3 resolves this reading, and Q4's answer confirms it:
+   `diff` is exactly the signed `amount` the resolved encoding stores.
 
 ---
 
-## The halt — filed as `pm/questions.md` Q4
+## Q4, now answered
 
-One decision cannot be cited: **which sides of the adjustment row carry the account, and
-whether `amount` is stored signed.**
-
-What was checked, and what each failed to say:
-
-- **`docs/enums.md` / ERD ISSUE-001 D1**, the `Transaction.kind` table:
-  `adjustment | the account, or *null* | *null*, or the account`. Every other kind's row
-  fixes its sides exactly; this row deliberately names both shapes and gives **no rule**
-  for choosing between them.
-- **The workbook UC-03 row** says it outright: *"How the adjustment is represented is an
-  ERD decision, not settled here."* The ERD decision settled that the correction is a
-  ledger row with `kind=adjustment` — it stopped short of the side/sign encoding.
-- **The sequence diagram**, message 10 — `insert(kind=adjustment, account, diff)` —
-  names neither column.
-- **`context/index/decisions.md`**, **`docs/statuses.md`**, **`fr-nfr.md`** — silent;
-  no artifact states whether `Transaction.amount` may be negative.
-- NFR-2 and ISSUE-001 D1 do constrain the *consequence*: **"is this spending?" is
-  `to_account_id IS NULL`**, so the two encodings below classify a downward adjustment
-  differently inside every spending total, including UC-12's "Others". The workbook's
-  own `Output` demands the adjustment be *"recorded and visible rather than silent."*
-
-This is a data-level fork — the error would live in stored rows, unfixable at the query
-layer (`lessons.md` §7's shape), and retroactively changing existing rows later means a
-migration. Choosing "the consistent-looking" option here would be exactly the
-self-confirmation the unattended gate forbids, so the issue halts instead.
-
-**Blast radius:** blocks this issue directly. Nothing in `pm/tracker.yaml` declares
-`depends_on: [UC03-adjust-account]`, so unlike Q2 the run is not fully stopped —
-`UC01-balance-sheet` and `UC10-debt-progress` remain runnable behind UC02, and the whole
-Budgeting chain is independent. But the answer **semantically bears on three later
-issues' queries**: UC-01 (whether downward corrections sit inside spendable movements),
-UC-09 (how the row displays) and UC-12 (whether it counts into "Others" spending). A late
-answer could force query rewrites there, which is why it is asked now rather than at
-UC-12.
+**`context/index/decisions.md`, 2026-08-23 — "Adjustment encodes as fixed side + signed
+amount":** `to_account_id` is always the corrected account, `from_account_id` is always
+`null`, `amount` carries the signed diff (positive up, negative down). Chosen over
+side-follows-sign because that option's downward correction would satisfy `to_account_id
+IS NULL` and read as **spending** everywhere that predicate is checked, including UC-12's
+"Others" — the opposite of the workbook's "visible, not silent" requirement. The chosen
+encoding requires **no change to any already-shipped query**: UC-01, UC-09, UC-10 and
+UC-12 were all built and tested encoding-independent (each cites `to_account_id IS NULL`
+with no `kind` filter, pinned by a dual-encoding test), and the balance formula
+`SUM(to_account_id contributions) − SUM(from_account_id contributions)` already handles a
+signed `amount` correctly on the `to` side.
 
 ---
 
@@ -269,8 +245,9 @@ Executable once Q4 is answered; step 1's column values are the only thing waitin
    `Transactions`, D3), compute `diff = targetAmount − current`, and insert one
    `Transactions` row with `kind = TransactionKind.adjustment`, `occurredOn` from the
    injected `Clock` (D7), nullable `categoryId` / `subcategoryId` / `budgetGroupId` /
-   `note` left unset, and the account placed on `from_account_id` / `to_account_id`
-   **per the Q4 ruling**. Update the now-false "writes only Accounts" doc comment (D1).
+   `note` left unset, **`toAccountId = accountId` always, `fromAccountId` always `null`,
+   `amount = diff`** (signed — negative for a downward correction; Q4's resolved
+   encoding). Update the now-false "writes only Accounts" doc comment (D1).
    Returns nothing to callers beyond completion — message 13 is `ok`.
 2. `app/lib/src/accounts/accounts_providers.dart`: add
    `Future<void> adjustAccount({required int accountId, required int targetAmount})` to
@@ -369,6 +346,3 @@ Plus `git diff --stat app/drift_schemas/` empty (step 6).
 - **Reachability (F8).** Until a navigator exists, the adjust flow is exercisable in
   tests but hard to reach in the running app, as with every screen since UC-13. Recorded,
   not solved (D6).
-- **Discrepancy 3's reading (D3)** — that message 10's `diff` describes the row's content
-  rather than a notifier-computed argument. Cheap for the owner to veto alongside Q4; it
-  changes one method signature, not the schema.

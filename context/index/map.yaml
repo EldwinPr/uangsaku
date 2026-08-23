@@ -174,6 +174,25 @@ code:
       - app/test/budgeting/budget_dao_test.dart
       - app/test/budgeting/budget_overview_screen_test.dart
 
+  # UC03-adjust-account, DONE 2026-08-23. The second `adjustment` path - correcting a
+  # balance after the fact. Q4 (adjustment side/sign encoding) answered 2026-08-23:
+  # to_account_id is always the corrected account, from_account_id always null, amount
+  # carries the signed diff (adjustment is the ledger's ONLY kind whose amount may be
+  # negative). AccountDao.insertAdjustment() is Accounts module's first write into
+  # Transactions (ISSUE-005 D1 licence read the other direction - AccountDao reaches
+  # Transactions directly, never TransactionDao); computes diff = targetAmount - current
+  # itself inside one drift transaction, no read above the DAO. Unconditional - a
+  # zero-diff correction still writes a row. AccountFormScreen extended with an adjust
+  # flow selected by a non-null accountId, reusing the same screen UC-02 built. No
+  # schema change (drift_schema_v1.json byte-identical). 112 tests green.
+  UC-03:
+    dao:       app/lib/src/accounts/account_dao.dart          # + insertAdjustment()
+    providers: app/lib/src/accounts/accounts_providers.dart   # + AccountsNotifier.adjustAccount()
+    screen:    app/lib/src/accounts/account_form_screen.dart  # AccountFormScreen, adjust flow (accountId != null)
+    tests:
+      - app/test/accounts/account_dao_test.dart
+      - app/test/accounts/account_form_screen_test.dart
+
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
 # each other in BOTH directions (balances need Transactions; the record screen needs

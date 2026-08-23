@@ -14,17 +14,20 @@ before starting work.
 
 ## Current state — 2026-08-23
 
-**Phase.** Documentation complete; **implementation runnable-backlog complete — phase 2
-next.** The app compiles and its test suite is green (**104 tests**). Nine modules/screens
-built end to end — UC-13's, UC-11's, UC-14's, UC-02's, UC-01's, UC-10's, UC-04's record
-form, UC-09's transaction list and UC-12's budget overview; `home` is `BalanceSheetScreen`
-permanently (FR-1) and eight screens are orphaned or unreachable (F8).
+**Phase.** Documentation complete; **implementation under way — one issue left.** The app
+compiles and its test suite is green (**112 tests**). Nine modules/screens built end to
+end — UC-13's, UC-11's, UC-14's, UC-02's, UC-01's, UC-10's, UC-04's record form, UC-09's
+transaction list, UC-12's budget overview and UC-03's adjust flow (reusing UC-02's
+screen); `home` is `BalanceSheetScreen` permanently (FR-1) and eight screens are orphaned
+or unreachable (F8).
 
-**Active issue.** None — `UC12-budget-consumption` just closed and nothing is runnable.
-Two issues are HALTED at the planning gate for the run: `UC02B-edit-account` (Q3) and
-`UC03-adjust-account` (Q4). This run has closed UC02, UC01, UC10, UC04, UC09 and UC12;
-before them FEAT01, UC13, UC11, UC14. **Phase 2 — the repo-wide APP + TRAIL sweep — is
-next**, then the run stops.
+**Active issue.** `UC02B-edit-account` — the owner answered both outstanding questions
+2026-08-23 (Q3: soft delete; Q4: fixed side + signed amount for adjustments), which
+unhalted both remaining issues. `UC03-adjust-account` closed the same day. `UC02B` is
+CONFIRMED and dispatched — the project's first schema change (`schemaVersion` → 2, drift
+guided migrations, `Accounts.deleted`/`deleted_at`). This run has closed UC02, UC01,
+UC10, UC04, UC09, UC12 and UC03; before them FEAT01, UC13, UC11, UC14. Once UC02B closes,
+nothing is runnable and phase 2 (the repo-wide APP + TRAIL sweep) runs again.
 
 **Pushed.** CI has run. The `app` job failed once on the scaffold and the guard was fixed
 rather than the commit reverted — see the entry below.
@@ -64,26 +67,26 @@ B-suffix issue scheme on 2026-08-22 after Q2 created UC02B as a second issue tra
 UC-02). Proves the artifacts agree with each other; proves nothing about whether they are
 right (`lessons.md` §12).
 
-**Open rulings:** none. Both items that stood here were answered 2026-08-21 — budget group
-CRUD moved from UC-13 to UC-11, and `note` appears on every recording screen. Recorded in
-`context/index/decisions.md`; `pm/questions.md` is the queue for any that arise during the
-run.
+**Open rulings:** none blocking. Q3 and Q4 both answered 2026-08-23 (`decisions.md`); F14
+(Account create-only) resolves once `UC02B` closes. `pm/questions.md` is the queue for
+any that arise before then.
 
 **Open, non-blocking:** one `fr-nfr.md` §4 item — where the data lives, narrowed to
-phone-only but not closed. **Fourteen findings on file** (`pm/findings.md` F1–F14), of
-which F8–F13 come from the two end-of-run sweeps of the previous run and F14 was filed with
-the Q2 ruling (Account create-only until UC02B lands; FR-18 visibly unsatisfied for it).
-**Four are resolved**: F2, F6, F13 fixed and
-F10 accepted (the clean-checkout verification, recorded as a negative result). F3 narrowed
-repeatedly, fourteen diagrams to **two** (`seq-uc03` and the not-yet-drawn `seq-uc02b`),
-both now on issues HALTED rather than TODO — neither moves again this run. **Eight stand,
-recorded and not fixed** — the ones that need an owner ruling are **F7** (a non-numeric
-budget amount is silently saved as zero), **F8** (every screen issue orphans the previous
-screen; eight now built, one reachable), **F9** (a codegen
-toolchain the app has proved it cannot use, still carried as a runtime dependency and a
-suppressed lint), **F11** (`decisions.md` still calls open the very question `lessons.md`
-§1 was written about) and **F12** (the orchestration guide describes a process this run
-stopped following).
+phone-only but not closed. **Fifteen findings on file** (`pm/findings.md` F1–F15,
+F15 filed 2026-08-23's phase-2 sweep — a date-formatter copy-pasted into three places).
+**Five are resolved**: F2, F3, F6, F13 fixed and F10 accepted (the clean-checkout
+verification, recorded as a negative result). F3 fixed 2026-08-23 — Q3/Q4 being answered
+unhalted the last two issues carrying a stale isolate note, and both closed it in their
+own as-built pass; every sequence diagram in the repo now names the correct mechanism.
+**Ten stand, recorded and not fixed** (F1, F4, F5, F7, F8, F9, F11, F12, F14, F15) — the
+ones that need an owner ruling are **F7** (a non-numeric amount is silently saved as
+zero, now five live instances across four screens), **F8** (every screen issue orphans
+the previous screen; eight built, one reachable), **F9** (a codegen toolchain the app has
+proved it cannot use, still carried as a runtime dependency and a suppressed lint),
+**F11** (`decisions.md` still calls open the very question `lessons.md` §1 was written
+about), **F12** (the orchestration guide describes a process this run stopped following)
+and **F15** (a copy-pasted date formatter). **F14 resolves as soon as `UC02B-edit-account`
+closes** — it is the issue that discharges it.
 
 **Unattended mode is live, and has now been exercised both ways.** `feat-planner` may mark
 a plan `AUTO-CONFIRMED` when every decision in it cites an already-confirmed artifact, and
@@ -880,3 +883,68 @@ in-session (F12). `flutter-coder` remains the one dispatched subagent.
 
 **[TODO]** Nothing is runnable. `UC02B-edit-account` (Q3) and `UC03-adjust-account` (Q4)
 stay HALTED pending the owner. **Phase 2 — the repo-wide APP + TRAIL sweep — is next.**
+
+---
+
+## 2026-08-23 — Owner answers Q3 and Q4; UC03-adjust-account closes, UC02B-edit-account dispatched
+
+**[DECISION]** **Q3 answered: deleting an account is a soft delete.** `Accounts` gains
+`deleted`/`deleted_at` (identical shape to UC-10's `settled`/`settledAt`); `delete()`
+writes the flag and never removes the row, so every transaction that ever referenced the
+account keeps a real row to resolve. Chosen over cascade (irreversible data loss) and
+set-null (contradicts the from/to columns' role as a transaction's identity) and refuse
+(a refusal, forbidden by NFR-4). `docs/diagrams/erd.drawio` and `class-accounts.drawio`
+amended in the main session (not delegated — see the owner's mid-run direction below);
+`docs/diagrams/seq-uc02b-edit-account.drawio` drawn fresh via Mermaid, rendered and
+visually verified (reordering the lifelines from the first draft to put `AccountsNotifier`
+ahead of the read-path classes, avoiding a zigzag the first ordering produced). Full
+reasoning in `context/index/decisions.md`.
+
+**[DECISION]** **Q4 answered, left to my judgment ("pick whatever you see fit"):
+adjustment encodes as a fixed side + signed amount.** `to_account_id` is always the
+corrected account, `from_account_id` always `null`, `amount` carries the signed diff —
+`adjustment` becomes the ledger's one negative-amount kind. Chosen over side-follows-sign
+because that option's downward correction would satisfy `to_account_id IS NULL` and read
+as spending in UC-12's Others bucket; the chosen encoding needed **no change to any
+shipped query**, since UC-01/UC-09/UC-10/UC-12 were all built and tested
+encoding-independent already. `docs/enums.md`'s kind table tightened from its two-sided
+hedge to the resolved rule.
+
+**[STATUS]** **`UC03-adjust-account` is DONE.** `AccountDao.insertAdjustment()` is the
+Accounts module's first write into `Transactions` (ISSUE-005 D1's licence read the other
+direction), deriving `diff = targetAmount − current` itself inside one drift transaction
+— nothing above the DAO reads the current balance. Unconditional: a zero-diff correction
+still writes a row. `AccountFormScreen` extended with an adjust flow selected by a
+non-null `accountId`, reusing UC-02's screen rather than building a new one. 112 tests
+green, no schema change. As-built pass corrected the stale isolate note — **F3 is now
+fully clear**, every sequence diagram names the correct mechanism.
+
+**[DISCOVERY]** `pm/findings.md` F7 (the non-numeric-amount-saves-as-zero pattern) had
+its own "this was the last one" claim falsified within the same day it was written: the
+phase-2 sweep declared the field count closed at four screens while UC03 was still
+HALTED, and UC03 unhalted an hour later, adding a fifth live instance (a second
+controller on an already-counted file). Recorded as evidence that a finding's closing
+claim is only as good as the backlog state it was checked against.
+
+**[STATUS]** `UC02B-edit-account`'s plan is CONFIRMED and its sequence diagram, ERD and
+class-diagram groundwork are done, but its `flutter-coder` dispatch was **held** until
+UC03's closed — the two issues share three files under `app/lib/src/accounts/`
+(`account_dao.dart`, `accounts_providers.dart`, `account_form_screen.dart`), and coding
+them in parallel would have been exactly the scope overlap the preflight gate exists to
+catch. Dispatched immediately after this close.
+
+**[DECISION]** Per the owner's direction mid-run: planning and diagram authoring now
+happen in the main orchestrator session rather than via `feat-planner`/diagram-author
+subagents — this extends the 2026-08-22 direction that already moved QA and diagram work
+in-session (F12). `flutter-coder` remains the one dispatched subagent. Also fixed a real
+bug in `audit.py` surfaced by drawing `seq-uc02b-edit-account.drawio`: the render-owner
+lookup sliced every `seq-uc{NN}...` filename's first two digits, which silently collided
+a B-suffixed diagram with its primary issue instead of the suffixed one — exactly the gap
+the script's own comment anticipated but never implemented. Fixed to check the filename's
+letter suffix against tracker issue ids directly.
+
+**[TODO]** `UC02B-edit-account` is the only remaining runnable work — a schema change
+(`schemaVersion` → 2 via drift's guided migrations, the project's first), `AccountDao`
+gains `update()`/`delete()`, three shipped queries gain `WHERE NOT deleted`. After it
+closes, nothing is runnable and phase 2 (the repo-wide sweep) runs again to catch
+anything the two newly-closed issues changed underneath it.
