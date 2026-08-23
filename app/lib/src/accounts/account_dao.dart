@@ -89,9 +89,9 @@ class DebtProgress {
 ///
 /// Reads: `watchPosition()` and `watchBalances()` (UC-01),
 /// `watchDebtProgress(accountId)` (UC-10). Writes: `insert()` from UC-02,
-/// `insertAdjustment()` from UC-03 and `setSettled(accountId)` from UC-10.
-/// `update()` remains UC-02B's and is deliberately absent (`pm/findings.md`
-/// F14).
+/// `insertAdjustment()` from UC-03, `setSettled(accountId)` from UC-10, and
+/// `update()`/`delete()` from UC-02B — closing `pm/findings.md` F14, the one
+/// entity FR-18 was left unsatisfied for.
 ///
 /// **The join below is written here, inside `AccountDao`, against the
 /// `Transactions` table** — ISSUE-005 D1 (`context/index/decisions.md`
@@ -147,6 +147,7 @@ class AccountDao {
                             WHERE t.from_account_id = accounts.account_id), 0)
                 AS balance
             FROM accounts
+            WHERE NOT accounts.deleted
           )
           SELECT
             COALESCE(SUM(CASE WHEN group_name = ? THEN balance ELSE 0 END), 0)
@@ -190,6 +191,8 @@ class AccountDao {
             accounts.opening_amount AS opening_amount,
             accounts.settled        AS settled,
             accounts.settled_at     AS settled_at,
+            accounts.deleted        AS deleted,
+            accounts.deleted_at     AS deleted_at,
             accounts.opening_amount
               + COALESCE((SELECT SUM(t.amount) FROM transactions t
                           WHERE t.to_account_id = accounts.account_id), 0)
@@ -197,6 +200,7 @@ class AccountDao {
                           WHERE t.from_account_id = accounts.account_id), 0)
               AS balance
           FROM accounts
+          WHERE NOT accounts.deleted
           ORDER BY accounts.account_id
           ''',
           readsFrom: {_db.accounts, _db.transactions},
@@ -213,6 +217,8 @@ class AccountDao {
                   openingAmount: row.read<int>('opening_amount'),
                   settled: row.read<bool>('settled'),
                   settledAt: row.readNullable<DateTime>('settled_at'),
+                  deleted: row.read<bool>('deleted'),
+                  deletedAt: row.readNullable<DateTime>('deleted_at'),
                 ),
                 balance: row.read<int>('balance'),
               ),
@@ -240,6 +246,15 @@ class AccountDao {
   /// The enum literal arrives as a bound variable holding
   /// `TransactionKind`'s stored text (`.textEnum` stores `.name`), the way
   /// [watchPosition] handles `AccountGroup` values.
+  ///
+  /// **Deliberately not filtered by `NOT deleted`** (UC02B D4, corrected at
+  /// review): unlike [watchPosition]/[watchBalances], which aggregate
+  /// *across* accounts and simply drop a deleted one from the sum, this
+  /// method is keyed to one already-selected `accountId` via
+  /// [`watchSingle`], which throws on zero rows. Filtering here would turn
+  /// "the account you're viewing was deleted" into a crash instead of a
+  /// still-resolvable historical figure — the same "history keeps
+  /// displaying" principle `TransactionDao.watchAll()` follows for UC-09.
   Stream<DebtProgress> watchDebtProgress(int accountId) {
     return _db
         .customSelect(
@@ -364,5 +379,46 @@ class AccountDao {
             ),
           );
     });
+  }
+
+  /// Message 10 on `seq-uc02b-edit-account.drawio`: `update(accountId, name,
+  /// group)` — `name` and `group` only, never `opening_amount` (UC02B plan
+  /// D3; correcting what an account holds is UC-03's `insertAdjustment()`,
+  /// unchanged by this method).
+  ///
+  /// Returns `Future<void>`; message 13 is `ok` and nothing reaches the
+  /// screen — the renamed/regrouped account arrives on the read path once
+  /// `accountBalancesProvider` re-emits (`riverpod.md`, the read/write
+  /// asymmetry).
+  Future<void> update({
+    required int accountId,
+    required String name,
+    required AccountGroup group,
+  }) async {
+    await (_db.update(_db.accounts)
+          ..where((row) => row.accountId.equals(accountId)))
+        .write(AccountsCompanion(name: Value(name), group: Value(group)));
+  }
+
+  /// Message 16 on `seq-uc02b-edit-account.drawio`: `delete(accountId)` — a
+  /// **soft** delete (UC02B plan D2, `context/index/decisions.md`
+  /// 2026-08-23 Q3): `deleted = true`, `deleted_at` stamped from the
+  /// injected clock. Never `DELETE FROM Accounts` — the row survives so
+  /// every transaction that ever referenced it keeps a real row to resolve
+  /// against (UC-09's list stays correct).
+  ///
+  /// Cannot fail: no row is removed, so no foreign key can be violated and
+  /// no guard is needed (NFR-4). Deleting an already-deleted account is
+  /// idempotent — it re-writes the same flag with a fresh timestamp,
+  /// harmlessly.
+  Future<void> delete({required int accountId}) async {
+    await (_db.update(
+      _db.accounts,
+    )..where((row) => row.accountId.equals(accountId))).write(
+      AccountsCompanion(
+        deleted: const Value(true),
+        deletedAt: Value(_clock.today()),
+      ),
+    );
   }
 }

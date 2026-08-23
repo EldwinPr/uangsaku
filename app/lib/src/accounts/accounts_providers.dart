@@ -73,6 +73,33 @@ class AccountsNotifier extends Notifier<void> {
   Future<void> markSettled({required int accountId}) async {
     await _dao.setSettled(accountId);
   }
+
+  /// Message 9 on `seq-uc02b-edit-account.drawio`: `editAccount(accountId,
+  /// name, group)`.
+  ///
+  /// Forwards to [AccountDao.update] and returns nothing to the screen —
+  /// message 13 is `ok`; the renamed/regrouped account arrives on the read
+  /// path once `accountBalancesProvider` re-emits (`riverpod.md`, the
+  /// read/write asymmetry). `opening_amount` is never a parameter here
+  /// (UC02B plan D3) — that stays UC-03's `adjustAccount`.
+  Future<void> editAccount({
+    required int accountId,
+    required String name,
+    required AccountGroup group,
+  }) async {
+    await _dao.update(accountId: accountId, name: name, group: group);
+  }
+
+  /// Message 14 on `seq-uc02b-edit-account.drawio`: `deleteAccount(accountId)`.
+  ///
+  /// Forwards to [AccountDao.delete] — a soft delete (UC02B plan D2) — and
+  /// returns nothing to the screen; the read path re-emits once the account
+  /// stops appearing in `accountBalancesProvider`/`financialPositionProvider`
+  /// (`riverpod.md`, the read/write asymmetry). Always proceeds — no
+  /// confirmation, no guard (NFR-4, the diagram draws none).
+  Future<void> deleteAccount({required int accountId}) async {
+    await _dao.delete(accountId: accountId);
+  }
 }
 
 final accountsProvider = NotifierProvider<AccountsNotifier, void>(

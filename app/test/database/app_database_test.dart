@@ -18,8 +18,8 @@ void main() {
     await database.customSelect('SELECT 1').get();
   });
 
-  test('FEAT01: schemaVersion is 1', () {
-    expect(database.schemaVersion, 1);
+  test('UC02B D1: schemaVersion is 2 — Accounts gained deleted/deletedAt', () {
+    expect(database.schemaVersion, 2);
   });
 
   test('FEAT01: all seven tables exist', () async {

@@ -100,11 +100,33 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [appDatabaseProvider.overrideWithValue(database)],
-        child: MaterialApp(home: AccountFormScreen(accountId: accountId)),
+        child: MaterialApp(
+          home: AccountFormScreen(
+            mode: AccountFormMode.adjust,
+            accountId: accountId,
+          ),
+        ),
       ),
     );
     // pumpAndSettle, not a single pump: the adjust flow watches
     // accountBalancesProvider (message 7), a real drift stream.
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> pumpEditScreen(WidgetTester tester, int accountId) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [appDatabaseProvider.overrideWithValue(database)],
+        child: MaterialApp(
+          home: AccountFormScreen(
+            mode: AccountFormMode.edit,
+            accountId: accountId,
+          ),
+        ),
+      ),
+    );
+    // pumpAndSettle: the edit flow also watches accountBalancesProvider
+    // (message 7), the same real drift stream the adjust flow reads.
     await tester.pumpAndSettle();
   }
 
@@ -172,6 +194,98 @@ void main() {
       expect(row.toAccountId, accountId);
       expect(row.fromAccountId, isNull);
       expect(row.amount, 50000);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  // `byIcon(Icons.delete)` also matches inside the button; find the button
+  // itself by type — there is exactly one delete control on this screen.
+  Finder deleteButton() => find.widgetWithIcon(OutlinedButton, Icons.delete);
+
+  testWidgets('UC02B D3: the edit flow has no opening_amount field', (
+    tester,
+  ) async {
+    final accountId = await database
+        .into(database.accounts)
+        .insert(
+          AccountsCompanion.insert(
+            name: 'Wallet',
+            group: AccountGroup.HOLDING,
+            openingAmount: 100000,
+          ),
+        );
+
+    await pumpEditScreen(tester, accountId);
+
+    expect(find.text('Opening amount'), findsNothing);
+    expect(find.text('Target amount (minus allowed)'), findsNothing);
+
+    await unmountAndFlushTimers(tester);
+  });
+
+  testWidgets(
+    'UC02B NFR-4 (D5): the save and delete controls are always enabled, with no confirmation dialog on delete',
+    (tester) async {
+      final accountId = await database
+          .into(database.accounts)
+          .insert(
+            AccountsCompanion.insert(
+              name: 'Wallet',
+              group: AccountGroup.HOLDING,
+              openingAmount: 100000,
+            ),
+          );
+
+      await pumpEditScreen(tester, accountId);
+
+      final saveWidget = tester.widget<FloatingActionButton>(saveButton());
+      expect(saveWidget.onPressed, isNotNull);
+      final deleteWidget = tester.widget<OutlinedButton>(deleteButton());
+      expect(deleteWidget.onPressed, isNotNull);
+
+      // Tapping delete performs the deletion immediately — no confirmation
+      // dialog anywhere on this screen (D2/D5).
+      await tester.tap(deleteButton());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      final row = await (database.select(
+        database.accounts,
+      )..where((r) => r.accountId.equals(accountId))).getSingle();
+      expect(row.deleted, isTrue);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'UC02B: editAccount reaches the database with the rename/group change entered, leaving opening_amount untouched',
+    (tester) async {
+      final accountId = await database
+          .into(database.accounts)
+          .insert(
+            AccountsCompanion.insert(
+              name: 'Wallet',
+              group: AccountGroup.HOLDING,
+              openingAmount: 100000,
+            ),
+          );
+
+      await pumpEditScreen(tester, accountId);
+
+      await tester.enterText(find.byType(TextField).first, 'Piggy bank');
+      await tester.tap(find.text('PAYABLE'));
+      await tester.pump();
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      final row = await (database.select(
+        database.accounts,
+      )..where((r) => r.accountId.equals(accountId))).getSingle();
+      expect(row.name, 'Piggy bank');
+      expect(row.group, AccountGroup.PAYABLE);
+      expect(row.openingAmount, 100000);
 
       await unmountAndFlushTimers(tester);
     },

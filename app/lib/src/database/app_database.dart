@@ -6,6 +6,7 @@ import '../accounts/accounts_table.dart';
 import '../budgeting/budgeting_table.dart';
 import '../settings/settings_table.dart';
 import '../transactions/transactions_table.dart';
+import 'app_database.steps.dart';
 
 part 'app_database.g.dart';
 
@@ -13,6 +14,9 @@ part 'app_database.g.dart';
 ///
 /// All seven tables land at `schemaVersion = 1` (ISSUE-001 D3) — see
 /// `docs/diagrams/erd.drawio` for the column-level source of truth.
+/// `schemaVersion` is `2` as of UC02B D1: `Accounts` gained `deleted`/
+/// `deleted_at`, this project's first guided migration (`drift.md`
+/// "Migrations", `drift_schemas/app_database/`).
 ///
 /// No `daos: […]` entry: `CategoryDao` is a plain composition over this
 /// class rather than a `@DriftAccessor`/`DatabaseAccessor` subtype (see
@@ -33,11 +37,20 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
+      onUpgrade: stepByStep(
+        // UC02B D1: `Accounts` gains `deleted`/`deleted_at`, the same
+        // guided-migration workflow drift.md's "Migrations" section
+        // requires — never a hand-written branch.
+        from1To2: (m, schema) async {
+          await m.addColumn(schema.accounts, schema.accounts.deleted);
+          await m.addColumn(schema.accounts, schema.accounts.deletedAt);
+        },
+      ),
       beforeOpen: (details) async {
         // The currency has to exist before any amount can be interpreted
         // (ISSUE-001 D6) — seed only a fresh database.

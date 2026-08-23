@@ -213,6 +213,21 @@ void main() {
     },
   );
 
+  test('UC02B D4: watchAccounts() excludes a soft-deleted account', () async {
+    final ids = await seedAccounts();
+    await (database.update(database.accounts)
+          ..where((row) => row.accountId.equals(ids['Savings']!)))
+        .write(const AccountsCompanion(deleted: Value(true)));
+
+    final accounts = await dao.watchAccounts().first;
+
+    expect(
+      accounts.map((account) => account.name).toList(),
+      isNot(contains('Savings')),
+    );
+    expect(accounts, hasLength(3));
+  });
+
   test('D7: the person/debt picker surfaces only RECEIVABLE/PAYABLE rows', () {
     final accounts = [
       Account(
@@ -222,6 +237,8 @@ void main() {
         openingAmount: 100000,
         settled: false,
         settledAt: null,
+        deleted: false,
+        deletedAt: null,
       ),
       Account(
         accountId: 2,
@@ -230,6 +247,8 @@ void main() {
         openingAmount: 0,
         settled: false,
         settledAt: null,
+        deleted: false,
+        deletedAt: null,
       ),
       Account(
         accountId: 3,
@@ -238,6 +257,8 @@ void main() {
         openingAmount: -50000,
         settled: false,
         settledAt: null,
+        deleted: false,
+        deletedAt: null,
       ),
     ];
 

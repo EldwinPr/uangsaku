@@ -188,10 +188,41 @@ code:
   UC-03:
     dao:       app/lib/src/accounts/account_dao.dart          # + insertAdjustment()
     providers: app/lib/src/accounts/accounts_providers.dart   # + AccountsNotifier.adjustAccount()
-    screen:    app/lib/src/accounts/account_form_screen.dart  # AccountFormScreen, adjust flow (accountId != null)
+    screen:    app/lib/src/accounts/account_form_screen.dart  # AccountFormScreen, AccountFormMode.adjust
     tests:
       - app/test/accounts/account_dao_test.dart
       - app/test/accounts/account_form_screen_test.dart
+
+  # UC02B-edit-account, DONE 2026-08-24. Closes FR-18 for Account (pm/findings.md F14) -
+  # the last entity that was create-only. Deleting an account is a SOFT delete: Accounts
+  # gains deleted/deleted_at (identical shape to UC-10's settled/settledAt), delete()
+  # writes the flag and never removes the row (decisions.md 2026-08-23, Q3). This is the
+  # project's FIRST schema change - schemaVersion 1 -> 2 via drift's guided migrations
+  # (drift_schemas/app_database/drift_schema_v2.json new, v1 byte-identical), with a real
+  # data-integrity migration test proving an existing account survives and defaults
+  # deleted=false/deletedAt=null. watchPosition()/watchBalances()/
+  # TransactionDao.watchAccounts() gain WHERE NOT deleted; TransactionDao.watchAll()
+  # (UC-09) stays unfiltered so a deleted account's history keeps displaying.
+  # watchDebtProgress() was ALSO deliberately left unfiltered at review - it is a
+  # watchSingle() family query keyed to one already-selected account, not a list
+  # aggregate, so filtering it would turn "the account you're viewing was deleted" into
+  # a crash instead of a still-resolvable historical figure. update() edits only
+  # name/group, never opening_amount (that stays UC-03's insertAdjustment()).
+  # AccountFormScreen gained an AccountFormMode {create, adjust, edit} discriminator
+  # (a widget-local param, not a diagram/stored enum) for its third flow. 122 tests
+  # green. Built after UC03 closed - the two issues shared three files under
+  # app/lib/src/accounts/, so their flutter-coder dispatches were sequenced, not
+  # parallel.
+  UC-02B:
+    dao:       app/lib/src/accounts/account_dao.dart          # + update(), delete()
+    providers: app/lib/src/accounts/accounts_providers.dart   # + AccountsNotifier.editAccount()/deleteAccount()
+    screen:    app/lib/src/accounts/account_form_screen.dart  # AccountFormScreen, AccountFormMode.edit
+    migration: app/lib/src/database/app_database.steps.dart   # drift guided migration, v1 -> v2
+    tests:
+      - app/test/accounts/account_dao_test.dart
+      - app/test/accounts/account_form_screen_test.dart
+      - app/test/transactions/transaction_dao_test.dart
+      - app/test/drift/app_database/migration_test.dart
 
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on

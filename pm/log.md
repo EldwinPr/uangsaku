@@ -12,22 +12,23 @@ before starting work.
 
 ---
 
-## Current state — 2026-08-23
+## Current state — 2026-08-24
 
-**Phase.** Documentation complete; **implementation under way — one issue left.** The app
-compiles and its test suite is green (**112 tests**). Nine modules/screens built end to
-end — UC-13's, UC-11's, UC-14's, UC-02's, UC-01's, UC-10's, UC-04's record form, UC-09's
-transaction list, UC-12's budget overview and UC-03's adjust flow (reusing UC-02's
-screen); `home` is `BalanceSheetScreen` permanently (FR-1) and eight screens are orphaned
-or unreachable (F8).
+**Phase.** **The entire runnable backlog is DONE.** The app compiles and its test suite
+is green (**122 tests**). Nine modules/screens built end to end — UC-13's, UC-11's,
+UC-14's, UC-02's, UC-01's, UC-10's, UC-04's record form, UC-09's transaction list,
+UC-12's budget overview, plus UC-03's adjust flow and UC02B's edit/delete flow (both
+reusing UC-02's `AccountFormScreen`); `home` is `BalanceSheetScreen` permanently (FR-1)
+and eight screens are orphaned or unreachable (F8, final for this run).
 
-**Active issue.** `UC02B-edit-account` — the owner answered both outstanding questions
-2026-08-23 (Q3: soft delete; Q4: fixed side + signed amount for adjustments), which
-unhalted both remaining issues. `UC03-adjust-account` closed the same day. `UC02B` is
-CONFIRMED and dispatched — the project's first schema change (`schemaVersion` → 2, drift
-guided migrations, `Accounts.deleted`/`deleted_at`). This run has closed UC02, UC01,
-UC10, UC04, UC09, UC12 and UC03; before them FEAT01, UC13, UC11, UC14. Once UC02B closes,
-nothing is runnable and phase 2 (the repo-wide APP + TRAIL sweep) runs again.
+**Active issue.** None. The owner answered both outstanding questions 2026-08-23 (Q3:
+soft delete; Q4: fixed side + signed amount for adjustments), unhalting the last two
+issues; both are now DONE — `UC03-adjust-account` on 2026-08-23, `UC02B-edit-account` on
+2026-08-24 (the project's first schema change: `schemaVersion` 1→2, drift guided
+migrations, `Accounts.deleted`/`deleted_at`). This run has closed UC02, UC01, UC10, UC04,
+UC09, UC12, UC03 and UC02B; before them FEAT01, UC13, UC11, UC14. **Nothing is runnable —
+phase 2 (the repo-wide APP + TRAIL sweep) runs again**, since two issues closed since it
+last ran.
 
 **Pushed.** CI has run. The `app` job failed once on the scaffold and the guard was fixed
 rather than the commit reverted — see the entry below.
@@ -67,26 +68,23 @@ B-suffix issue scheme on 2026-08-22 after Q2 created UC02B as a second issue tra
 UC-02). Proves the artifacts agree with each other; proves nothing about whether they are
 right (`lessons.md` §12).
 
-**Open rulings:** none blocking. Q3 and Q4 both answered 2026-08-23 (`decisions.md`); F14
-(Account create-only) resolves once `UC02B` closes. `pm/questions.md` is the queue for
-any that arise before then.
+**Open rulings:** none. Q3 and Q4 both answered 2026-08-23 (`decisions.md`); F14 (Account
+create-only) resolved 2026-08-24 at `UC02B`'s close. `pm/questions.md` has nothing open.
 
 **Open, non-blocking:** one `fr-nfr.md` §4 item — where the data lives, narrowed to
-phone-only but not closed. **Fifteen findings on file** (`pm/findings.md` F1–F15,
-F15 filed 2026-08-23's phase-2 sweep — a date-formatter copy-pasted into three places).
-**Five are resolved**: F2, F3, F6, F13 fixed and F10 accepted (the clean-checkout
-verification, recorded as a negative result). F3 fixed 2026-08-23 — Q3/Q4 being answered
-unhalted the last two issues carrying a stale isolate note, and both closed it in their
-own as-built pass; every sequence diagram in the repo now names the correct mechanism.
-**Ten stand, recorded and not fixed** (F1, F4, F5, F7, F8, F9, F11, F12, F14, F15) — the
-ones that need an owner ruling are **F7** (a non-numeric amount is silently saved as
-zero, now five live instances across four screens), **F8** (every screen issue orphans
-the previous screen; eight built, one reachable), **F9** (a codegen toolchain the app has
-proved it cannot use, still carried as a runtime dependency and a suppressed lint),
-**F11** (`decisions.md` still calls open the very question `lessons.md` §1 was written
-about), **F12** (the orchestration guide describes a process this run stopped following)
-and **F15** (a copy-pasted date formatter). **F14 resolves as soon as `UC02B-edit-account`
-closes** — it is the issue that discharges it.
+phone-only but not closed. **Fifteen findings on file** (`pm/findings.md` F1–F15).
+**Seven are resolved**: F2, F3, F6, F13, F14 fixed and F10 accepted (the clean-checkout
+verification, recorded as a negative result). F3 fixed 2026-08-23 — every sequence
+diagram in the repo now names the correct isolate mechanism. F14 fixed 2026-08-24 —
+`Account` has full CRUD, FR-18 satisfied for every entity in the project.
+**Eight stand, recorded and not fixed** (F1, F4, F5, F7, F8, F9, F11, F12) — the ones
+that need an owner ruling are **F7** (a non-numeric amount is silently saved as zero, now
+five live instances across four screens), **F8** (every screen issue orphans the
+previous screen; eight built, one reachable, final for this run), **F9** (a codegen
+toolchain the app has proved it cannot use, still carried as a runtime dependency and a
+suppressed lint), **F11** (`decisions.md` still calls open the very question
+`lessons.md` §1 was written about), **F12** (the orchestration guide describes a process
+this run stopped following) and **F15** (a copy-pasted date formatter).
 
 **Unattended mode is live, and has now been exercised both ways.** `feat-planner` may mark
 a plan `AUTO-CONFIRMED` when every decision in it cites an already-confirmed artifact, and
@@ -948,3 +946,53 @@ letter suffix against tracker issue ids directly.
 gains `update()`/`delete()`, three shipped queries gain `WHERE NOT deleted`. After it
 closes, nothing is runnable and phase 2 (the repo-wide sweep) runs again to catch
 anything the two newly-closed issues changed underneath it.
+
+---
+
+## 2026-08-24 — UC02B-edit-account closes; the entire runnable backlog is done
+
+**[STATUS]** **`UC02B-edit-account` is DONE — the last runnable issue.** The `flutter-coder`
+dispatch hit a connection error mid-response (not a content failure) after most of the
+work was done; resumed from its own transcript rather than restarted, and finished
+cleanly. Closes FR-18 for `Account` (`pm/findings.md` F14): the one entity that was
+create-only until now has full CRUD.
+
+**This is the project's first schema change since FEAT01** — `schemaVersion` 1 → 2,
+`Accounts` gains `deleted`/`deletedAt` (identical shape to UC-10's `settled`/`settledAt`).
+Built exactly as `drift.md`'s "Migrations" section prescribes: `dart run drift_dev
+make-migrations` twice, the generated `stepByStep` helper wired into `onUpgrade`, never a
+hand-written branch. `drift_schema_v1.json` byte-identical; `drift_schema_v2.json` new.
+The generated migration test was filled in with a real data-integrity fixture (one
+pre-existing account) rather than left as the empty TODO template — proves the upgrade
+preserves the row and defaults the new columns correctly, not just that a fresh v2
+database can be created.
+
+**`AccountDao.delete()` is a soft delete** — writes `deleted = true, deleted_at = Clock.
+now()`, never `DELETE FROM Accounts`, so it can never fail a foreign key and needs no
+guard. `watchPosition()`/`watchBalances()` (UC-01) and `TransactionDao.watchAccounts()`
+(UC-04/UC-09's picker) gain `WHERE NOT deleted`; `TransactionDao.watchAll()` (UC-09's
+list) stays unfiltered so a deleted account's history keeps displaying — exactly why Q3
+rejected set-null. `update()` edits only `name`/`group`, never `opening_amount` (stays
+UC-03's). `AccountFormScreen` gained an `AccountFormMode {create, adjust, edit}`
+discriminator for its third flow.
+
+**[DISCOVERY]** **Caught at review, before close: my own plan's D4 had a real bug.**
+D4 said `watchDebtProgress()` should also gain `WHERE NOT deleted`, generalizing from
+`watchPosition()`/`watchBalances()` without noticing the difference in shape —
+`watchDebtProgress(accountId)` is a `.watchSingle()` family query keyed to one
+already-selected account, not a list aggregate. Filtering it would have turned "the
+account you're viewing was deleted" into a `StateError` crash (zero rows) instead of a
+still-resolvable historical figure, the first time anyone actually deleted a debt account
+while its detail screen was subscribed. Reachability (F8) makes this unlikely to have
+been hit soon, but it was a real defect in a planning decision I wrote myself, not
+something surfaced by the coder — fixed directly during review rather than re-dispatching
+for one line. Worth remembering: a "the same filter as its neighbors" generalization
+needs checking against each query's actual cardinality contract, not just its subject
+table.
+
+**[STATUS]** 122 tests green, `flutter analyze` clean, `audit.py` 14/0/0. `pm/findings.md`
+F8 confirmed final for this run — eight built screens, one reachable; F14 closed.
+
+**[TODO]** **Nothing is runnable.** The entire backlog planned at run start (FEAT01
+through UC02B) is DONE. **Phase 2 — the repo-wide APP + TRAIL sweep — runs again**, since
+two issues (UC03, UC02B) closed since the last sweep touched anything. Then the run stops.

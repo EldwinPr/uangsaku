@@ -78,6 +78,32 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _deletedMeta = const VerificationMeta(
+    'deleted',
+  );
+  @override
+  late final GeneratedColumn<bool> deleted = GeneratedColumn<bool>(
+    'deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     accountId,
@@ -86,6 +112,8 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     openingAmount,
     settled,
     settledAt,
+    deleted,
+    deletedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -136,6 +164,18 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
         settledAt.isAcceptableOrUnknown(data['settled_at']!, _settledAtMeta),
       );
     }
+    if (data.containsKey('deleted')) {
+      context.handle(
+        _deletedMeta,
+        deleted.isAcceptableOrUnknown(data['deleted']!, _deletedMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
     return context;
   }
 
@@ -171,6 +211,14 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}settled_at'],
       ),
+      deleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}deleted'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
     );
   }
 
@@ -196,6 +244,13 @@ class Account extends DataClass implements Insertable<Account> {
   /// FR-11's "just tick" — a flag, not an enum (`docs/enums.md`).
   final bool settled;
   final DateTime? settledAt;
+
+  /// UC-02B soft delete (`context/index/decisions.md` 2026-08-23): the row
+  /// survives so every transaction that ever referenced it keeps a real row
+  /// to resolve against (UC-09). One-way flag, not a lifecycle
+  /// (`docs/statuses.md`) — the same shape as [settled]/[settledAt] above.
+  final bool deleted;
+  final DateTime? deletedAt;
   const Account({
     required this.accountId,
     required this.name,
@@ -203,6 +258,8 @@ class Account extends DataClass implements Insertable<Account> {
     required this.openingAmount,
     required this.settled,
     this.settledAt,
+    required this.deleted,
+    this.deletedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -219,6 +276,10 @@ class Account extends DataClass implements Insertable<Account> {
     if (!nullToAbsent || settledAt != null) {
       map['settled_at'] = Variable<DateTime>(settledAt);
     }
+    map['deleted'] = Variable<bool>(deleted);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
     return map;
   }
 
@@ -232,6 +293,10 @@ class Account extends DataClass implements Insertable<Account> {
       settledAt: settledAt == null && nullToAbsent
           ? const Value.absent()
           : Value(settledAt),
+      deleted: Value(deleted),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
     );
   }
 
@@ -249,6 +314,8 @@ class Account extends DataClass implements Insertable<Account> {
       openingAmount: serializer.fromJson<int>(json['openingAmount']),
       settled: serializer.fromJson<bool>(json['settled']),
       settledAt: serializer.fromJson<DateTime?>(json['settledAt']),
+      deleted: serializer.fromJson<bool>(json['deleted']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
     );
   }
   @override
@@ -263,6 +330,8 @@ class Account extends DataClass implements Insertable<Account> {
       'openingAmount': serializer.toJson<int>(openingAmount),
       'settled': serializer.toJson<bool>(settled),
       'settledAt': serializer.toJson<DateTime?>(settledAt),
+      'deleted': serializer.toJson<bool>(deleted),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
     };
   }
 
@@ -273,6 +342,8 @@ class Account extends DataClass implements Insertable<Account> {
     int? openingAmount,
     bool? settled,
     Value<DateTime?> settledAt = const Value.absent(),
+    bool? deleted,
+    Value<DateTime?> deletedAt = const Value.absent(),
   }) => Account(
     accountId: accountId ?? this.accountId,
     name: name ?? this.name,
@@ -280,6 +351,8 @@ class Account extends DataClass implements Insertable<Account> {
     openingAmount: openingAmount ?? this.openingAmount,
     settled: settled ?? this.settled,
     settledAt: settledAt.present ? settledAt.value : this.settledAt,
+    deleted: deleted ?? this.deleted,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
   );
   Account copyWithCompanion(AccountsCompanion data) {
     return Account(
@@ -291,6 +364,8 @@ class Account extends DataClass implements Insertable<Account> {
           : this.openingAmount,
       settled: data.settled.present ? data.settled.value : this.settled,
       settledAt: data.settledAt.present ? data.settledAt.value : this.settledAt,
+      deleted: data.deleted.present ? data.deleted.value : this.deleted,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
     );
   }
 
@@ -302,14 +377,24 @@ class Account extends DataClass implements Insertable<Account> {
           ..write('group: $group, ')
           ..write('openingAmount: $openingAmount, ')
           ..write('settled: $settled, ')
-          ..write('settledAt: $settledAt')
+          ..write('settledAt: $settledAt, ')
+          ..write('deleted: $deleted, ')
+          ..write('deletedAt: $deletedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(accountId, name, group, openingAmount, settled, settledAt);
+  int get hashCode => Object.hash(
+    accountId,
+    name,
+    group,
+    openingAmount,
+    settled,
+    settledAt,
+    deleted,
+    deletedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -319,7 +404,9 @@ class Account extends DataClass implements Insertable<Account> {
           other.group == this.group &&
           other.openingAmount == this.openingAmount &&
           other.settled == this.settled &&
-          other.settledAt == this.settledAt);
+          other.settledAt == this.settledAt &&
+          other.deleted == this.deleted &&
+          other.deletedAt == this.deletedAt);
 }
 
 class AccountsCompanion extends UpdateCompanion<Account> {
@@ -329,6 +416,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   final Value<int> openingAmount;
   final Value<bool> settled;
   final Value<DateTime?> settledAt;
+  final Value<bool> deleted;
+  final Value<DateTime?> deletedAt;
   const AccountsCompanion({
     this.accountId = const Value.absent(),
     this.name = const Value.absent(),
@@ -336,6 +425,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     this.openingAmount = const Value.absent(),
     this.settled = const Value.absent(),
     this.settledAt = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.deletedAt = const Value.absent(),
   });
   AccountsCompanion.insert({
     this.accountId = const Value.absent(),
@@ -344,6 +435,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     required int openingAmount,
     this.settled = const Value.absent(),
     this.settledAt = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.deletedAt = const Value.absent(),
   }) : name = Value(name),
        group = Value(group),
        openingAmount = Value(openingAmount);
@@ -354,6 +447,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Expression<int>? openingAmount,
     Expression<bool>? settled,
     Expression<DateTime>? settledAt,
+    Expression<bool>? deleted,
+    Expression<DateTime>? deletedAt,
   }) {
     return RawValuesInsertable({
       if (accountId != null) 'account_id': accountId,
@@ -362,6 +457,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       if (openingAmount != null) 'opening_amount': openingAmount,
       if (settled != null) 'settled': settled,
       if (settledAt != null) 'settled_at': settledAt,
+      if (deleted != null) 'deleted': deleted,
+      if (deletedAt != null) 'deleted_at': deletedAt,
     });
   }
 
@@ -372,6 +469,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Value<int>? openingAmount,
     Value<bool>? settled,
     Value<DateTime?>? settledAt,
+    Value<bool>? deleted,
+    Value<DateTime?>? deletedAt,
   }) {
     return AccountsCompanion(
       accountId: accountId ?? this.accountId,
@@ -380,6 +479,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       openingAmount: openingAmount ?? this.openingAmount,
       settled: settled ?? this.settled,
       settledAt: settledAt ?? this.settledAt,
+      deleted: deleted ?? this.deleted,
+      deletedAt: deletedAt ?? this.deletedAt,
     );
   }
 
@@ -406,6 +507,12 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     if (settledAt.present) {
       map['settled_at'] = Variable<DateTime>(settledAt.value);
     }
+    if (deleted.present) {
+      map['deleted'] = Variable<bool>(deleted.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
     return map;
   }
 
@@ -417,7 +524,9 @@ class AccountsCompanion extends UpdateCompanion<Account> {
           ..write('group: $group, ')
           ..write('openingAmount: $openingAmount, ')
           ..write('settled: $settled, ')
-          ..write('settledAt: $settledAt')
+          ..write('settledAt: $settledAt, ')
+          ..write('deleted: $deleted, ')
+          ..write('deletedAt: $deletedAt')
           ..write(')'))
         .toString();
   }
@@ -2380,6 +2489,8 @@ typedef $$AccountsTableCreateCompanionBuilder = AccountsCompanion Function({
   required int openingAmount,
   Value<bool> settled,
   Value<DateTime?> settledAt,
+  Value<bool> deleted,
+  Value<DateTime?> deletedAt,
 });
 typedef $$AccountsTableUpdateCompanionBuilder = AccountsCompanion Function({
   Value<int> accountId,
@@ -2388,6 +2499,8 @@ typedef $$AccountsTableUpdateCompanionBuilder = AccountsCompanion Function({
   Value<int> openingAmount,
   Value<bool> settled,
   Value<DateTime?> settledAt,
+  Value<bool> deleted,
+  Value<DateTime?> deletedAt,
 });
 
 final class $$AccountsTableReferences
@@ -2476,6 +2589,16 @@ class $$AccountsTableFilterComposer
 
   ColumnFilters<DateTime> get settledAt => $composableBuilder(
     column: $table.settledAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get deleted => $composableBuilder(
+    column: $table.deleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2568,6 +2691,16 @@ class $$AccountsTableOrderingComposer
     column: $table.settledAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get deleted => $composableBuilder(
+    column: $table.deleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AccountsTableAnnotationComposer
@@ -2598,6 +2731,12 @@ class $$AccountsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get settledAt =>
       $composableBuilder(column: $table.settledAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
   Expression<T> outgoingTransactions<T extends Object>(
     Expression<T> Function($$TransactionsTableAnnotationComposer a) f,
@@ -2687,6 +2826,8 @@ class $$AccountsTableTableManager
                 Value<int> openingAmount = const Value.absent(),
                 Value<bool> settled = const Value.absent(),
                 Value<DateTime?> settledAt = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
               }) => AccountsCompanion(
                 accountId: accountId,
                 name: name,
@@ -2694,6 +2835,8 @@ class $$AccountsTableTableManager
                 openingAmount: openingAmount,
                 settled: settled,
                 settledAt: settledAt,
+                deleted: deleted,
+                deletedAt: deletedAt,
               ),
           createCompanionCallback:
               ({
@@ -2703,6 +2846,8 @@ class $$AccountsTableTableManager
                 required int openingAmount,
                 Value<bool> settled = const Value.absent(),
                 Value<DateTime?> settledAt = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
               }) => AccountsCompanion.insert(
                 accountId: accountId,
                 name: name,
@@ -2710,6 +2855,8 @@ class $$AccountsTableTableManager
                 openingAmount: openingAmount,
                 settled: settled,
                 settledAt: settledAt,
+                deleted: deleted,
+                deletedAt: deletedAt,
               ),
           withReferenceMapper: (p0) => p0
               .map(

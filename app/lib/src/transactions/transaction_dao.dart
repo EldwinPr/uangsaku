@@ -80,10 +80,17 @@ class TransactionDao {
   /// A person or a debt is an ordinary row here (`docs/enums.md`: *"the
   /// owner re-confirmed that a debt is an account"*); the person/debt
   /// picker narrows these rows to their `RECEIVABLE`/`PAYABLE` groups at
-  /// the form, nothing more — this method filters nothing and hides
-  /// nothing.
+  /// the form, nothing more — beyond the `deleted` filter below, this
+  /// method filters nothing and hides nothing.
+  ///
+  /// Excludes soft-deleted accounts (UC02B plan D4) — a deleted account
+  /// cannot be chosen for a *new* or *amended* transaction side. UC-09's
+  /// `watchAll()` below is deliberately unfiltered: a transaction already
+  /// pointing at a deleted account must keep resolving its stored side
+  /// name.
   Stream<List<Account>> watchAccounts() {
     final query = _db.select(_db.accounts)
+      ..where((row) => row.deleted.equals(false))
       ..orderBy([(row) => OrderingTerm.asc(row.accountId)]);
     return query.watch();
   }

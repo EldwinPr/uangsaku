@@ -286,6 +286,10 @@ stays `BalanceSheetScreen`. Every screen this run has built since UC-01 has ship
 unreachable; the backlog's only remaining issues are the two HALTED on Q3/Q4, so this
 count does not move again until the owner either answers one of those or rules on
 navigation. **Eight built features, one reachable, zero routes.**
+**Confirmed final 2026-08-24, UC03 and UC02B — both extended `AccountFormScreen` rather
+than building a new screen** (an adjust mode, then an edit/delete mode), so neither adds
+a ninth orphan. The count stays at eight; this closes the entire runnable backlog, so it
+is final for this run. Navigation remains the owner's open call.
 **Confidence:** certain — `grep` for `RecordTransactionScreen` outside its own file and tests
 returns only doc comments; `grep` for `BudgetOverviewScreen` likewise.
 
@@ -398,7 +402,7 @@ survives and the open-claim is gone.
 accepted gap rather than an accident, and is recorded here so the backlog can look
 complete without FR-18 being satisfied.*
 
-## F14 — `Account` is create-only until UC02B lands; FR-18 is unsatisfied for it   [OPEN]
+## F14 — `Account` is create-only until UC02B lands; FR-18 is unsatisfied for it   [FIXED]
 **Scope:** APP          **Severity:** risk
 **Where:** `pm/tracker.yaml`, row `UC02B-edit-account`; `docs/fr-nfr.md` FR-18
 **Violates:** FR-18 — *"Full CRUD across transactions, accounts, budgets, categories and
@@ -413,6 +417,11 @@ backlog looking complete while it exists.
 FR-18 must not be reported satisfied while this is OPEN.
 **Confidence:** certain — the ruling and its cost were stated by the owner before UC-02
 was built (`context/index/decisions.md`, 2026-08-22).
+**FIXED 2026-08-24:** `UC02B-edit-account` landed. `AccountDao.update()` edits `name`/
+`group`; `delete()` is a soft delete (`Accounts.deleted`/`deleted_at`, `context/index/
+decisions.md` 2026-08-23, Q3). `Account` now has full CRUD — `insert()` (UC-02),
+`update()`/`delete()` (UC02B), and reads from every module that needs one. FR-18 is
+satisfied for every entity in the project.
 
 ---
 

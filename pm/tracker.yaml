@@ -258,29 +258,36 @@ issues:
   - id: UC02B-edit-account
     slug: edit-account
     title: Rename, edit and delete an account
-    status: TODO
+    status: DONE
     plan: pm/issues/uc02b-edit-account/plan.md
     depends_on: [UC02-add-account]
     traces_to: [UC-02]
     summary: >-
-      UNHALTED 2026-08-23: pm/questions.md Q3 answered - soft delete. Accounts gains
-      deleted/deleted_at (same shape as UC-10's settled/settledAt), decisions.md
-      2026-08-23. delete() writes the flag, never DELETE FROM Accounts, so it can never
-      fail a foreign key and needs no migration-avoidance workaround - it IS the
-      project's first schema change (schemaVersion 2), done deliberately via drift's
-      guided migrations. watchPosition()/watchBalances()/watchDebtProgress()/
-      TransactionDao.watchAccounts() gain WHERE NOT deleted; TransactionDao.watchAll()
-      (UC-09) does not, so a deleted account's history keeps displaying.
-      docs/diagrams/seq-uc02b-edit-account.drawio drawn this session (Mermaid, rendered,
-      verified); class-accounts.drawio gained delete()/editAccount()/deleteAccount() and
-      erd.drawio gained the two columns, both this session. Plan CONFIRMED - rename and
-      group are AccountDao.update()'s scope, opening_amount stays UC-03's (workbook: UC-02
-      alternate flows are rename/details/delete, correcting the amount is UC-03).
-      PREFLIGHT NOTE: shares three files with UC03-adjust-account, being built in
-      parallel - flutter-coder for this issue must not dispatch until UC03's coder run is
-      reviewed and committed.
-      Closing this issue resolves pm/findings.md F14 (Account was the one entity FR-18
-      was unsatisfied for) and completes the runnable backlog alongside UC03.
+      DONE 2026-08-24: pm/questions.md Q3 answered 2026-08-23 - soft delete. Accounts
+      gains deleted/deleted_at (same shape as UC-10's settled/settledAt, decisions.md
+      2026-08-23). delete() writes the flag, never DELETE FROM Accounts, so it can never
+      fail a foreign key - this is the project's FIRST schema change (schemaVersion
+      1 -> 2), done via drift's guided migrations (dart run drift_dev make-migrations,
+      never a hand-written onUpgrade branch): drift_schema_v1.json byte-identical,
+      drift_schema_v2.json new, plus a real data-integrity migration test proving an
+      existing account survives with deleted=false/deletedAt=null.
+      watchPosition()/watchBalances()/TransactionDao.watchAccounts() gain WHERE NOT
+      deleted; TransactionDao.watchAll() (UC-09) stays unfiltered so a deleted account's
+      history keeps displaying. watchDebtProgress() was ALSO deliberately left
+      unfiltered - caught at review: it is a watchSingle() family query keyed to one
+      already-selected account, not a list aggregate like the other two, so filtering it
+      would turn "the account you're viewing was deleted" into a StateError crash
+      instead of a still-resolvable historical figure - a gap in the plan's own D4, fixed
+      before close rather than shipped. update() edits only name/group, never
+      opening_amount (stays UC-03's insertAdjustment()). AccountFormScreen gained an
+      AccountFormMode {create, adjust, edit} discriminator for its third flow. 122 tests
+      green. docs/diagrams/seq-uc02b-edit-account.drawio drawn via Mermaid this session,
+      rendered and verified against the shipped signatures at close - matches exactly.
+      class-accounts.drawio and erd.drawio amended in the main session, not delegated.
+      Closes pm/findings.md F14 - Account now has full CRUD, FR-18 satisfied for every
+      entity. Completes the runnable backlog - only UC03's coder run had to finish first
+      (shared three files, sequenced not parallel). Nothing is runnable after this;
+      phase 2 (repo-wide sweep) runs again.
 
   - id: UC03-adjust-account
     slug: adjust-account

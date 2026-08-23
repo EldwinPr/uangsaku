@@ -217,4 +217,97 @@ void main() {
       expect(row.occurredOn, DateTime(2026, 3, 15));
     },
   );
+
+  test(
+    'UC02B D3: update() changes name/group and leaves opening_amount untouched',
+    () async {
+      final accountId = await dao.insert(
+        companion('Wallet', AccountGroup.HOLDING, 100000),
+      );
+
+      await dao.update(
+        accountId: accountId,
+        name: 'Renamed wallet',
+        group: AccountGroup.PAYABLE,
+      );
+
+      final row = await (database.select(
+        database.accounts,
+      )..where((r) => r.accountId.equals(accountId))).getSingle();
+      expect(row.name, 'Renamed wallet');
+      expect(row.group, AccountGroup.PAYABLE);
+      expect(row.openingAmount, 100000);
+    },
+  );
+
+  test('UC02B D2: delete() sets deleted = true and a Clock-stamped deletedAt; the row still exists', () async {
+    final clockedDao = AccountDao(
+      database,
+      clock: _FixedClock(DateTime(2026, 4, 1)),
+    );
+    final accountId = await clockedDao.insert(
+      companion('Wallet', AccountGroup.HOLDING, 100000),
+    );
+
+    await clockedDao.delete(accountId: accountId);
+
+    final row = await (database.select(
+      database.accounts,
+    )..where((r) => r.accountId.equals(accountId))).getSingle();
+    expect(row.deleted, isTrue);
+    expect(row.deletedAt, DateTime(2026, 4, 1));
+  });
+
+  test(
+    'UC02B D2: deleting an already-deleted account is idempotent, no error',
+    () async {
+      final accountId = await dao.insert(
+        companion('Wallet', AccountGroup.HOLDING, 100000),
+      );
+
+      await dao.delete(accountId: accountId);
+      await dao.delete(accountId: accountId);
+
+      final row = await (database.select(
+        database.accounts,
+      )..where((r) => r.accountId.equals(accountId))).getSingle();
+      expect(row.deleted, isTrue);
+    },
+  );
+
+  test('UC02B D4: after deleting an account with existing transactions, watchPosition()/watchBalances() no longer include it, but a direct query still resolves from_account_id/to_account_id to the (deleted) account', () async {
+    final accountId = await dao.insert(
+      companion('Wallet', AccountGroup.HOLDING, 100000),
+    );
+    await database
+        .into(database.transactions)
+        .insert(
+          TransactionsCompanion.insert(
+            kind: TransactionKind.expense,
+            amount: 5000,
+            occurredOn: DateTime(2026, 1, 1),
+            fromAccountId: Value(accountId),
+          ),
+        );
+
+    await dao.delete(accountId: accountId);
+
+    final balances = await dao.watchBalances().first;
+    expect(balances.where((b) => b.account.accountId == accountId), isEmpty);
+
+    final position = await dao.watchPosition().first;
+    expect(position.spendable, 0);
+
+    // FR-18: this is a soft delete, not `DELETE FROM Accounts` in disguise —
+    // the transaction row still resolves its from_account_id to a real row.
+    final txnFromAccount = await (database.select(
+      database.transactions,
+    )..where((t) => t.fromAccountId.equals(accountId))).getSingle();
+    expect(txnFromAccount.fromAccountId, accountId);
+    final stillThere = await (database.select(
+      database.accounts,
+    )..where((r) => r.accountId.equals(accountId))).getSingle();
+    expect(stillThere.accountId, accountId);
+    expect(stillThere.deleted, isTrue);
+  });
 }

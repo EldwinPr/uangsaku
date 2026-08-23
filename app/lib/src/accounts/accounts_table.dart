@@ -32,4 +32,12 @@ class Accounts extends Table {
   BoolColumn get settled => boolean().withDefault(const Constant(false))();
 
   DateTimeColumn get settledAt => dateTime().nullable()();
+
+  /// UC-02B soft delete (`context/index/decisions.md` 2026-08-23): the row
+  /// survives so every transaction that ever referenced it keeps a real row
+  /// to resolve against (UC-09). One-way flag, not a lifecycle
+  /// (`docs/statuses.md`) — the same shape as [settled]/[settledAt] above.
+  BoolColumn get deleted => boolean().withDefault(const Constant(false))();
+
+  DateTimeColumn get deletedAt => dateTime().nullable()();
 }

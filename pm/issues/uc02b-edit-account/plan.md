@@ -1,6 +1,6 @@
 # UC02B-edit-account — Rename, edit and delete an account
 
-**Status:** CONFIRMED 2026-08-23 — Q3 answered (`pm/questions.md`, `context/index/
+**Status:** DONE 2026-08-24. Was CONFIRMED — Q3 answered (`pm/questions.md`, `context/index/
 decisions.md` "Deleting an account is a soft delete"). Written in the main session, not
 by `feat-planner`, per the owner's 2026-08-23 direction that planning and diagram work
 happen in-session. Every decision below cites an already-confirmed artifact — the
@@ -153,11 +153,19 @@ to a derived balance: the entered starting figure is not this issue's to touch).
 *Cites:* `context/index/decisions.md` 2026-08-23, the "Consequences for existing shipped
 queries" paragraph — recorded there so this plan can cite rather than re-derive.
 
-- **`AccountDao.watchPosition()`, `watchBalances()`, `watchDebtProgress()`** (UC-01,
-  UC-10) gain `WHERE NOT deleted`. A deleted account stops contributing to FR-1's four
-  figures and stops appearing in the balance-sheet list. This is a **behavior change to
-  shipped code**, made here because the column does not exist before this issue and the
-  queries are wrong the moment it does — not scope creep, and not optional.
+- **`AccountDao.watchPosition()`, `watchBalances()`** (UC-01) gain `WHERE NOT deleted`. A
+  deleted account stops contributing to FR-1's four figures and stops appearing in the
+  balance-sheet list. This is a **behavior change to shipped code**, made here because
+  the column does not exist before this issue and the queries are wrong the moment it
+  does — not scope creep, and not optional.
+- **`watchDebtProgress()` (UC-10) is deliberately NOT filtered** — corrected at review
+  from this D4's first draft, which had proposed the same `WHERE NOT deleted` as the two
+  above. Unlike those two, which aggregate *across* accounts and simply drop a deleted
+  one from the sum, `watchDebtProgress(accountId)` is keyed to one already-selected
+  account via `.watchSingle()`, which throws on zero rows. Filtering it would turn "the
+  account you're viewing was deleted" into a crash instead of a still-resolvable
+  historical figure — the same "history keeps displaying" principle behind the
+  `watchAll()` bullet below.
 - **`TransactionDao.watchAccounts()`** (UC-04/UC-05's picker, reused by UC-09's edit
   sheet) gains `WHERE NOT deleted` — a deleted account cannot be chosen for a *new* or
   *amended* transaction side.
@@ -219,9 +227,10 @@ in this plan re-opens it.
 2. **`AccountDao`** (`app/lib/src/accounts/account_dao.dart`): add `update({required int
    accountId, required String name, required AccountGroup group})` (D3) and
    `delete({required int accountId})` (D2, soft, `Clock`-stamped `deletedAt`, D5). Add
-   `WHERE NOT deleted` to `watchPosition()`, `watchBalances()`, `watchDebtProgress()`
-   (D4). Update the class's doc comment inventory to match (`update()` was previously
-   documented as unimplemented; that sentence is now false).
+   `WHERE NOT deleted` to `watchPosition()` and `watchBalances()` only — `not`
+   `watchDebtProgress()` (D4, corrected). Update the class's doc comment inventory to
+   match (`update()` was previously documented as unimplemented; that sentence is now
+   false).
 3. **`AccountsNotifier`** (`app/lib/src/accounts/accounts_providers.dart`): add
    `editAccount({required int accountId, required String name, required AccountGroup
    group})` and `deleteAccount({required int accountId})`, forwarding to the DAO and
