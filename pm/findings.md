@@ -122,10 +122,11 @@ pass, because UC-13 owns that diagram.
 `seq-uc14-choose-currency.drawio` in UC-14's, then `seq-uc02-add-account.drawio` and
 `seq-uc01-balance-sheet.drawio` at their closes.
 **Narrowed 2026-08-23:** `seq-uc10-debt-progress.drawio` in UC-10's, then all five
-recording diagrams (`seq-uc04`–`seq-uc08`) at UC04's close. **Four remain**, on the issues
-that are still TODO-or-halted: `seq-uc03`, `seq-uc09`, `seq-uc12`, and the not-yet-drawn
-`seq-uc02b`. Each will be corrected by its own issue's as-built pass; anything still stale
-when the run ends is a real leftover for the sweep.
+recording diagrams (`seq-uc04`–`seq-uc08`) at UC04's close, then `seq-uc09-review-and-
+correct.drawio` in UC-09's. **Three remain**, on the issues that are still
+TODO-or-halted: `seq-uc03`, `seq-uc12`, and the not-yet-drawn `seq-uc02b`. Each will be
+corrected by its own issue's as-built pass; anything still stale when the run ends is a
+real leftover for the sweep.
 
 ## F4 — the NFR-4 enabled-controls test can pass vacuously for the rename control   [OPEN]
 **Scope:** APP          **Severity:** risk
@@ -250,6 +251,13 @@ host for this one.
 **Confirmed again 2026-08-23, UC04:** `RecordTransactionScreen` joins the set — **sixth
 orphan**. The record form is the app's core feature (FR-6, "the fastest path in the app")
 and it is reachable from nothing. UC09 and UC12 each add one more on the current pattern.
+**Confirmed again 2026-08-23, UC09 — no re-pointing this time, by design:**
+`TransactionListScreen` ships as the **seventh orphan**, and `home` deliberately stays
+`BalanceSheetScreen` (plan D8) rather than continuing the re-pointing chain — FR-1 settled
+`home` permanently at UC-01's close, so nothing since re-points it. UC-09's list would have
+been the natural navigation host for UC-10's `DebtDetailScreen` (noted at UC-10's close),
+but no navigation host exists on any class diagram, so this issue does not invent one
+either. Only UC12 remains on the current backlog to add another orphan.
 **Confidence:** certain — `grep` for `RecordTransactionScreen` outside its own file and tests
 returns only doc comments.
 

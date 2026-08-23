@@ -99,4 +99,125 @@ class TransactionDao {
       ..orderBy([(row) => OrderingTerm.asc(row.budgetGroupId)]);
     return query.watch();
   }
+
+  /// Message 2 and 12 on `seq-uc09-review-and-correct.drawio`:
+  /// `transactions[]` — every recorded transaction, watched, each row
+  /// carrying its two account-side **names** resolved here by joining
+  /// `Accounts` twice (UC-09 D3).
+  ///
+  /// The join lives in this module, against the `Accounts` table — ISSUE-005
+  /// D1 (`context/index/decisions.md` 2026-08-20), the same shape
+  /// `AccountDao.watchBalances()` ships mirrored: SQL join inside the owning
+  /// module, never a call into `AccountDao`, no Dart-side stitching. Accepted
+  /// cost: table ownership is enforced by nothing, so a schema change to
+  /// `Accounts` means checking all four modules.
+  ///
+  /// Ordered `(occurredOn, transactionId)` ascending — no artifact fixes a
+  /// display order and `pm/questions.md` excludes presentation preferences
+  /// with no downstream consequence, so the deterministic order-for-
+  /// determinism convention every other watched select here ships applies.
+  ///
+  /// Each element is a **record**, not a new class: UC-09's plan invents no
+  /// class ("every box above is already on the class diagram") and
+  /// `class-transactions.drawio` deliberately draws no query-result box for
+  /// the list, unlike `class-accounts.drawio`'s `FinancialPosition`/
+  /// `AccountBalance`. A record is structural, so nothing enters any
+  /// diagram's namespace. [fromName] / [toName] are null exactly when the
+  /// row's corresponding side column is null — the list reads columns, it
+  /// does not interpret kinds (UC-09 D3/D6).
+  Stream<List<({Transaction transaction, String? fromName, String? toName})>>
+  watchAll() {
+    final transactions = _db.transactions;
+    final fromAccounts = _db.alias(_db.accounts, 'from_accounts');
+    final toAccounts = _db.alias(_db.accounts, 'to_accounts');
+
+    final query =
+        _db.select(transactions).join([
+          leftOuterJoin(
+            fromAccounts,
+            fromAccounts.accountId.equalsExp(transactions.fromAccountId),
+          ),
+          leftOuterJoin(
+            toAccounts,
+            toAccounts.accountId.equalsExp(transactions.toAccountId),
+          ),
+        ])..orderBy([
+          OrderingTerm.asc(transactions.occurredOn),
+          OrderingTerm.asc(transactions.transactionId),
+        ]);
+
+    return query.watch().map(
+      (rows) => [
+        for (final row in rows)
+          (
+            transaction: row.readTable(transactions),
+            fromName: row.readTableOrNull(fromAccounts)?.name,
+            toName: row.readTableOrNull(toAccounts)?.name,
+          ),
+      ],
+    );
+  }
+
+  /// Messages 5–6 on `seq-uc09-review-and-correct.drawio`:
+  /// `update(id, fields)` — UC-09's amend arm (FR-18). A companion write of
+  /// exactly the fields message 4 carries: amount, the account side(s) the
+  /// row's kind occupies per `docs/enums.md`'s table, date, the three
+  /// optional tags and the note. **`kind` is deliberately not a parameter**
+  /// (UC-09 D4): retagging a row across kinds is drawn nowhere.
+  ///
+  /// Blanks become nulls (`Value(null)` writes the column null), keeping
+  /// "cleared" and "was never set" one fact — the convention UC04 shipped on
+  /// the record form. Nothing validates and nothing refuses (NFR-4); a
+  /// caller may legally leave a two-sided kind with a null side, because the
+  /// write is exactly what was handed over (UC-09 D6).
+  ///
+  /// Returns `Future<void>`; the amended list reaches the screen as stream
+  /// re-emissions of [watchAll], never as this method's result.
+  Future<void> update({
+    required int id,
+    required int amount,
+    required DateTime occurredOn,
+    int? fromAccountId,
+    int? toAccountId,
+    int? categoryId,
+    int? subcategoryId,
+    int? budgetGroupId,
+    String? note,
+  }) async {
+    await (_db.update(
+      _db.transactions,
+    )..where((row) => row.transactionId.equals(id))).write(
+      TransactionsCompanion(
+        amount: Value(amount),
+        occurredOn: Value(occurredOn),
+        fromAccountId: Value(fromAccountId),
+        toAccountId: Value(toAccountId),
+        categoryId: Value(categoryId),
+        subcategoryId: Value(subcategoryId),
+        budgetGroupId: Value(budgetGroupId),
+        note: Value(note),
+      ),
+    );
+  }
+
+  /// Messages 10–11 on `seq-uc09-review-and-correct.drawio`:
+  /// `delete(id)` — UC-09's delete arm (FR-18), **immediate and
+  /// unconditional** (UC-09 D5): no guard, no confirmation whose "no" could
+  /// quietly become a refusal — NFR-4's fit criterion is zero refusals.
+  ///
+  /// It can never fail on a foreign key: `Transactions` references
+  /// `Accounts`, `Categories`, `Subcategories` and `BudgetGroups`, and **no
+  /// table references `Transactions`**, so deleting a ledger row breaks
+  /// nothing (UC-09 D5) — hence no migration and `schemaVersion` stays 1.
+  ///
+  /// Deleting a nonexistent id completes harmlessly; there is no error to
+  /// surface and nothing to refuse.
+  ///
+  /// Returns `Future<void>`; the shortened list arrives as stream
+  /// re-emissions of [watchAll] (message 12).
+  Future<void> delete({required int id}) async {
+    await (_db.delete(
+      _db.transactions,
+    )..where((row) => row.transactionId.equals(id))).go();
+  }
 }

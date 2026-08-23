@@ -407,15 +407,29 @@ issues:
   - id: UC09-review-and-correct
     slug: review-and-correct
     title: Review and correct what was recorded
-    status: TODO
+    status: DONE
     plan: pm/issues/uc09-review-and-correct/plan.md
     depends_on: [UC04-record-money-movement]
     traces_to: [UC-09]
     summary: >-
-      The transaction list, and editing or deleting any row on it. FR-18 is full CRUD with
-      no exception for any entity, and NFR-4's fit criterion is zero refusals - this is the
-      likeliest issue to violate that quietly with a disabled button, so check it explicitly
-      rather than assuming.
+      The transaction list, plus editing or deleting any row on it - closes FR-18 for
+      Transaction. DONE 2026-08-23: AUTO-CONFIRMED plan (both OPEN questions, Q3 and Q4,
+      checked and cited through as not blocking - D6). TransactionDao gained the two
+      methods class-transactions.drawio named for it from the start: watchAll() (a
+      two-sided LEFT JOIN against Accounts for both side names, in-module join per
+      ISSUE-005 D1) and update()/delete(). Delete is immediate and unconditional - no
+      table references Transactions, so it can never fail a foreign key, and NFR-4's zero
+      refusals forbids a confirmation dialog whose "no" could become a quiet refusal.
+      kind is never a parameter of edit() - retagging a row across kinds is out of scope.
+      transactionListProvider is a single-stream hand-written StreamProvider.autoDispose
+      (UC-11 combining-shape ruling not triggered). 89 tests green, no schema change
+      (drift_schema_v1.json byte-identical). TransactionListScreen ships unreachable -
+      F8's seventh orphan, and home deliberately stays BalanceSheetScreen (D8, FR-1) rather
+      than re-pointing again. As-built pass already landed the two read-path messages and
+      corrected the isolate note on seq-uc09 (F3 narrows to three: seq-uc03, seq-uc12,
+      seq-uc02b). Two stale "searching notes is UC-09's surface" passages corrected
+      (fr-nfr.md and transactions_table.dart's note column doc comment) per D9. Only
+      UC12-budget-consumption remains runnable; UC02B and UC03 stay HALTED.
 
   - id: UC11-set-budget
     slug: set-budget

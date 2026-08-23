@@ -29,7 +29,7 @@ docs/diagrams/seq-uc08-repayment.drawio:
   source_sha: be18fb3e594ee32214e5c4d370a8cebee75dd4d9714d8ff03239221e6038283d
 docs/diagrams/seq-uc09-review-and-correct.drawio:
   render: seq-uc09-review-and-correct.png
-  source_sha: 93af2bb60a1afc7da301d1e1c5006d47ee01b1521f5e566ebe4c0a50e15bd41f
+  source_sha: f43d99e3169f0d2ccef8bc300fabbde8a05d4ee4ca2974fafc0bcb871235f982
 docs/diagrams/seq-uc10-debt-progress.drawio:
   render: seq-uc10-debt-progress.png
   source_sha: ca84aa1a6825251aa208c49153281cf558d2d169b7df729a81bf2445bd932a38

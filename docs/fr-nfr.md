@@ -315,8 +315,10 @@ for" is thin enough that category alone was never obviously all that was meant.
 
 *Consequence.* `Transaction` gains a `note` row on `erd.drawio` (ISSUE-001 re-opened,
 same as the `Budget_Period.state` drop), it belongs in FEAT01's first migration, and it
-appears on the UC-04 record screen as an optional field. It is **not** searchable yet —
-searching notes is UC-09's surface, not FEAT01's. No FR changes: an optional field the
+appears on the UC-04 record screen as an optional field. It is **not** searchable —
+searching or filtering stays deferred outright (§3), and UC-09's own scope confirms the
+exclusion rather than lifting it: its diagram amends the note like any other field and
+draws no search. No FR changes: an optional field the
 app never reads is not a new capability, it is the shape of FR-6's "what it was for".
 
 **Decided 2026-08-20 — "a month" is a calendar month.** Budget periods run from the

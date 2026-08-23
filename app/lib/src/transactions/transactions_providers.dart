@@ -106,6 +106,30 @@ final budgetGroupPickerProvider = StreamProvider.autoDispose<List<BudgetGroup>>(
   },
 );
 
+/// The transaction list for `TransactionListScreen` (UC-09), messages 2 and
+/// 12 on `seq-uc09-review-and-correct.drawio`: one drift stream,
+/// `TransactionDao.watchAll()` — account side names already joined inside
+/// the DAO, never stitched here (UC-09 D3).
+///
+/// **Single-stream, so the UC-11 ruling is not triggered**:
+/// `context/index/decisions.md` 2026-08-22 bans combining shapes for screens
+/// reading more than one stream; this screen reads exactly one. A plain
+/// `Notifier` with hand-opened subscriptions would be unnecessary machinery.
+///
+/// Hand-written single-stream `StreamProvider.autoDispose`, not `@riverpod`,
+/// for the two recorded reasons (`riverpod.md`, verified UC-13/UC-14): the
+/// generator throws `InvalidTypeException` on any provider typed over a
+/// drift row class (`Transaction` lives in `app_database.g.dart`, a part
+/// file), and the name is not codegen's to choose — the class diagram names
+/// `transactionListProvider`.
+final transactionListProvider =
+    StreamProvider.autoDispose<
+      List<({Transaction transaction, String? fromName, String? toName})>
+    >((ref) {
+      final database = ref.watch(appDatabaseProvider);
+      return TransactionDao(database).watchAll();
+    });
+
 /// Writes for all six recording kinds (UC-04..UC-08), messages 3 on the five
 /// diagrams: `recordExpense` / `recordIncome` / `transfer` / `lend` /
 /// `borrow` / `repay`. Each forwards to `TransactionDao.insert()` with the
@@ -293,6 +317,63 @@ class TransactionsNotifier extends Notifier<void> {
       toAccountId: toAccountId,
       note: note,
     );
+  }
+
+  /// Messages 4–5 on `seq-uc09-review-and-correct.drawio`:
+  /// `edit(id, amount, account, date, category, subcategory, budgetGroup,
+  /// note)` — UC-09's amend arm (FR-18), forwarded verbatim as
+  /// `TransactionDao.update(id, fields)`.
+  ///
+  /// Message 4's singular **`account`** is the drawn compression of the
+  /// per-kind presentation (UC-09 D4); in code it arrives expanded as
+  /// [fromAccountId] / [toAccountId], filled by the screen with exactly the
+  /// sides `docs/enums.md`'s kind table assigns the row *as it stands* — one
+  /// side for expense/income/lend/borrow, both for transfer/repayment,
+  /// whichever-is-set for adjustment. The screen holds the row's kind (it
+  /// came off the list stream); this method branches on nothing.
+  ///
+  /// **No `kind` parameter** — an existing row's kind never changes here
+  /// (UC-09 D4). Blanks become nulls, so "cleared" and "was never set" stay
+  /// one fact. Nothing is refused (NFR-4): a zero amount or empty pickers
+  /// writes exactly what was handed over.
+  ///
+  /// Returns nothing to the screen; the amended list arrives on
+  /// [transactionListProvider]'s next emission (message 12).
+  Future<void> edit({
+    required int id,
+    required int amount,
+    int? fromAccountId,
+    int? toAccountId,
+    required DateTime date,
+    int? categoryId,
+    int? subcategoryId,
+    int? budgetGroupId,
+    String? note,
+  }) {
+    return _dao.update(
+      id: id,
+      amount: amount,
+      occurredOn: date,
+      fromAccountId: fromAccountId,
+      toAccountId: toAccountId,
+      categoryId: categoryId,
+      subcategoryId: subcategoryId,
+      budgetGroupId: budgetGroupId,
+      note: note,
+    );
+  }
+
+  /// Messages 8–9 on `seq-uc09-review-and-correct.drawio`: `delete(id)` —
+  /// immediate and unconditional (UC-09 D5): no confirmation dialog, no
+  /// disabled state, no guard whose "no" could quietly become a refusal
+  /// (NFR-4's zero refusals). It can never fail on a foreign key — no table
+  /// references `Transactions` (UC-09 D5) — so there is nothing this method
+  /// could legitimately refuse either.
+  ///
+  /// Returns nothing to the screen; the shortened list arrives on
+  /// [transactionListProvider]'s next emission (message 12).
+  Future<void> delete({required int id}) {
+    return _dao.delete(id: id);
   }
 }
 

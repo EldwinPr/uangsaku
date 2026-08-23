@@ -1405,8 +1405,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final int? budgetGroupId;
 
   /// Nullable free text. Optional; nothing in the app reads it to make a
-  /// decision, and it is not searchable yet (decided 2026-08-21 — that is
-  /// UC-09's surface).
+  /// decision, and it is not searchable (decided 2026-08-21; searching or
+  /// filtering stays deferred per `docs/fr-nfr.md` §3 — UC-09 amends the
+  /// note like any other field and draws no search).
   final String? note;
   const Transaction({
     required this.transactionId,

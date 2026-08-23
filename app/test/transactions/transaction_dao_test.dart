@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uangsaku/src/accounts/accounts_table.dart';
@@ -259,5 +260,158 @@ void main() {
       'Groceries',
       'Transport',
     ]);
+  });
+
+  test('UC-09 D3: watchAll() joins both side-account names inside the DAO and orders (occurredOn, transactionId) ascending', () async {
+    final ids = await seedAccounts();
+
+    // The later-dated row is inserted FIRST (lowest id), so the emission
+    // order pins both ordering keys: date dominates, insertion id breaks
+    // same-day ties.
+    await dao.insert(
+      kind: TransactionKind.transfer,
+      amount: 30000,
+      occurredOn: DateTime(2026, 8, 2),
+      fromAccountId: ids['Cash'],
+      toAccountId: ids['Savings'],
+    );
+    await dao.insert(
+      kind: TransactionKind.expense,
+      amount: 10000,
+      occurredOn: day,
+      fromAccountId: ids['Cash'],
+      note: 'lunch',
+    );
+    await dao.insert(
+      kind: TransactionKind.income,
+      amount: 20000,
+      occurredOn: day,
+      toAccountId: ids['Budi'],
+    );
+
+    final rows = await dao.watchAll().first;
+
+    // Ordered by (occurredOn, transactionId): the two `day` rows first in
+    // id order, then the later day.
+    expect(rows.map((row) => row.transaction.amount).toList(), [
+      10000,
+      20000,
+      30000,
+    ]);
+
+    // Side names arrive joined — one side for expense/income per
+    // docs/enums.md's kind table, both for transfer; a null side reads as
+    // a null name. The list reads columns, it does not interpret kinds.
+    expect(rows[0].fromName, 'Cash');
+    expect(rows[0].toName, isNull);
+    expect(rows[1].fromName, isNull);
+    expect(rows[1].toName, 'Budi');
+    expect(rows[2].fromName, 'Cash');
+    expect(rows[2].toName, 'Savings');
+    expect(rows[0].transaction.note, 'lunch');
+  });
+
+  test(
+    'FR-18: update() round-trips every editable field and never touches kind',
+    () async {
+      final ids = await seedAccounts();
+      await database
+          .into(database.categories)
+          .insert(CategoriesCompanion.insert(name: 'Food'));
+      await database
+          .into(database.budgetGroups)
+          .insert(BudgetGroupsCompanion.insert(name: 'Groceries'));
+      final category = await database.select(database.categories).getSingle();
+      final group = await database.select(database.budgetGroups).getSingle();
+
+      await dao.insert(
+        kind: TransactionKind.expense,
+        amount: 10000,
+        occurredOn: day,
+        fromAccountId: ids['Cash'],
+        categoryId: category.categoryId,
+        budgetGroupId: group.budgetGroupId,
+        note: 'lunch',
+      );
+      final original = await database.select(database.transactions).getSingle();
+
+      final nextDay = DateTime(2026, 8, 9);
+      await dao.update(
+        id: original.transactionId,
+        amount: 25000,
+        occurredOn: nextDay,
+        fromAccountId: ids['Savings'],
+        toAccountId: null,
+        categoryId: null,
+        subcategoryId: null,
+        budgetGroupId: null,
+        note: 'amended note',
+      );
+
+      final amended = await database.select(database.transactions).getSingle();
+      // Kind is not an update parameter (plan D4) — the row keeps its kind.
+      expect(amended.kind, TransactionKind.expense);
+      expect(amended.transactionId, original.transactionId);
+      expect(amended.amount, 25000);
+      expect(amended.occurredOn, nextDay);
+      expect(amended.fromAccountId, ids['Savings']);
+      // Blanks become nulls: the previously-set tags are now cleared, keeping
+      // "cleared" and "was never set" one fact (UC04's D8 convention).
+      expect(amended.categoryId, isNull);
+      expect(amended.subcategoryId, isNull);
+      expect(amended.budgetGroupId, isNull);
+      expect(amended.note, 'amended note');
+    },
+  );
+
+  test('FR-18: delete() removes an existing row', () async {
+    final ids = await seedAccounts();
+
+    await dao.insert(
+      kind: TransactionKind.expense,
+      amount: 10000,
+      occurredOn: day,
+      fromAccountId: ids['Cash'],
+    );
+    final row = await database.select(database.transactions).getSingle();
+
+    await dao.delete(id: row.transactionId);
+
+    final rows = await database.select(database.transactions).get();
+    expect(rows, isEmpty);
+  });
+
+  test('D5 / NFR-4: delete() proceeds unconditionally — even a row referencing now-absent tag ids deletes successfully', () async {
+    // FK-direction proof for UC-09 D5: nothing references Transactions, so
+    // a ledger row can never be blocked by what it points at — not even
+    // when its own side/tag references dangle. (drift does not enable
+    // PRAGMA foreign_keys by default — see drift's columns.dart — which is
+    // why a row referencing absent ids can exist here at all.)
+    final id = await database
+        .into(database.transactions)
+        .insert(
+          TransactionsCompanion.insert(
+            kind: TransactionKind.expense,
+            amount: 5000,
+            occurredOn: day,
+            fromAccountId: const Value(9999),
+            toAccountId: const Value(8888),
+            categoryId: const Value(7777),
+            subcategoryId: const Value(6666),
+            budgetGroupId: const Value(5555),
+            note: const Value('dangling'),
+          ),
+        );
+
+    await dao.delete(id: id);
+
+    var rows = await database.select(database.transactions).get();
+    expect(rows, isEmpty);
+
+    // Deleting an already-absent id completes harmlessly — there is no
+    // error to surface and nothing to refuse.
+    await dao.delete(id: id);
+    rows = await database.select(database.transactions).get();
+    expect(rows, isEmpty);
   });
 }

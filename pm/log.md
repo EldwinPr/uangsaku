@@ -12,18 +12,18 @@ before starting work.
 
 ---
 
-## Current state — 2026-08-22
+## Current state — 2026-08-23
 
 **Phase.** Documentation complete; **implementation under way, mid-run.** The app compiles
-and its test suite is green (**77 tests**). Seven modules/screens built end to end — UC-13's,
-UC-11's, UC-14's, UC-02's, UC-01's, UC-10's and UC-04's record form; `home` is
-`BalanceSheetScreen` permanently (FR-1) and six screens are orphaned or unreachable (F8).
+and its test suite is green (**89 tests**). Eight modules/screens built end to end — UC-13's,
+UC-11's, UC-14's, UC-02's, UC-01's, UC-10's, UC-04's record form and UC-09's transaction
+list; `home` is `BalanceSheetScreen` permanently (FR-1) and seven screens are orphaned or
+unreachable (F8).
 
-**Active issue.** `UC09-review-and-correct` — the transaction list plus edit/delete, the
-issue the brief itself flags as likeliest to violate NFR-4 quietly. Two issues are HALTED at
+**Active issue.** None — `UC09-review-and-correct` just closed. Two issues are HALTED at
 the planning gate for the run: `UC02B-edit-account` (Q3) and `UC03-adjust-account` (Q4).
-This run has closed UC02, UC01, UC10 and UC04; before them FEAT01, UC13, UC11, UC14.
-Remaining after UC09: UC12-budget-consumption.
+This run has closed UC02, UC01, UC10, UC04 and UC09; before them FEAT01, UC13, UC11, UC14.
+Only `UC12-budget-consumption` remains runnable; after it, phase 2's repo sweep.
 
 **Pushed.** CI has run. The `app` job failed once on the scaffold and the guard was fixed
 rather than the commit reverted — see the entry below.
@@ -74,7 +74,8 @@ which F8–F13 come from the two end-of-run sweeps of the previous run and F14 w
 the Q2 ruling (Account create-only until UC02B lands; FR-18 visibly unsatisfied for it).
 **Four are resolved**: F2, F6, F13 fixed and
 F10 accepted (the clean-checkout verification, recorded as a negative result). F3 narrowed
-twice, fourteen diagrams to **twelve**. **Eight stand, recorded and not fixed** — the ones
+repeatedly, fourteen diagrams to **three** (`seq-uc03`, `seq-uc12`, the not-yet-drawn
+`seq-uc02b`) as of UC-09's close. **Eight stand, recorded and not fixed** — the ones
 that need an owner ruling are **F7** (a non-numeric budget amount is silently saved as
 zero), **F8** (every screen issue orphans the previous screen; UC-13's is already
 unreachable, and six more screens are queued behind the same pattern), **F9** (a codegen
@@ -811,3 +812,36 @@ autonumber loss from UC01's pass would have happened five times here without tha
 
 **[TODO]** Next: `UC09-review-and-correct`. After it, only UC12 remains runnable; UC02B
 and UC03 stay halted on Q3/Q4 unless the owner answers.
+
+---
+
+## 2026-08-23 — UC09-review-and-correct closes; FR-18 lands for Transaction
+
+**[STATUS]** **`UC09-review-and-correct` is DONE.** `TransactionDao` gained the two
+methods `class-transactions.drawio` named for it from the start: `watchAll()` (a two-sided
+`LEFT JOIN` against `Accounts` for both side names, in-module join per ISSUE-005 D1) and
+`update()`/`delete()`. Delete is immediate and unconditional — no table references
+`Transactions`, so it can never fail a foreign key, and NFR-4's zero refusals forbids a
+confirmation dialog whose "no" could become a quiet refusal. `kind` is never a parameter of
+`edit()` — retagging a row across kinds stays out of scope. `transactionListProvider` is a
+single-stream hand-written `StreamProvider.autoDispose` (the UC-11 combining-shape ruling
+isn't triggered — one stream, not several). Both OPEN questions (Q3, Q4) were checked and
+cited through as not blocking (D6): neither this issue's read nor its writes branch on
+either question's answer. 89 tests green, no schema change (`drift_schema_v1.json`
+byte-identical). `TransactionListScreen` ships unreachable — F8's seventh orphan — and
+`home` deliberately stays `BalanceSheetScreen` rather than re-pointing again (D8, FR-1
+settled that permanently at UC-01's close).
+
+**[STATUS]** As-built pass on `seq-uc09-review-and-correct.drawio` had already landed the
+two read-path subscription messages and the corrected isolate note before this review;
+render re-inspected at full size, clean. F3 narrows to three: `seq-uc03`, `seq-uc12`,
+`seq-uc02b`. `renders.lock` was stale against the as-built source (hash mismatch) and was
+refreshed via `audit.py --record-renders`.
+
+**[STATUS]** D9's two stale "searching notes is UC-09's surface" passages corrected —
+`docs/fr-nfr.md`'s note-decision entry and `transactions_table.dart`'s `note` column doc
+comment both now say search/filtering stays deferred outright (fr-nfr.md §3), not promised
+to a later UC-09 surface.
+
+**[TODO]** Only `UC12-budget-consumption` remains runnable. `UC02B-edit-account` (Q3) and
+`UC03-adjust-account` (Q4) stay HALTED pending the owner.
