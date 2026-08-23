@@ -8,7 +8,7 @@
 <mxGeometry height="30" width="700" x="40" y="20" as="geometry" />
 </mxCell>
 <mxCell id="grp_accounts" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;fontStyle=1;fontColor=#666666;" value="Accounts" vertex="1">
-<mxGeometry height="300" width="300" x="40" y="60" as="geometry" />
+<mxGeometry height="400" width="300" x="40" y="60" as="geometry" />
 </mxCell>
 <mxCell id="grp_transactions" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;fontStyle=1;fontColor=#666666;" value="Transactions" vertex="1">
 <mxGeometry height="510" width="700" x="400" y="60" as="geometry" />
@@ -17,7 +17,7 @@
 <mxGeometry height="420" width="480" x="1150" y="60" as="geometry" />
 </mxCell>
 <mxCell id="t_account" parent="1" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;" value="Account" vertex="1">
-<mxGeometry height="210" width="220" x="60" y="100" as="geometry" />
+<mxGeometry height="270" width="220" x="60" y="100" as="geometry" />
 </mxCell>
 <mxCell id="t_account_r1" parent="t_account" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;" vertex="1">
 <mxGeometry height="30" width="220" y="30" as="geometry" />
@@ -71,6 +71,24 @@
 <mxGeometry height="30" width="30" as="geometry"><mxRectangle height="30" width="30" as="alternateBounds" /></mxGeometry>
 </mxCell>
 <mxCell id="t_account_r6_n" parent="t_account_r6" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;whiteSpace=wrap;html=1;" value="settled_at" vertex="1">
+<mxGeometry height="30" width="190" x="30" as="geometry"><mxRectangle height="30" width="190" as="alternateBounds" /></mxGeometry>
+</mxCell>
+<mxCell id="t_account_r7" parent="t_account" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;" vertex="1">
+<mxGeometry height="30" width="220" y="210" as="geometry" />
+</mxCell>
+<mxCell id="t_account_r7_k" parent="t_account_r7" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;whiteSpace=wrap;html=1;" value="" vertex="1">
+<mxGeometry height="30" width="30" as="geometry"><mxRectangle height="30" width="30" as="alternateBounds" /></mxGeometry>
+</mxCell>
+<mxCell id="t_account_r7_n" parent="t_account_r7" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;whiteSpace=wrap;html=1;" value="deleted" vertex="1">
+<mxGeometry height="30" width="190" x="30" as="geometry"><mxRectangle height="30" width="190" as="alternateBounds" /></mxGeometry>
+</mxCell>
+<mxCell id="t_account_r8" parent="t_account" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;" vertex="1">
+<mxGeometry height="30" width="220" y="240" as="geometry" />
+</mxCell>
+<mxCell id="t_account_r8_k" parent="t_account_r8" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;whiteSpace=wrap;html=1;" value="" vertex="1">
+<mxGeometry height="30" width="30" as="geometry"><mxRectangle height="30" width="30" as="alternateBounds" /></mxGeometry>
+</mxCell>
+<mxCell id="t_account_r8_n" parent="t_account_r8" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;whiteSpace=wrap;html=1;" value="deleted_at" vertex="1">
 <mxGeometry height="30" width="190" x="30" as="geometry"><mxRectangle height="30" width="190" as="alternateBounds" /></mxGeometry>
 </mxCell>
 <mxCell id="t_transaction" parent="1" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;" value="Transaction" vertex="1">
@@ -286,8 +304,8 @@
 <mxCell id="t_budgetperiod_r5_n" parent="t_budgetperiod_r5" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;whiteSpace=wrap;html=1;" value="amount" vertex="1">
 <mxGeometry height="30" width="190" x="30" as="geometry"><mxRectangle height="30" width="190" as="alternateBounds" /></mxGeometry>
 </mxCell>
-<mxCell id="note_account" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="No stored balance. Every figure is derived from Transaction (NFR-2)." vertex="1">
-<mxGeometry height="34" width="260" x="60" y="320" as="geometry" />
+<mxCell id="note_account" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="No stored balance. Every figure is derived from Transaction (NFR-2). deleted/deleted_at is a soft-delete flag (Q3, 2026-08-23) - a deleted account keeps its row so referencing transactions keep resolving." vertex="1">
+<mxGeometry height="60" width="260" x="60" y="380" as="geometry" />
 </mxCell>
 <mxCell id="note_transaction" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="to_account_id NULL =&gt; the money left the system, i.e. it is spending. Transfers and lending have both ends set, so they are never counted as spending (FR-8, FR-9)." vertex="1">
 <mxGeometry x="480" y="440" width="210" height="115" as="geometry" />

@@ -1019,3 +1019,73 @@ has to be made rather than derived.
 create-only, and no entity has an exception", and until `UC02B` lands, `Account` is exactly
 that exception.** Filed as `pm/findings.md` F14. The requirement is not amended — the gap is
 temporary and tracked, which is different from a requirement that was quietly narrowed.
+
+## 2026-08-23 — Deleting an account is a soft delete; Q3 answered
+
+Owner's ruling, answering `pm/questions.md` Q3 ("soft delete/disable"), unblocking
+`UC02B-edit-account`. Chosen over the three shapes the question posed: **A (cascade)**
+destroys history irreversibly in an app whose data cannot be regenerated; **B (set null)**
+contradicts the from/to columns' role as a transaction's *identity*, not an optional tag
+(UC-11's null-the-tag precedent explicitly does not transfer here — see the 2026-08-22
+entry above); **C (refuse)** is a refusal, which NFR-4 forbids by name.
+
+**The shape:** `Accounts` gains `deleted` (`BoolColumn`, default `false`) and `deletedAt`
+(`DateTimeColumn`, nullable) — the identical two-column shape UC-10 already shipped for
+`settled`/`settledAt` (`Clock`-stamped, set together, never separately). `schemaVersion`
+becomes 2; a migration and a new `drift_schemas/` snapshot are required (`lessons.md` §8's
+cost, paid deliberately rather than avoided).
+
+**What "delete" means now:** `UC02B`'s delete control writes `deleted = true,
+deletedAt = Clock.now()` — a `Future<void>` update, never a `DELETE FROM Accounts`. It
+always succeeds (NFR-4): there is no FK to violate, because the account row is never
+removed. Every transaction that referenced the account keeps referencing a real row, so
+its name and history keep resolving exactly as before.
+
+**Consequences for existing shipped queries — recorded so `UC02B`'s plan can cite them
+rather than re-deriving:**
+- **FR-1 (`AccountDao.watchPosition()`/`watchBalances()`) and FR-11
+  (`watchDebtProgress()`) must filter `WHERE NOT deleted`.** A deleted account's balance
+  stops contributing to the four figures and stops appearing in the balance-sheet list —
+  "deleted" has to mean gone from the owner's view of their money, not merely
+  unselectable. This is a **behavior change to shipped UC-01/UC-10 queries**, made by
+  `UC02B` as part of landing the column, not scope creep — the column does not exist
+  without this issue and the queries are wrong the moment it does.
+- **`TransactionDao.watchAccounts()` (the record-form/edit-sheet picker, UC-04/UC-09)
+  must filter `WHERE NOT deleted`** — a deleted account cannot be chosen for a *new* or
+  *amended* transaction side. `TransactionDao.watchAll()` (UC-09's list) does **not**
+  filter — a transaction already pointing at a deleted account still needs its stored
+  side name to render, which is exactly why B (set null) was rejected.
+- **`BudgetDao` is untouched** — it never references `Accounts`.
+- **No un-delete is drawn anywhere** and none is implied by this ruling; reactivating a
+  deleted account is a future question if the owner ever asks for it, not answered here.
+
+**Not a lifecycle** (`docs/statuses.md`): a one-way flag flipped by exactly one action, the
+same reasoning that kept `settled` off the statuses register. No state diagram.
+
+## 2026-08-23 — Adjustment encodes as fixed side + signed amount; Q4 answered
+
+Q4 was left to my judgment ("pick whatever you see fit") rather than the owner naming a
+side. **Chosen: Option B** — `to_account_id` is always the account being corrected,
+`from_account_id` stays `null` always, and `amount` carries the signed diff (positive for
+an upward correction, negative for a downward one). `docs/enums.md`'s kind-table hedge
+(*"the account, or null | null, or the account"*) resolves to the first branch, always.
+
+**Why B over A (side-follows-sign, magnitude-only amount):** A's cost is not
+symmetric with B's. A's downward-correction row satisfies `to_account_id IS NULL` and
+therefore reads as **spending** everywhere that predicate is checked — including UC-12's
+"Others" bucket, exactly the workbook's own warning that an adjustment must be *"recorded
+and visible rather than silent"* turned against itself: it would be visible as the wrong
+thing. B's cost — introducing the ledger's one negative-amount kind — is contained and
+already proven harmless: **UC-01, UC-09, UC-10 and UC-12 were all built and tested
+encoding-independent** (each cites `to_account_id IS NULL` with no `kind` filter, pinned
+by a dual-encoding test asserting identical output under both options), so B requires
+**no change to any shipped query** — the balance formula `SUM(to_account_id contributions)
+- SUM(from_account_id contributions)` already handles a signed `amount` correctly, since a
+negative contribution on the `to` side subtracts exactly as an equivalent `from`-side
+magnitude would.
+
+**Consequence for `UC03-adjust-account`'s plan:** the write is `insert(kind: adjustment,
+toAccountId: theAccount, amount: signedDiff)`, `fromAccountId` always `null`. No existing
+DAO method changes shape — `TransactionDao.insert()` already accepts a signed `int`
+(nothing in its signature or body assumes non-negative). `docs/enums.md`'s adjustment row
+should be tightened from the hedge to this resolved rule.

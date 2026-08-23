@@ -345,8 +345,10 @@ O('{} tracker issues ({} planned, {} still TODO and unplanned by design): '
 # of the source it was made from, and this compares.
 RENDER_LOCK = 'docs/diagrams/renders.lock'
 # A UC shared under the B-suffix scheme keeps its sequence render with its PRIMARY
-# issue -- the suffixed one draws flows the base diagram deliberately does not, and
-# gets its own diagram when one is drawn for it.
+# issue for as long as the suffixed one has drawn no diagram of its own. Once a
+# suffixed issue draws its own seq-uc{NN}{letter}-*.drawio (UC02B did, 2026-08-23),
+# that file names its own issue directly rather than falling back to the primary's --
+# the filename's letter is the signal, checked before the bare-UC lookup below.
 owner_of = {}
 for i in impl:
     for uc in (i.get('traces_to') or []):
@@ -361,11 +363,20 @@ stale, missing = [], []
 for src in sorted(glob.glob('docs/diagrams/seq-uc*.drawio')):
     src = src.replace(os.sep, '/')
     name = os.path.basename(src)
-    uc = 'UC-' + name[6:8]
-    issue = owner_of.get(uc)
-    if not issue:
-        F('{} draws {} which no implementation issue traces to'.format(name, uc))
-        continue
+    m = re.match(r'seq-uc(\d+)([a-z]?)-', name)
+    num, suffix = m.group(1), m.group(2)
+    if suffix:
+        prefix = 'UC{}{}'.format(num, suffix.upper())
+        issue = next((i['id'] for i in impl if i['id'].startswith(prefix)), None)
+        if not issue:
+            F('{} names a suffixed issue id starting {} but no tracker issue matches'
+              .format(name, prefix))
+            continue
+    else:
+        issue = owner_of.get('UC-' + num)
+        if not issue:
+            F('{} draws UC-{} which no implementation issue traces to'.format(name, num))
+            continue
     png = 'pm/issues/{}/{}'.format(_slugdir(issue), name[:-7] + '.png')
     if not os.path.exists(png):
         missing.append('{} -> {}'.format(name, png))

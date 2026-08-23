@@ -263,29 +263,24 @@ issues:
     depends_on: [UC02-add-account]
     traces_to: [UC-02]
     summary: >-
-      HALTED 2026-08-22 at the planning gate, before a planner was spent on it: the halt
-      condition was already on the record and dispatching feat-planner to rediscover it
-      would only burn the spawn. Question filed as pm/questions.md Q3. A halted issue
-      stays halted for the whole run.
-      Added 2026-08-22 by the owner's ruling on pm/questions.md Q2. THE SECOND ISSUE TRACING
-      TO UC-02, which the ID scheme above did not anticipate - the workbook calls renaming,
-      editing and deleting an account "alternate flows of this use case", while seq-uc02
-      draws create and nothing else, so the use case needs two issues rather than the
-      diagram being widened. Hence the B suffix instead of a new UC code: there is no new
-      workbook row and inventing one would misrepresent the workbook.
-      BLOCKED ON ITS OWN DIAGRAM: no sequence diagram anywhere in docs/diagrams/ covers an
-      account rename, edit or delete. One must be drawn before this can be planned, because
-      CLAUDE.md makes the diagram the scope. class-accounts.drawio also needs AccountDao to
-      gain a delete() - it currently has an update() that no diagram calls and no delete()
-      at all.
-      CARRIES AN UNANSWERED RULING: what happens to the transactions of a deleted account.
-      UC-11's null-the-tag precedent DOES NOT TRANSFER - budget_group_id is an optional tag,
-      but from_account_id/to_account_id are the transaction's identity. Every non-refusing
-      delete is a schema change (schemaVersion 2, a migration and a new snapshot), because
-      the FKs carry no onDelete and SQLite's default NO ACTION makes the delete FAIL, which
-      NFR-4's zero-refusals criterion forbids.
-      UNTIL THIS LANDS, FR-18 IS NOT SATISFIED FOR Account - see pm/findings.md F14. The gap
-      is accepted and tracked, not an oversight, and FR-18 was deliberately not amended.
+      UNHALTED 2026-08-23: pm/questions.md Q3 answered - soft delete. Accounts gains
+      deleted/deleted_at (same shape as UC-10's settled/settledAt), decisions.md
+      2026-08-23. delete() writes the flag, never DELETE FROM Accounts, so it can never
+      fail a foreign key and needs no migration-avoidance workaround - it IS the
+      project's first schema change (schemaVersion 2), done deliberately via drift's
+      guided migrations. watchPosition()/watchBalances()/watchDebtProgress()/
+      TransactionDao.watchAccounts() gain WHERE NOT deleted; TransactionDao.watchAll()
+      (UC-09) does not, so a deleted account's history keeps displaying.
+      docs/diagrams/seq-uc02b-edit-account.drawio drawn this session (Mermaid, rendered,
+      verified); class-accounts.drawio gained delete()/editAccount()/deleteAccount() and
+      erd.drawio gained the two columns, both this session. Plan CONFIRMED - rename and
+      group are AccountDao.update()'s scope, opening_amount stays UC-03's (workbook: UC-02
+      alternate flows are rename/details/delete, correcting the amount is UC-03).
+      PREFLIGHT NOTE: shares three files with UC03-adjust-account, being built in
+      parallel - flutter-coder for this issue must not dispatch until UC03's coder run is
+      reviewed and committed.
+      Closing this issue resolves pm/findings.md F14 (Account was the one entity FR-18
+      was unsatisfied for) and completes the runnable backlog alongside UC03.
 
   - id: UC03-adjust-account
     slug: adjust-account
@@ -298,12 +293,13 @@ issues:
       The second `adjustment` path - correcting a balance after the fact. Small on its own
       because UC02 already built the form and the write path; kept separate because it is
       its own workbook row and its own sequence diagram.
-      HALTED 2026-08-22 at the planning gate: pm/questions.md Q4 - which side(s) of an
-      adjustment transaction carry the account and whether the amount is signed. enums.md
-      and ERD D1 deliberately hedge ("the account, or null") and no artifact settles the
-      sign; option A would make a downward correction count as spending under
-      to_account_id IS NULL, landing in UC-12's Others. Plan written to HALTED with seven
-      derived decisions kept in place. Blocks UC03 only; nothing depends on it.
+      UNHALTED 2026-08-23: pm/questions.md Q4 answered - to_account_id is always the
+      corrected account, from_account_id always null, amount carries the signed diff
+      (Option B, decisions.md 2026-08-23). Chosen because Option A's downward correction
+      would read as spending under to_account_id IS NULL, landing wrongly in UC-12's
+      Others; requires no change to any shipped query since UC-01/UC-09/UC-10/UC-12 were
+      all built encoding-independent. Plan CONFIRMED with all seven prior decisions
+      unchanged - only step 1's column values were waiting on Q4. Ready to build.
 
   - id: UC01-balance-sheet
     slug: balance-sheet

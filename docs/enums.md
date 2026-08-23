@@ -65,13 +65,23 @@ lives here rather than in the issue plan it was decided in:
 | `lend` | the wallet | the person's `RECEIVABLE` account | FR-9, UC-07 |
 | `borrow` | the `PAYABLE` account | the wallet | FR-9, UC-08 |
 | `repayment` | either side | the other | FR-9, UC-07/UC-08 |
-| `adjustment` | the account, or *null* | *null*, or the account | FR-18, UC-03 |
+| `adjustment` | *null*, always | the corrected account, always | FR-18, UC-03 |
+
+**Resolved 2026-08-23** (`pm/questions.md` Q4, `context/index/decisions.md`): the row
+above no longer hedges. `adjustment` is the ledger's **only kind whose `amount` may be
+negative** — direction is the sign of the diff, not which side is filled, because
+`to_account_id` never varies. An upward correction stores a positive `amount`; a downward
+one stores a negative `amount`. Every other kind's `amount` stays a non-negative
+magnitude.
 
 **The property that makes this shape worth keeping: "is this spending?" is
 `to_account_id IS NULL`.** FR-8's "a transfer is not an expense" and FR-9's "lending is
 not spending" are therefore enforced by the shape of the data, not by a rule every
-future query has to remember. A balance is likewise one expression over one table
-(NFR-2).
+future query has to remember — and `adjustment`'s fixed `to_account_id` means a balance
+correction is never spending either, in either direction, by the same predicate. A
+balance is likewise one expression over one table (NFR-2), and that expression already
+tolerates a signed `amount` correctly: a negative contribution on the `to` side
+subtracts, exactly as an equivalent `from`-side magnitude would.
 
 **Why the column exists at all**, given it is largely derivable from the two accounts'
 groups: reporting and UC-09's list both want to filter on it directly, and

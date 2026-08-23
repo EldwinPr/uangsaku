@@ -232,7 +232,15 @@ is a known gap on the record rather than an accident, and it is filed as `pm/fin
 
 ---
 
-## Q3 — What happens to the transactions of a deleted account?          [OPEN]
+## Q3 — What happens to the transactions of a deleted account?          [ANSWERED]
+
+**Answer (2026-08-23):** Soft delete. `Accounts` gains `deleted`/`deletedAt`, the same
+shape UC-10's `settled`/`settledAt` — "delete" writes the flag, never removes the row, so
+every transaction referencing the account keeps a real row to resolve. Full reasoning,
+the shipped-query consequences (`watchPosition`/`watchBalances`/`watchDebtProgress`/
+`watchAccounts` must filter `WHERE NOT deleted`; `watchAll` must not) and the schema cost
+are recorded in `context/index/decisions.md`, 2026-08-23 — "Deleting an account is a soft
+delete". `UC02B-edit-account` is unblocked.
 
 **Raised by:** UC02B-edit-account, 2026-08-22 (deferred here by the Q2 ruling, which
 recorded that the question "is not UC-02's to answer")
@@ -277,7 +285,16 @@ change it is decides what the delete flow looks like.
 
 ---
 
-## Q4 — Which sides of an adjustment transaction carry the account, and is the amount signed?          [OPEN]
+## Q4 — Which sides of an adjustment transaction carry the account, and is the amount signed?          [ANSWERED]
+
+**Answer (2026-08-23):** Option B — fixed side, signed amount. `to_account_id` is always
+the corrected account, `from_account_id` always `null`, `amount` carries the signed diff.
+Chosen over Option A because A's downward correction would read as spending everywhere
+`to_account_id IS NULL` is checked, including UC-12's Others bucket — the opposite of the
+workbook's "visible, not silent" requirement. Full reasoning, including why this requires
+no change to any already-shipped query (UC-01/UC-09/UC-10/UC-12 all proven
+encoding-independent), is in `context/index/decisions.md`, 2026-08-23 — "Adjustment
+encodes as fixed side + signed amount". `UC03-adjust-account` is unblocked.
 
 **Raised by:** UC03-adjust-account, 2026-08-23
 **Blocks:** UC03-adjust-account directly. Nothing in `pm/tracker.yaml` depends on UC03, so
