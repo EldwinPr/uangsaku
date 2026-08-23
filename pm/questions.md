@@ -229,6 +229,7 @@ so UC-11's null-the-tag precedent does not transfer.
 lands**, and `Account` is until then the one entity in the project that is create-only. That
 is a known gap on the record rather than an accident, and it is filed as `pm/findings.md`
 **F14** so it cannot be mistaken for an oversight when the backlog next looks complete.
+**`UC02B-edit-account` landed 2026-08-24 — F14 is fixed, `Account` has full CRUD.**
 
 ---
 

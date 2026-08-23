@@ -1016,9 +1016,10 @@ neither side is not a record of anything — so the same move is not available a
 has to be made rather than derived.
 
 **The accepted cost, stated so it is not rediscovered as a bug:** **FR-18 says "no entity is
-create-only, and no entity has an exception", and until `UC02B` lands, `Account` is exactly
-that exception.** Filed as `pm/findings.md` F14. The requirement is not amended — the gap is
-temporary and tracked, which is different from a requirement that was quietly narrowed.
+create-only, and no entity has an exception", and `Account` was exactly that exception until
+`UC02B-edit-account` landed.** Filed as `pm/findings.md` F14, **fixed 2026-08-24** —
+`AccountDao` gained `update()`/`delete()` (the latter a soft delete, see the 2026-08-23 entry
+below), so `Account` now has full CRUD like every other entity and FR-18 was never amended.
 
 ## 2026-08-23 — Deleting an account is a soft delete; Q3 answered
 
