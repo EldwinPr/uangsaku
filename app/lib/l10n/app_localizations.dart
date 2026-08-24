@@ -392,6 +392,30 @@ abstract class AppLocalizations {
   /// **'A person whose balance can go either way — you might owe them, or they might owe you, depending on what\'s happened.'**
   String get accountGroupDescriptionPerson;
 
+  /// No description provided for @accountGroupLabelHolding.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet'**
+  String get accountGroupLabelHolding;
+
+  /// No description provided for @accountGroupLabelReceivable.
+  ///
+  /// In en, this message translates to:
+  /// **'Owed to me'**
+  String get accountGroupLabelReceivable;
+
+  /// No description provided for @accountGroupLabelPayable.
+  ///
+  /// In en, this message translates to:
+  /// **'Owed by me'**
+  String get accountGroupLabelPayable;
+
+  /// No description provided for @accountGroupLabelPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Person'**
+  String get accountGroupLabelPerson;
+
   /// No description provided for @duplicateAccountNameBlockedTitle.
   ///
   /// In en, this message translates to:

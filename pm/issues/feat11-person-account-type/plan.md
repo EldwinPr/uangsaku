@@ -10,6 +10,21 @@ autocomplete-with-inline-create (like the category picker, FEAT05), with a check
 unchecked creates the flow's normal type (`Lend`→`RECEIVABLE`, `Borrow`→`PAYABLE`),
 checked creates `Person`. No UC owns this, same class as FEAT01-10.
 
+**Post-close fix, 2026-08-24, same day:** the owner reported the group `SegmentedButton`
+overflowing with all four values shown ("the selection in create account the 4 side by
+side its overflowing") — the raw `AccountGroup.name` (`"RECEIVABLE"`, `"HOLDING"`, etc.)
+wrapped mid-word once a fourth segment narrowed each one's share of the row. Fixed with
+short, localized labels (new `_groupLabel`, four new ARB keys) instead of the raw enum
+name — the one place on this screen that wasn't already localized — plus
+`showSelectedIcon: false` on both `SegmentedButton`s, since the selected segment's
+check icon was still enough overhead to wrap even the shortest label ("Dompet"). Verified
+live on a running emulator (adb screenshots, both the create and edit flows) before and
+after the fix, not just by reading the diff. See `pm/log.md`'s 2026-08-24 entry for the
+full account, including the two other things confirmed working correctly the same
+session (the Repay direction toggle and the inline-create checkbox — both already
+functioning as designed, the owner just hadn't triggered the conditions for either to
+appear yet).
+
 **Depends on:** `FEAT08-transaction-ux-and-name-block` — DONE (last issue that touched
 `AccountGroup`/`AccountFormScreen`).
 

@@ -168,6 +168,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'A person whose balance can go either way — you might owe them, or they might owe you, depending on what\'s happened.';
 
   @override
+  String get accountGroupLabelHolding => 'Wallet';
+
+  @override
+  String get accountGroupLabelReceivable => 'Owed to me';
+
+  @override
+  String get accountGroupLabelPayable => 'Owed by me';
+
+  @override
+  String get accountGroupLabelPerson => 'Person';
+
+  @override
   String get duplicateAccountNameBlockedTitle => 'Name already used';
 
   @override

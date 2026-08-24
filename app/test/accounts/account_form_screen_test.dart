@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -7,6 +8,7 @@ import 'package:uangsaku/l10n/app_localizations.dart';
 import 'package:uangsaku/src/accounts/account_form_screen.dart';
 import 'package:uangsaku/src/accounts/accounts_table.dart';
 import 'package:uangsaku/src/database/app_database.dart';
+import 'package:uangsaku/src/settings/settings_table.dart';
 
 void main() {
   late AppDatabase database;
@@ -98,6 +100,44 @@ void main() {
       expect(segment.enabled, isTrue);
     }
     expect(segmented.onSelectionChanged, isNotNull);
+    // 2026-08-24 overflow report: a fourth segment left no room for the
+    // selected-check icon without wrapping a short label mid-word — the
+    // tinted fill already shows selection, so the icon is dropped entirely
+    // rather than narrowed further.
+    expect(segmented.showSelectedIcon, isFalse);
+
+    await unmountAndFlushTimers(tester);
+  });
+
+  testWidgets('2026-08-24 overflow audit: the four-way group selector does not '
+      'overflow under id labels and a large accessibility text scale', (
+    tester,
+  ) async {
+    await database
+        .update(database.settings)
+        .write(const SettingsCompanion(locale: Value(AppLanguage.id)));
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(1.6)),
+        child: ProviderScope(
+          overrides: [appDatabaseProvider.overrideWithValue(database)],
+          child: const MaterialApp(
+            locale: Locale('id'),
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: AccountFormScreen(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
 
     await unmountAndFlushTimers(tester);
   });
@@ -108,7 +148,7 @@ void main() {
       await pumpScreen(tester);
 
       await tester.enterText(find.byType(TextField).at(0), 'Budi');
-      await tester.tap(find.text('RECEIVABLE'));
+      await tester.tap(find.text('Owed to me'));
       await tester.pump();
       // A negative opening amount is entered as typed and stored as typed
       // (FR-4, D6) — no group-based negation anywhere.
@@ -308,17 +348,17 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.tap(find.text('RECEIVABLE'));
+      await tester.tap(find.text('Owed to me'));
       await tester.pump();
 
       expect(find.text('Money someone else owes you.'), findsOneWidget);
 
-      await tester.tap(find.text('PAYABLE'));
+      await tester.tap(find.text('Owed by me'));
       await tester.pump();
 
       expect(find.text('Money you owe someone else.'), findsOneWidget);
 
-      await tester.tap(find.text('PERSON'));
+      await tester.tap(find.text('Person'));
       await tester.pump();
 
       // FEAT11 D4: PERSON's description, plain wording, no jargon.
@@ -537,7 +577,7 @@ void main() {
       await pumpEditScreen(tester, accountId);
 
       await tester.enterText(find.byType(TextField).first, 'Piggy bank');
-      await tester.tap(find.text('PAYABLE'));
+      await tester.tap(find.text('Owed by me'));
       await tester.pump();
       await tester.tap(saveButton());
       await tester.pumpAndSettle();

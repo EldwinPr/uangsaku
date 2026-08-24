@@ -169,6 +169,18 @@ class AppLocalizationsId extends AppLocalizations {
       'Seseorang yang saldonya bisa berubah arah — bisa jadi Anda berutang padanya, atau dia berutang pada Anda, tergantung apa yang terjadi.';
 
   @override
+  String get accountGroupLabelHolding => 'Dompet';
+
+  @override
+  String get accountGroupLabelReceivable => 'Piutang';
+
+  @override
+  String get accountGroupLabelPayable => 'Utang';
+
+  @override
+  String get accountGroupLabelPerson => 'Orang';
+
+  @override
   String get duplicateAccountNameBlockedTitle => 'Nama sudah dipakai';
 
   @override

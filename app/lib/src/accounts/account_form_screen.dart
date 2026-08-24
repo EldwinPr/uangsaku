@@ -255,6 +255,20 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
         AccountGroup.PERSON => loc.accountGroupDescriptionPerson,
       };
 
+  /// A short, localized label for the group `SegmentedButton` — the raw
+  /// `AccountGroup.name` (owner feedback, 2026-08-24: *"the selection in
+  /// create account the 4 side by side its overflowing"*) wraps mid-word
+  /// once a fourth segment (`PERSON`) narrows each one's share of the row.
+  /// Every other string on this screen is already localized; this closes
+  /// the one place that wasn't.
+  String _groupLabel(AppLocalizations loc, AccountGroup group) =>
+      switch (group) {
+        AccountGroup.HOLDING => loc.accountGroupLabelHolding,
+        AccountGroup.RECEIVABLE => loc.accountGroupLabelReceivable,
+        AccountGroup.PAYABLE => loc.accountGroupLabelPayable,
+        AccountGroup.PERSON => loc.accountGroupLabelPerson,
+      };
+
   Widget _groupDescriptionText(AppLocalizations loc) {
     return Text(
       _groupDescription(loc, _group),
@@ -281,11 +295,16 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
         ),
         const SizedBox(height: 16),
         SegmentedButton<AccountGroup>(
+          // No selected-check icon (2026-08-24, same overflow report as the
+          // short labels above): the tinted fill already shows which
+          // segment is selected, and the icon's reserved width was enough
+          // to wrap even a short label on the selected segment.
+          showSelectedIcon: false,
           segments: [
             for (final value in AccountGroup.values)
               ButtonSegment<AccountGroup>(
                 value: value,
-                label: Text(value.name),
+                label: Text(_groupLabel(loc, value)),
                 // No `enabled:` anywhere — all three groups stay
                 // selectable at all times (D7, NFR-4).
               ),
@@ -379,11 +398,16 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
         ),
         const SizedBox(height: 16),
         SegmentedButton<AccountGroup>(
+          // No selected-check icon (2026-08-24, same overflow report as the
+          // short labels above): the tinted fill already shows which
+          // segment is selected, and the icon's reserved width was enough
+          // to wrap even a short label on the selected segment.
+          showSelectedIcon: false,
           segments: [
             for (final value in AccountGroup.values)
               ButtonSegment<AccountGroup>(
                 value: value,
-                label: Text(value.name),
+                label: Text(_groupLabel(loc, value)),
                 // No `enabled:` anywhere — all three groups stay
                 // selectable at all times (D5, NFR-4).
               ),

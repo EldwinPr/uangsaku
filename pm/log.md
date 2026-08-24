@@ -15,7 +15,7 @@ before starting work.
 ## Current state — 2026-08-24
 
 **Phase.** **The planned backlog and all FOUR of the owner's manual-testing feedback
-rounds are DONE.** The app compiles and its test suite is green (**197 tests**). Ten
+rounds are DONE.** The app compiles and its test suite is green (**198 tests**). Ten
 screens/tabs built end to end, all reachable except one deliberately unrouted flow
 (UC-03's adjust mode, never asked for). `home` is `AppShell`: a five-tab bottom nav
 (Home, Accounts, Record as a colored circular docked FAB, Transactions, Budget) with
@@ -1490,3 +1490,44 @@ app/drift_schemas/` both empty, confirming the no-migration call was correct.
 
 **[TODO]** Nothing queued. Four rounds of the owner's manual-testing feedback
 (`FEAT03`-`FEAT06`, `FEAT07`-`FEAT08`, `FEAT09`-`FEAT10`, `FEAT11`) are all DONE.
+
+## 2026-08-24 — FEAT11 post-close fix: four-way group selector overflow, verified live
+
+**[STATUS]** Same-day fix on `FEAT11`'s just-shipped work: *"the selection in create
+account the 4 side by side its overflowing"*. The group `SegmentedButton`
+(`AccountFormScreen`, create and edit flows) showed the raw `AccountGroup.name` —
+`"HOLDING"`, `"RECEIVABLE"`, `"PAYABLE"`, `"PERSON"` — which wrapped mid-word once a
+fourth segment narrowed each one's share of the row (`"HOLDI/NG"`, `"RECEIVAB/LE"`).
+
+**Root-caused and verified live, not just from the diff.** Connected to the owner's
+already-running debug build on the Android emulator via the Dart Tooling Daemon,
+drove the UI directly with `adb` (screenshots + `uiautomator dump` for exact widget
+bounds, since guessed pixel coordinates repeatedly missed), and reproduced the exact
+wrapped layout the owner described before touching any code. This same session also
+confirmed the owner's other two questions were **not** bugs: the Repay "who paid"
+toggle and the inline-create checkbox both fired correctly once their actual
+preconditions were met (a Person-type account picked; a new name typed in Lend/
+Borrow) — the owner just hadn't hit those conditions yet when they looked.
+
+**Fix.** Raw enum names replaced with four new short, localized ARB keys (a new
+`_groupLabel` switch) — the one place on this already-fully-localized screen that
+wasn't. That alone wasn't enough: the selected segment's check icon added enough
+width overhead to still wrap the shortest label ("Dompet"), so `showSelectedIcon:
+false` was added too — the tinted fill already shows selection clearly. Verified the
+fix live the same way: hot-reloaded the running app, re-screenshotted both the create
+and edit flows, confirmed all four labels sit on one line.
+
+**[STATUS]** Four commands green: `dart run build_runner build
+--delete-conflicting-outputs`, `flutter gen-l10n`, `dart format
+--set-exit-if-changed .`, `flutter analyze` (No issues found!), `flutter test` — 198
+tests, up from 197 (one new overflow-regression test, `id` locale + a 1.6x
+`TextScaler`, asserting no exception is thrown; three existing tests updated from
+`find.text('RECEIVABLE')`-style raw-enum lookups to the new localized label text).
+`git diff --stat app/drift_schemas/` empty — no schema change. `python audit.py` — 14
+passed / 0 warnings / 0 failures.
+
+**[TODO]** One open item from this session, not yet actioned pending the owner's
+answer: switching transaction kind in `RecordTransactionScreen` without confirming a
+typed-but-uncreated person name leaves the old text in the field instead of clearing
+it (observed while testing live, e.g. typing "Rina" then switching flows and typing
+"Andi" produced "RinaAndi"). Small, real, but out of scope for this fix until asked.

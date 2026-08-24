@@ -450,6 +450,14 @@ code:
       - app/test/transactions/record_transaction_screen_test.dart
       - app/test/transactions/transaction_dao_test.dart
 
+  # Post-close fix, same day: the four-way group SegmentedButton (account_form_
+  # screen.dart) overflowed - raw AccountGroup.name wrapped mid-word once a fourth
+  # segment narrowed each one's share of the row. Fixed with short localized labels
+  # (new _groupLabel, four new ARB keys - the one unlocalized spot on this screen)
+  # plus showSelectedIcon: false (the check icon alone was enough overhead to wrap
+  # even the shortest label). Verified live on a running emulator, not just by
+  # reading the diff. 198 tests green (was 197).
+
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
 # each other in BOTH directions (balances need Transactions; the record screen needs

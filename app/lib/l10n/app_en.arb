@@ -57,6 +57,10 @@
   "accountGroupDescriptionReceivable": "Money someone else owes you.",
   "accountGroupDescriptionPayable": "Money you owe someone else.",
   "accountGroupDescriptionPerson": "A person whose balance can go either way — you might owe them, or they might owe you, depending on what's happened.",
+  "accountGroupLabelHolding": "Wallet",
+  "accountGroupLabelReceivable": "Owed to me",
+  "accountGroupLabelPayable": "Owed by me",
+  "accountGroupLabelPerson": "Person",
   "duplicateAccountNameBlockedTitle": "Name already used",
   "duplicateAccountNameBlockedContent": "Another account already has this name. Choose a different name to save.",
 

@@ -54,6 +54,10 @@
   "accountGroupDescriptionReceivable": "Uang yang menjadi piutang Anda kepada orang lain.",
   "accountGroupDescriptionPayable": "Uang yang menjadi utang Anda kepada orang lain.",
   "accountGroupDescriptionPerson": "Seseorang yang saldonya bisa berubah arah — bisa jadi Anda berutang padanya, atau dia berutang pada Anda, tergantung apa yang terjadi.",
+  "accountGroupLabelHolding": "Dompet",
+  "accountGroupLabelReceivable": "Piutang",
+  "accountGroupLabelPayable": "Utang",
+  "accountGroupLabelPerson": "Orang",
   "duplicateAccountNameBlockedTitle": "Nama sudah dipakai",
   "duplicateAccountNameBlockedContent": "Akun lain sudah memakai nama ini. Pilih nama lain untuk menyimpan.",
 

@@ -786,5 +786,9 @@ issues:
       debt-detail icon and personDebtChoices() both extended to include PERSON;
       AccountFormScreen's and HelpScreen's group descriptions both gained a PERSON arm
       reusing one new ARB key. 197 tests green (was 185), no schema change. See
-      decisions.md 2026-08-24 for the full rationale.
+      decisions.md 2026-08-24 for the full rationale. POST-CLOSE FIX same day: the
+      four-way group SegmentedButton overflowed (raw AccountGroup.name wrapped
+      mid-word once a fourth segment narrowed the row) - fixed with short localized
+      labels plus showSelectedIcon: false, verified live on a running emulator.
+      198 tests green (was 197).
 
