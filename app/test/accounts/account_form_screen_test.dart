@@ -34,12 +34,23 @@ void main() {
         ),
       ),
     );
-    await tester.pump();
+    // pumpAndSettle, not a single pump: create mode now also watches
+    // accountBalancesProvider (FEAT06 D3), a real drift stream.
+    await tester.pumpAndSettle();
   }
 
   // `byTooltip` also matches the tooltip's own `RawTooltip` widget, so the
   // FAB is found by type — there is exactly one on this screen.
   Finder saveButton() => find.byType(FloatingActionButton);
+
+  // drift's `watch()` cancellation schedules a zero-duration `Timer`
+  // (`StreamQueryStore.markAsClosed`) that only fires on a later pump; the
+  // test body flushes it before returning (`testing.md`, verified UC13,
+  // UC01's `balance_sheet_screen_test.dart`).
+  Future<void> unmountAndFlushTimers(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+  }
 
   testWidgets(
     'NFR-4: the save control is enabled with every field empty and pressing it proceeds rather than refusing',
@@ -54,12 +65,14 @@ void main() {
       // a field was filled would be a requirements violation, not a UI
       // choice.
       await tester.tap(saveButton());
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       final row = await database.select(database.accounts).getSingle();
       expect(row.name, '');
       expect(row.group, AccountGroup.HOLDING);
       expect(row.openingAmount, 0);
+
+      await unmountAndFlushTimers(tester);
     },
   );
 
@@ -81,6 +94,8 @@ void main() {
       expect(segment.enabled, isTrue);
     }
     expect(segmented.onSelectionChanged, isNotNull);
+
+    await unmountAndFlushTimers(tester);
   });
 
   testWidgets(
@@ -95,7 +110,7 @@ void main() {
       // (FR-4, D6) — no group-based negation anywhere.
       await tester.enterText(find.byType(TextField).at(1), '-12000');
       await tester.tap(saveButton());
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       final row = await database.select(database.accounts).getSingle();
       expect(row.name, 'Budi');
@@ -104,6 +119,8 @@ void main() {
 
       // UC-02 writes no transaction row ever (D4).
       expect(await database.select(database.transactions).get(), isEmpty);
+
+      await unmountAndFlushTimers(tester);
     },
   );
 
@@ -153,15 +170,6 @@ void main() {
     // pumpAndSettle: the edit flow also watches accountBalancesProvider
     // (message 7), the same real drift stream the adjust flow reads.
     await tester.pumpAndSettle();
-  }
-
-  // drift's `watch()` cancellation schedules a zero-duration `Timer`
-  // (`StreamQueryStore.markAsClosed`) that only fires on a later pump; the
-  // test body flushes it before returning (`testing.md`, verified UC13,
-  // UC01's `balance_sheet_screen_test.dart`).
-  Future<void> unmountAndFlushTimers(WidgetTester tester) async {
-    await tester.pumpWidget(const SizedBox());
-    await tester.pump(const Duration(seconds: 1));
   }
 
   testWidgets(
@@ -279,6 +287,130 @@ void main() {
         database.accounts,
       )..where((r) => r.accountId.equals(accountId))).getSingle();
       expect(row.deleted, isTrue);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT06 D1/D2: the FAB reads Icons.check, and save pops the route it was pushed on (create mode)',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [appDatabaseProvider.overrideWithValue(database)],
+          child: MaterialApp(
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: Center(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const AccountFormScreen(),
+                      ),
+                    ),
+                    child: const Text('open'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AccountFormScreen), findsOneWidget);
+      // Scoped to the FAB itself — a pushed route's Hero flight can leave a
+      // transitional Icon(check) elsewhere in the tree even after settling.
+      expect(
+        find.descendant(
+          of: find.byType(FloatingActionButton),
+          matching: find.byIcon(Icons.check),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byIcon(Icons.save), findsNothing);
+
+      await tester.enterText(find.byType(TextField).at(0), 'Budi');
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      // The route popped — the form screen is gone.
+      expect(find.byType(AccountFormScreen), findsNothing);
+      final row = await database.select(database.accounts).getSingle();
+      expect(row.name, 'Budi');
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT06 D3: a colliding account name (case-insensitive) shows the one-button warning and still saves',
+    (tester) async {
+      await database
+          .into(database.accounts)
+          .insert(
+            AccountsCompanion.insert(
+              name: 'Wallet',
+              group: AccountGroup.HOLDING,
+              openingAmount: 0,
+            ),
+          );
+
+      await pumpScreen(tester);
+      // Let accountBalancesProvider's stream emit the seeded row.
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).at(0), 'wallet');
+      await tester.tap(saveButton());
+      await tester.pump();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+
+      // Acknowledge-and-proceed: the one button both closes the dialog and
+      // lets the write and close-on-save still happen (D3, not a gate).
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      final rows = await database.select(database.accounts).get();
+      expect(rows, hasLength(2));
+      expect(rows.map((r) => r.name), containsAll(['Wallet', 'wallet']));
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT06 D3: a non-colliding account name never shows the warning',
+    (tester) async {
+      await database
+          .into(database.accounts)
+          .insert(
+            AccountsCompanion.insert(
+              name: 'Wallet',
+              group: AccountGroup.HOLDING,
+              openingAmount: 0,
+            ),
+          );
+
+      await pumpScreen(tester);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).at(0), 'Savings');
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      final rows = await database.select(database.accounts).get();
+      expect(rows, hasLength(2));
 
       await unmountAndFlushTimers(tester);
     },

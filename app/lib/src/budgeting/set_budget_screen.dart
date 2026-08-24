@@ -115,13 +115,16 @@ class _BudgetGroupTileState extends State<_BudgetGroupTile> {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                icon: const Icon(Icons.save),
+                icon: const Icon(Icons.check),
                 tooltip: loc.saveAmountTooltip,
                 onPressed: () {
                   final amount = int.tryParse(_controller.text) ?? 0;
                   ref
                       .read(budgetProvider.notifier)
                       .setAmount(groupId: row.groupId, amount: amount);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(loc.amountSavedMessage)),
+                  );
                 },
               ),
               if (row.periodId != null)

@@ -338,6 +338,18 @@ abstract class AppLocalizations {
   /// **'Delete account'**
   String get deleteAccountButton;
 
+  /// No description provided for @duplicateAccountNameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name already used'**
+  String get duplicateAccountNameTitle;
+
+  /// No description provided for @duplicateAccountNameDialogContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Another account already has this name. It will still be saved.'**
+  String get duplicateAccountNameDialogContent;
+
   /// No description provided for @budgetOverviewTitle.
   ///
   /// In en, this message translates to:
@@ -391,6 +403,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save amount'**
   String get saveAmountTooltip;
+
+  /// No description provided for @amountSavedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount saved'**
+  String get amountSavedMessage;
 
   /// No description provided for @deletePeriodTooltip.
   ///
@@ -613,6 +631,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create \'{name}\''**
   String createOptionLabel(String name);
+
+  /// No description provided for @recordedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded'**
+  String get recordedMessage;
 
   /// No description provided for @allTransactionsTitle.
   ///

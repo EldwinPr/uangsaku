@@ -98,6 +98,36 @@ void main() {
   );
 
   testWidgets(
+    'FEAT06 D2: the FAB reads Icons.check, and after save the form clears and a confirmation SnackBar shows',
+    (tester) async {
+      await seedAccounts();
+      await pumpScreen(tester);
+
+      expect(find.byIcon(Icons.check), findsOneWidget);
+      expect(find.byIcon(Icons.save), findsNothing);
+
+      final amountField = find.byType(TextField).first;
+      await tester.enterText(amountField, '15000');
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pump();
+
+      // Confirmation shows — this tab has nothing to pop.
+      expect(find.byType(SnackBar), findsOneWidget);
+
+      // The form cleared back to its initial blank state (plan D2).
+      final controllerAfter = tester.widget<TextField>(amountField).controller;
+      expect(controllerAfter!.text, '');
+
+      final rows = await database.select(database.transactions).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.amount, 15000);
+
+      await tester.pumpAndSettle();
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
     'D9 / NFR-4: a zero amount and a same-source-and-destination transfer both proceed unrefused',
     (tester) async {
       await seedAccounts();

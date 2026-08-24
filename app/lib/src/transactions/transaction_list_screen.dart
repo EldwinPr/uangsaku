@@ -380,7 +380,7 @@ class _EditSheetState extends ConsumerState<_EditSheet> {
           FilledButton.icon(
             key: const Key('edit-save'),
             onPressed: _save,
-            icon: const Icon(Icons.save),
+            icon: const Icon(Icons.check),
             label: Text(loc.saveButton),
           ),
         ],

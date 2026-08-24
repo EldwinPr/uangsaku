@@ -107,7 +107,7 @@ void main() {
       // F4 (`pm/findings.md`): assert the finder matches the expected count
       // *before* looping over it, so this test cannot pass by finding
       // nothing.
-      final saveButtons = find.widgetWithIcon(IconButton, Icons.save);
+      final saveButtons = find.widgetWithIcon(IconButton, Icons.check);
       final deletePeriodButtons = find.widgetWithIcon(
         IconButton,
         Icons.delete_outline,
@@ -148,6 +148,32 @@ void main() {
       await tester.pumpAndSettle();
       expect(await database.select(database.budgetPeriods).get(), isEmpty);
 
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT06 D2: the row save icon reads Icons.check and shows a confirmation SnackBar',
+    (tester) async {
+      await dao.insertGroup(name: 'Groceries');
+      final group = await database.select(database.budgetGroups).getSingle();
+
+      await pumpScreen(tester);
+
+      expect(find.byIcon(Icons.check), findsOneWidget);
+      expect(find.byIcon(Icons.save), findsNothing);
+
+      await tester.enterText(find.byType(TextField).first, '50000');
+      await tester.tap(find.widgetWithIcon(IconButton, Icons.check));
+      await tester.pump();
+
+      expect(find.byType(SnackBar), findsOneWidget);
+      final saved = await (database.select(
+        database.budgetPeriods,
+      )..where((r) => r.budgetGroupId.equals(group.budgetGroupId))).getSingle();
+      expect(saved.amount, 50000);
+
+      await tester.pumpAndSettle();
       await unmountAndFlushTimers(tester);
     },
   );

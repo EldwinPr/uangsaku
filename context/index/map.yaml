@@ -306,6 +306,24 @@ code:
   # flattened list for browsing (UC-09 D6) - creating a NEW subcategory still needs a
   # category selected in both. 146 tests green, no schema change.
 
+  # FEAT06-save-ux-and-uniqueness, DONE 2026-08-24. No UC - infrastructure. Fourth and
+  # LAST item from the owner's manual-testing feedback round. All four Icons.save sites
+  # (AccountFormScreen, SetBudgetScreen's row save, RecordTransactionScreen,
+  # TransactionListScreen's edit sheet) now read Icons.check. AccountFormScreen (all
+  # three modes) and the edit sheet pop the route immediately after firing their
+  # Future<void> write - no disabled state, NFR-4 untouched, a second tap is simply
+  # impossible because the screen is gone. RecordTransactionScreen is a persistent tab
+  # with nothing to pop - clears its form back to blank and shows a confirmation
+  # SnackBar instead; SetBudgetScreen's row save gets the same SnackBar treatment (no
+  # form to clear, it's an inline row). Account-name uniqueness: AccountFormScreen's
+  # create/edit paths check the typed name (case-insensitive, own id excluded when
+  # editing) against the already-shipped accountBalancesProvider - no new DAO method -
+  # and show a one-button acknowledge-and-proceed dialog on a collision, identical
+  # shape to SettingsScreen's currency-relabel notice, then the write and pop still
+  # happen unconditionally (warn, never block). No new class needed anywhere in this
+  # issue. 151 tests green, no schema change. Closes the owner's manual-testing
+  # feedback round - all four items (FEAT03-FEAT06) DONE.
+
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
 # each other in BOTH directions (balances need Transactions; the record screen needs

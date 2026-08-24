@@ -134,6 +134,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteAccountButton => 'Delete account';
 
   @override
+  String get duplicateAccountNameTitle => 'Name already used';
+
+  @override
+  String get duplicateAccountNameDialogContent =>
+      'Another account already has this name. It will still be saved.';
+
+  @override
   String get budgetOverviewTitle => 'Budget this month';
 
   @override
@@ -161,6 +168,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveAmountTooltip => 'Save amount';
+
+  @override
+  String get amountSavedMessage => 'Amount saved';
 
   @override
   String get deletePeriodTooltip => 'Delete this month\'s period';
@@ -274,6 +284,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String createOptionLabel(String name) {
     return 'Create \'$name\'';
   }
+
+  @override
+  String get recordedMessage => 'Recorded';
 
   @override
   String get allTransactionsTitle => 'All transactions';

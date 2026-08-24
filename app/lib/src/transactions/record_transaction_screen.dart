@@ -206,6 +206,30 @@ class _RecordTransactionScreenState
           ),
         );
     }
+
+    // FEAT06 D2: clear the form back to its initial blank state so a fast
+    // second tap submits a blank/default entry rather than a silent
+    // duplicate of the same data — still legal to submit (NFR-4); this is
+    // not a refusal, it changes what a re-tap does. Then confirm the write
+    // fired, since this tab has nothing to pop.
+    _amountController.clear();
+    _noteController.clear();
+    setState(() {
+      _flow = _Flow.expense;
+      _date = DateTime.now();
+      _payingAccountId = null;
+      _receivingAccountId = null;
+      _sourceAccountId = null;
+      _destinationAccountId = null;
+      _personDebtId = null;
+      _walletId = null;
+      _categoryId = null;
+      _subcategoryId = null;
+      _budgetGroupId = null;
+    });
+    final loc = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(loc.recordedMessage)));
   }
 
   @override
@@ -230,7 +254,7 @@ class _RecordTransactionScreenState
         heroTag: 'record-transaction-fab',
         tooltip: loc.saveButton,
         onPressed: _save,
-        icon: const Icon(Icons.save),
+        icon: const Icon(Icons.check),
         label: Text(loc.saveButton),
       ),
       body: Padding(

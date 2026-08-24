@@ -14,24 +14,24 @@ before starting work.
 
 ## Current state — 2026-08-24
 
-**Phase.** **The planned backlog is DONE; a manual-testing feedback round is now under
-way.** The app compiles and its test suite is green (**136 tests**). Nine screens built
-end to end, all reachable except one deliberately unrouted flow (UC-03's adjust mode).
-`home` is `AppShell`: a four-tab `NavigationBar` with every other screen reached from
-within a tab (`pm/findings.md` F8, fixed). The app now has a full EN/ID language toggle,
-light/dark/system theme, and a theme-color choice, all in `SettingsScreen` (was
-`CurrencyScreen`) — `FEAT03-settings-and-i18n`, this project's third schema change.
+**Phase.** **The planned backlog and the owner's entire manual-testing feedback round are
+both DONE.** The app compiles and its test suite is green (**151 tests**). Ten
+screens/tabs built end to end, all reachable except one deliberately unrouted flow
+(UC-03's adjust mode, never asked for). `home` is `AppShell`: a five-tab bottom nav
+(Home, Accounts, Record as a colored circular docked FAB, Transactions, Budget) with
+every other screen reached contextually. Full EN/ID language toggle, light/dark/system
+theme and a theme-color choice live in `SettingsScreen` (was `CurrencyScreen`); category/
+subcategory pickers are autocomplete-with-inline-create; every save action closes/clears
+and confirms instead of sitting silently re-tappable; account names warn (never block) on
+a case-insensitive collision.
 
-**Active issue.** None currently dispatched. The original tracked backlog (FEAT01
-through `FEAT03`) is entirely DONE. The owner is now manually testing the app and filing
-polish feedback as a new, untracked-by-workbook round: three more items are queued —
-nav redesign (5th "Accounts" tab, renamed Balance Sheet tab, a colored circular Record
-quick-action), a category autocomplete picker, and save-flow UX (auto-close/confirm,
-icon change) plus account-name uniqueness. Both original questions (Q3, Q4) were
-answered 2026-08-23; `UC03-adjust-account` and `UC02B-edit-account` closed the same
-day/next (`UC02B` being the first schema change). CI broke right after (a real
-`_slugdir` bug in `audit.py`) and was found and fixed the same day, confirmed green via
-the actual failing log, not local reproduction alone.
+**Active issue.** None. Nothing is queued. `FEAT03` through `FEAT06` — the entire
+feedback round — closed across four same-day issues, the third schema change
+(`FEAT03`'s `Settings.locale`/`themeMode`/`seedColor`) among them. Both original
+questions (Q3, Q4) were answered 2026-08-23; `UC03-adjust-account` and
+`UC02B-edit-account` closed the same day/next (`UC02B` being the first schema change).
+CI broke right after (a real `_slugdir` bug in `audit.py`) and was found and fixed the
+same day, confirmed green via the actual failing log, not local reproduction alone.
 
 **Pushed.** CI has run. The `app` job failed once on the scaffold and the guard was fixed
 rather than the commit reverted — see the entry below.
@@ -1165,3 +1165,39 @@ review: the first version resolved a newly-created row's id by calling
 save so double-tapping doesn't create duplicates and the user gets feedback; the
 floppy-disk save icon replaced with something more recognizable) plus account-name
 uniqueness (case-insensitive, warn-but-still-allow-save).
+
+---
+
+## 2026-08-24 — FEAT06-save-ux-and-uniqueness closes; the manual-testing feedback round is done
+
+**[STATUS]** **`FEAT06-save-ux-and-uniqueness` is DONE** — the fourth and last item from
+the owner's manual-testing feedback round. All four `Icons.save` sites
+(`AccountFormScreen`, `SetBudgetScreen`'s row save, `RecordTransactionScreen`,
+`TransactionListScreen`'s edit sheet) now read `Icons.check`.
+
+The core complaint — "it doesn't close... so you can click it multiple times, there is
+no warning" — is fixed per-screen by how each is actually reached: `AccountFormScreen`
+(all three modes) and the edit sheet (`showModalBottomSheet`) now pop the route
+immediately after firing their `Future<void>` write. Popping, not disabling, is what
+makes a second tap impossible — the control was never refused, the screen just isn't
+there anymore, so NFR-4 stays untouched. `RecordTransactionScreen` is a persistent tab in
+`AppShell`'s `IndexedStack` — nothing to pop — so it clears its form back to blank and
+shows a confirmation `SnackBar` instead; `SetBudgetScreen`'s inline per-row save gets the
+same `SnackBar` treatment.
+
+**Account-name uniqueness** (the earlier "no unique holdings account name" complaint):
+`AccountFormScreen`'s create/edit paths check the typed name (case-insensitive, own id
+excluded when editing) against the already-shipped `accountBalancesProvider` — no new DAO
+method, no new query. A collision with another non-deleted account shows a one-button
+acknowledge-and-proceed dialog, the identical shape to `SettingsScreen`'s currency-relabel
+notice, and the write still fires unconditionally afterward — a warning, never a block.
+
+**[STATUS]** No new tracked class was needed anywhere in this issue — confirmed before
+writing any code, consistent with the FEAT04 precedent of checking first.
+`CategoryManagerScreen`'s and `SetBudgetScreen`'s add/rename dialogs were confirmed to
+already close correctly (`showDialog<String>` + `Navigator.pop(value)`) and were left
+untouched. 151 tests green, `flutter analyze` clean, no schema change, `audit.py`
+14/0/0.
+
+**[TODO]** Nothing queued. `FEAT03` through `FEAT06` — the entire manual-testing feedback
+round — are all DONE. The tracker has no runnable work.

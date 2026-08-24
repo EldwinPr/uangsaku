@@ -134,6 +134,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get deleteAccountButton => 'Hapus akun';
 
   @override
+  String get duplicateAccountNameTitle => 'Nama sudah dipakai';
+
+  @override
+  String get duplicateAccountNameDialogContent =>
+      'Akun lain sudah memakai nama ini. Tetap akan disimpan.';
+
+  @override
   String get budgetOverviewTitle => 'Anggaran bulan ini';
 
   @override
@@ -161,6 +168,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get saveAmountTooltip => 'Simpan jumlah';
+
+  @override
+  String get amountSavedMessage => 'Jumlah tersimpan';
 
   @override
   String get deletePeriodTooltip => 'Hapus periode bulan ini';
@@ -274,6 +284,9 @@ class AppLocalizationsId extends AppLocalizations {
   String createOptionLabel(String name) {
     return 'Buat \'$name\'';
   }
+
+  @override
+  String get recordedMessage => 'Tercatat';
 
   @override
   String get allTransactionsTitle => 'Semua transaksi';

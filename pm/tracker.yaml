@@ -632,3 +632,32 @@ issues:
       four items from the feedback round done; save-flow UX (auto-close/confirm on
       save, icon change) plus account-name uniqueness remains.
 
+  - id: FEAT06-save-ux-and-uniqueness
+    slug: save-ux-and-uniqueness
+    title: Close/confirm on save, a recognizable save icon, account-name uniqueness
+    status: DONE
+    plan: pm/issues/feat06-save-ux-and-uniqueness/plan.md
+    depends_on: [FEAT05-category-picker]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-24. No UC owns this - infrastructure. Fourth and last item from the
+      owner's manual-testing feedback round. Every Icons.save (4 sites) is now
+      Icons.check. AccountFormScreen (all three modes) and TransactionListScreen's
+      edit sheet (a modal bottom sheet) pop immediately after firing their write - the
+      write is Future<void>, fire-and-forget by design, so popping is what makes a
+      second tap on the same button impossible without disabling anything (NFR-4
+      untouched). RecordTransactionScreen is a persistent tab with nothing to pop -
+      clears the form back to blank and shows a confirmation SnackBar instead.
+      SetBudgetScreen's per-row save gets the same SnackBar treatment (nothing to
+      close, it's an inline row). Account-name uniqueness: AccountFormScreen's
+      create/edit flows check the typed name against the already-shipped
+      accountBalancesProvider (case-insensitive, excluding the account's own id when
+      editing, no new DAO method) - a collision with another non-deleted account shows
+      a one-button acknowledge-and-proceed dialog, same shape as SettingsScreen's
+      currency-relabel notice, and the write still fires unconditionally afterward
+      (warn, never block, NFR-4). CategoryManagerScreen's and SetBudgetScreen's
+      add/rename dialogs already closed correctly before this issue - confirmed, not
+      touched. No new class needed anywhere. 151 tests green, no schema change.
+      Closes the owner's manual-testing feedback round - all four items (FEAT03
+      through FEAT06) DONE.
+

@@ -48,6 +48,8 @@
   "targetAmountLabel": "What it should actually be",
   "targetAmountHint": "Target amount (minus allowed)",
   "deleteAccountButton": "Delete account",
+  "duplicateAccountNameTitle": "Name already used",
+  "duplicateAccountNameDialogContent": "Another account already has this name. It will still be saved.",
 
   "budgetOverviewTitle": "Budget this month",
   "setBudgetTooltip": "Set budget",
@@ -60,6 +62,7 @@
   "addBudgetGroupTooltip": "Add budget group",
   "amountHint": "Amount",
   "saveAmountTooltip": "Save amount",
+  "amountSavedMessage": "Amount saved",
   "deletePeriodTooltip": "Delete this month's period",
   "renameGroupTooltip": "Rename group",
   "deleteGroupTooltip": "Delete group",
@@ -100,6 +103,7 @@
   "noAccountsYetHint": "No accounts yet",
   "createOptionLabel": "Create '{name}'",
   "@createOptionLabel": {"placeholders": {"name": {"type": "String"}}},
+  "recordedMessage": "Recorded",
 
   "allTransactionsTitle": "All transactions",
   "noTransactionsYet": "No transactions yet",

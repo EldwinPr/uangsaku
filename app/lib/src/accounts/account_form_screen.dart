@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -100,38 +102,93 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     super.dispose();
   }
 
-  void _save() {
+  /// FEAT06 D3: a warning, never a gate — checked against the currently
+  /// loaded [accountBalancesProvider] list (already shipped, already
+  /// filters `WHERE NOT deleted`; no new DAO method or query), case-
+  /// insensitive, excluding the account's own id when editing. Adjust mode
+  /// never calls this — that flow never touches `name`.
+  bool _nameCollides(String name) {
+    final rows = ref.read(accountBalancesProvider).value ?? const [];
+    final lowerName = name.toLowerCase();
+    for (final row in rows) {
+      if (row.account.accountId == widget.accountId) continue;
+      if (row.account.name.toLowerCase() == lowerName) return true;
+    }
+    return false;
+  }
+
+  /// FEAT06 D3: single-button acknowledge-and-proceed dialog, identical
+  /// shape to `SettingsScreen`'s currency-relabel notice — no cancel, the
+  /// write and the close-on-save (D2) both still happen unconditionally
+  /// after this resolves.
+  Future<void> _showDuplicateNameNotice() {
+    final loc = AppLocalizations.of(context)!;
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(loc.duplicateAccountNameTitle),
+        content: Text(loc.duplicateAccountNameDialogContent),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(loc.okButton),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _save() async {
     // D7 / F7: an empty or unparseable amount proceeds as 0 rather than
     // refusing — the same shape UC-11's screen ships.
     if (_isAdjustFlow) {
       final targetAmount = int.tryParse(_targetAmountController.text) ?? 0;
-      ref
-          .read(accountsProvider.notifier)
-          .adjustAccount(
-            accountId: widget.accountId!,
-            targetAmount: targetAmount,
-          );
+      unawaited(
+        ref
+            .read(accountsProvider.notifier)
+            .adjustAccount(
+              accountId: widget.accountId!,
+              targetAmount: targetAmount,
+            ),
+      );
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
       return;
     }
     if (_isEditFlow) {
       // UC02B D5: an empty name is legal and saves as ''.
-      ref
-          .read(accountsProvider.notifier)
-          .editAccount(
-            accountId: widget.accountId!,
-            name: _nameController.text,
-            group: _group,
-          );
+      final name = _nameController.text;
+      if (_nameCollides(name)) {
+        await _showDuplicateNameNotice();
+      }
+      unawaited(
+        ref
+            .read(accountsProvider.notifier)
+            .editAccount(
+              accountId: widget.accountId!,
+              name: name,
+              group: _group,
+            ),
+      );
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
       return;
     }
     final openingAmount = int.tryParse(_openingAmountController.text) ?? 0;
-    ref
-        .read(accountsProvider.notifier)
-        .addAccount(
-          name: _nameController.text,
-          group: _group,
-          openingAmount: openingAmount,
-        );
+    final name = _nameController.text;
+    if (_nameCollides(name)) {
+      await _showDuplicateNameNotice();
+    }
+    unawaited(
+      ref
+          .read(accountsProvider.notifier)
+          .addAccount(name: name, group: _group, openingAmount: openingAmount),
+    );
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   /// Message 14 on `seq-uc02b-edit-account.drawio`: `deleteAccount`. Always
@@ -145,6 +202,11 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    // FEAT06 D3: keeps accountBalancesProvider subscribed on every mode
+    // (adjust/edit flows already watch it below for message 7; create mode
+    // otherwise never would) so `_save`'s uniqueness check reads a live
+    // list rather than an unstarted stream's empty default.
+    ref.watch(accountBalancesProvider);
     return Scaffold(
       appBar: AppBar(title: Text(_title(loc))),
       floatingActionButton: FloatingActionButton.extended(
@@ -158,7 +220,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
             ? loc.saveCorrectionTooltip
             : (_isEditFlow ? loc.saveChangesTooltip : loc.saveAccountTooltip),
         onPressed: _save,
-        icon: const Icon(Icons.save),
+        icon: const Icon(Icons.check),
         label: Text(loc.saveButton),
       ),
       body: Padding(

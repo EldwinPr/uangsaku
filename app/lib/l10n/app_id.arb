@@ -45,6 +45,8 @@
   "targetAmountLabel": "Yang seharusnya",
   "targetAmountHint": "Jumlah target (boleh minus)",
   "deleteAccountButton": "Hapus akun",
+  "duplicateAccountNameTitle": "Nama sudah dipakai",
+  "duplicateAccountNameDialogContent": "Akun lain sudah memakai nama ini. Tetap akan disimpan.",
 
   "budgetOverviewTitle": "Anggaran bulan ini",
   "setBudgetTooltip": "Atur anggaran",
@@ -56,6 +58,7 @@
   "addBudgetGroupTooltip": "Tambah kelompok anggaran",
   "amountHint": "Jumlah",
   "saveAmountTooltip": "Simpan jumlah",
+  "amountSavedMessage": "Jumlah tersimpan",
   "deletePeriodTooltip": "Hapus periode bulan ini",
   "renameGroupTooltip": "Ganti nama kelompok",
   "deleteGroupTooltip": "Hapus kelompok",
@@ -95,6 +98,7 @@
   "budgetGroupOptionalLabel": "Kelompok anggaran (opsional)",
   "noAccountsYetHint": "Belum ada akun",
   "createOptionLabel": "Buat '{name}'",
+  "recordedMessage": "Tercatat",
 
   "allTransactionsTitle": "Semua transaksi",
   "noTransactionsYet": "Belum ada transaksi",
