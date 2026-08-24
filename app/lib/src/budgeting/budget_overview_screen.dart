@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import 'budget_dao.dart';
 import 'budgeting_providers.dart';
 import 'set_budget_screen.dart';
@@ -24,14 +25,15 @@ class BudgetOverviewScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loc = AppLocalizations.of(context)!;
     final consumptionAsync = ref.watch(budgetConsumptionProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Budget this month'),
+        title: Text(loc.budgetOverviewTitle),
         actions: [
           IconButton(
-            tooltip: 'Set budget',
+            tooltip: loc.setBudgetTooltip,
             icon: const Icon(Icons.edit_outlined),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const SetBudgetScreen()),
@@ -40,16 +42,16 @@ class BudgetOverviewScreen extends ConsumerWidget {
         ],
       ),
       body: consumptionAsync.when(
-        data: _list,
+        data: (rows) => _list(loc, rows),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stackTrace) => Center(child: Text('$error')),
       ),
     );
   }
 
-  Widget _list(List<BudgetConsumption> rows) {
+  Widget _list(AppLocalizations loc, List<BudgetConsumption> rows) {
     if (rows.isEmpty) {
-      return const Center(child: Text('No budget groups yet'));
+      return Center(child: Text(loc.noBudgetGroupsYet));
     }
 
     return ListView(
@@ -71,13 +73,14 @@ class _BudgetConsumptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     // The "Others" label is applied here, at the view — never stored in the
     // query result (D4).
-    final label = row.name ?? 'Others';
+    final label = row.name ?? loc.othersLabel;
 
     return ListTile(
       title: Text(label),
-      subtitle: Text('Budget: ${row.amount}   Spent: ${row.spent}'),
+      subtitle: Text(loc.budgetSpentSubtitle(row.amount, row.spent)),
       trailing: Text(
         '${row.remaining}',
         key: ValueKey('remaining-${row.groupId ?? 'others'}'),

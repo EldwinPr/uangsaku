@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import 'account_dao.dart';
 import 'accounts_providers.dart';
 
@@ -44,17 +45,18 @@ class DebtDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loc = AppLocalizations.of(context)!;
     final progressAsync = ref.watch(debtProgressProvider(accountId));
 
     return Scaffold(
-      appBar: AppBar(title: Text('Debt #$accountId')),
+      appBar: AppBar(title: Text(loc.debtDetailTitle(accountId))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           ...progressAsync.when(
-            data: _figures,
-            loading: () => _figures(_zero),
-            error: (_, _) => const [Text('The figures could not be loaded.')],
+            data: (progress) => _figures(loc, progress),
+            loading: () => _figures(loc, _zero),
+            error: (_, _) => [Text(loc.figuresLoadError)],
           ),
           const SizedBox(height: 24),
           // Always enabled, always proceeds — NFR-4 has nothing to bite on.
@@ -64,7 +66,7 @@ class DebtDetailScreen extends ConsumerWidget {
                 .read(accountsProvider.notifier)
                 .markSettled(accountId: accountId),
             icon: const Icon(Icons.check),
-            label: const Text('Mark settled'),
+            label: Text(loc.markSettled),
           ),
         ],
       ),
@@ -74,22 +76,22 @@ class DebtDetailScreen extends ConsumerWidget {
   /// The two figures, each its own card — paid is not remaining's complement
   /// shown twice but its own derivation (D4: repayment sum vs ABS balance);
   /// the two move independently, which the dual-encoding tests pin.
-  List<Widget> _figures(DebtProgress progress) => [
+  List<Widget> _figures(AppLocalizations loc, DebtProgress progress) => [
     _FigureCard(
       figureKey: const ValueKey('figure-paid'),
-      label: 'Paid off',
+      label: loc.figurePaid,
       minorUnits: progress.paid,
     ),
     _FigureCard(
       figureKey: const ValueKey('figure-remaining'),
-      label: 'Left to pay',
+      label: loc.figureRemaining,
       minorUnits: progress.remaining,
     ),
     if (progress.settled)
-      const ListTile(
-        key: ValueKey('settled-badge'),
-        leading: Icon(Icons.check_circle),
-        title: Text('Settled'),
+      ListTile(
+        key: const ValueKey('settled-badge'),
+        leading: const Icon(Icons.check_circle),
+        title: Text(loc.settledBadge),
       ),
   ];
 }

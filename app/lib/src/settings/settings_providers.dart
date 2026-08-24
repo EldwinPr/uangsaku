@@ -25,6 +25,35 @@ final currencyProvider = StreamProvider<Currency>((ref) {
   return SettingsDao(database).watchCurrency();
 });
 
+/// The app's current UI language (FEAT03 D2) — `MaterialApp.locale`
+/// (`app.dart`) watches this to drive `AppLocalizations`. Kept alive for the
+/// same reason [currencyProvider] is: every screen in the app needs it, not
+/// just the settings screen that writes it.
+///
+/// Hand-written, not `@riverpod`, for the same reason as [currencyProvider]
+/// — `AppLanguage` is declared in `settings_table.dart`, a drift-adjacent
+/// enum type the generator has been unreliable with here
+/// (`context/index/decisions.md` 2026-08-21, UC-13 ruling 2).
+final languageProvider = StreamProvider<AppLanguage>((ref) {
+  final database = ref.watch(appDatabaseProvider);
+  return SettingsDao(database).watchLanguage();
+});
+
+/// The app's current theme mode preference (FEAT03 D2) — `MaterialApp`
+/// (`app.dart`) maps this to Flutter's own `ThemeMode`. Kept alive, same
+/// reasoning as [languageProvider].
+final themeModeProvider = StreamProvider<AppThemeMode>((ref) {
+  final database = ref.watch(appDatabaseProvider);
+  return SettingsDao(database).watchThemeMode();
+});
+
+/// The app's current theme seed color, or `null` for the app's default seed
+/// (FEAT03 D1). Kept alive, same reasoning as [languageProvider].
+final seedColorProvider = StreamProvider<int?>((ref) {
+  final database = ref.watch(appDatabaseProvider);
+  return SettingsDao(database).watchSeedColor();
+});
+
 /// `SettingsNotifier` — the write side (message 10 → 11:
 /// `setCurrency(chosen)`). Forwards to `SettingsDao` and returns nothing to
 /// the screen — the re-labelled currency arrives on `currencyProvider`'s next
@@ -54,6 +83,22 @@ class SettingsNotifier extends Notifier<void> {
   /// other table touched).
   Future<void> setCurrency(Currency currency) {
     return _dao.setCurrency(currency);
+  }
+
+  /// FEAT03 D2: writes only the stored language.
+  Future<void> setLanguage(AppLanguage language) {
+    return _dao.setLanguage(language);
+  }
+
+  /// FEAT03 D2: writes only the stored theme mode.
+  Future<void> setThemeMode(AppThemeMode themeMode) {
+    return _dao.setThemeMode(themeMode);
+  }
+
+  /// FEAT03 D2: writes only the stored theme seed color. `null` resets to
+  /// the app's default seed.
+  Future<void> setSeedColor(int? seedColor) {
+    return _dao.setSeedColor(seedColor);
   }
 }
 

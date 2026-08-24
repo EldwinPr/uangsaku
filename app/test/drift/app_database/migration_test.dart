@@ -9,6 +9,7 @@ import 'generated/schema.dart';
 
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
+import 'generated/schema_v3.dart' as v3;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -93,6 +94,90 @@ void main() {
       newVersion: 2,
       createOld: v1.DatabaseAtV1.new,
       createNew: v2.DatabaseAtV2.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insertAll(oldDb.accounts, oldAccountsData);
+        batch.insertAll(oldDb.categories, oldCategoriesData);
+        batch.insertAll(oldDb.subcategories, oldSubcategoriesData);
+        batch.insertAll(oldDb.budgetGroups, oldBudgetGroupsData);
+        batch.insertAll(oldDb.transactions, oldTransactionsData);
+        batch.insertAll(oldDb.budgetPeriods, oldBudgetPeriodsData);
+        batch.insertAll(oldDb.settings, oldSettingsData);
+      },
+      validateItems: (newDb) async {
+        expect(
+          expectedNewAccountsData,
+          await newDb.select(newDb.accounts).get(),
+        );
+        expect(
+          expectedNewCategoriesData,
+          await newDb.select(newDb.categories).get(),
+        );
+        expect(
+          expectedNewSubcategoriesData,
+          await newDb.select(newDb.subcategories).get(),
+        );
+        expect(
+          expectedNewBudgetGroupsData,
+          await newDb.select(newDb.budgetGroups).get(),
+        );
+        expect(
+          expectedNewTransactionsData,
+          await newDb.select(newDb.transactions).get(),
+        );
+        expect(
+          expectedNewBudgetPeriodsData,
+          await newDb.select(newDb.budgetPeriods).get(),
+        );
+        expect(
+          expectedNewSettingsData,
+          await newDb.select(newDb.settings).get(),
+        );
+      },
+    );
+  });
+
+  test('FEAT03: v2->v3 migration preserves the existing settings row and '
+      'defaults locale/themeMode to id/system with seedColor null', () async {
+    // One pre-existing settings row (v2 has no locale/themeMode/seedColor
+    // columns yet) must survive the migration unchanged, with the three new
+    // columns defaulting exactly as D1 specifies.
+    final oldSettingsData = [
+      const v2.SettingsData(settingsId: 1, currency: 'IDR'),
+    ];
+    final expectedNewSettingsData = [
+      const v3.SettingsData(
+        settingsId: 1,
+        currency: 'IDR',
+        locale: 'id',
+        themeMode: 'system',
+        seedColor: null,
+      ),
+    ];
+
+    final oldAccountsData = <v2.AccountsData>[];
+    final expectedNewAccountsData = <v3.AccountsData>[];
+
+    final oldCategoriesData = <v2.CategoriesData>[];
+    final expectedNewCategoriesData = <v3.CategoriesData>[];
+
+    final oldSubcategoriesData = <v2.SubcategoriesData>[];
+    final expectedNewSubcategoriesData = <v3.SubcategoriesData>[];
+
+    final oldBudgetGroupsData = <v2.BudgetGroupsData>[];
+    final expectedNewBudgetGroupsData = <v3.BudgetGroupsData>[];
+
+    final oldTransactionsData = <v2.TransactionsData>[];
+    final expectedNewTransactionsData = <v3.TransactionsData>[];
+
+    final oldBudgetPeriodsData = <v2.BudgetPeriodsData>[];
+    final expectedNewBudgetPeriodsData = <v3.BudgetPeriodsData>[];
+
+    await verifier.testWithDataIntegrity(
+      oldVersion: 2,
+      newVersion: 3,
+      createOld: v2.DatabaseAtV2.new,
+      createNew: v3.DatabaseAtV3.new,
       openTestedDatabase: AppDatabase.new,
       createItems: (batch, oldDb) {
         batch.insertAll(oldDb.accounts, oldAccountsData);

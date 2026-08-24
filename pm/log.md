@@ -14,22 +14,24 @@ before starting work.
 
 ## Current state — 2026-08-24
 
-**Phase.** **The entire backlog, including one owner-requested addition, is DONE.** The
-app compiles and its test suite is green (**128 tests**). Nine screens built end to end,
-and — since `FEAT02-navigation-host` — **all reachable except one deliberately unrouted
-flow** (UC-03's adjust mode). `home` is `AppShell`: a four-tab `NavigationBar`
-(Balance Sheet, Record, Transactions, Budget) with every other screen reached from
-within a tab. `pm/findings.md` F8 (no navigation) is fixed.
+**Phase.** **The planned backlog is DONE; a manual-testing feedback round is now under
+way.** The app compiles and its test suite is green (**136 tests**). Nine screens built
+end to end, all reachable except one deliberately unrouted flow (UC-03's adjust mode).
+`home` is `AppShell`: a four-tab `NavigationBar` with every other screen reached from
+within a tab (`pm/findings.md` F8, fixed). The app now has a full EN/ID language toggle,
+light/dark/system theme, and a theme-color choice, all in `SettingsScreen` (was
+`CurrencyScreen`) — `FEAT03-settings-and-i18n`, this project's third schema change.
 
-**Active issue.** None. The owner answered both outstanding questions 2026-08-23 (Q3:
-soft delete; Q4: fixed side + signed amount for adjustments), unhalting the last two
-issues; both are now DONE — `UC03-adjust-account` on 2026-08-23, `UC02B-edit-account` on
-2026-08-24 (the project's first schema change: `schemaVersion` 1→2, drift guided
-migrations, `Accounts.deleted`/`deleted_at`). CI was found broken after that (a real
-`_slugdir` bug in `audit.py`, fixed and confirmed green). The owner then asked directly
-for a navigation host so the app could actually be tried, closed the same day as
-`FEAT02-navigation-host`. This run has closed UC02, UC01, UC10, UC04, UC09, UC12, UC03,
-UC02B and FEAT02; before them FEAT01, UC13, UC11, UC14. **Nothing is runnable.**
+**Active issue.** None currently dispatched. The original tracked backlog (FEAT01
+through `FEAT03`) is entirely DONE. The owner is now manually testing the app and filing
+polish feedback as a new, untracked-by-workbook round: three more items are queued —
+nav redesign (5th "Accounts" tab, renamed Balance Sheet tab, a colored circular Record
+quick-action), a category autocomplete picker, and save-flow UX (auto-close/confirm,
+icon change) plus account-name uniqueness. Both original questions (Q3, Q4) were
+answered 2026-08-23; `UC03-adjust-account` and `UC02B-edit-account` closed the same
+day/next (`UC02B` being the first schema change). CI broke right after (a real
+`_slugdir` bug in `audit.py`) and was found and fixed the same day, confirmed green via
+the actual failing log, not local reproduction alone.
 
 **Pushed.** CI has run. The `app` job failed once on the scaffold and the guard was fixed
 rather than the commit reverted — see the entry below.
@@ -1054,3 +1056,41 @@ without an entry point (not asked for).
 
 **[TODO]** Nothing is runnable. This is genuinely the end of the run — every tracker
 issue, including this owner-requested addition, is DONE.
+
+---
+
+## 2026-08-24 — FEAT03-settings-and-i18n closes; the owner starts a manual-testing feedback round
+
+**[STATUS]** **`FEAT03-settings-and-i18n` is DONE** — the first of four polish items
+from the owner's first manual-testing pass (built once `FEAT02` made the app reachable).
+This project's **third schema change**: `schemaVersion` 2→3, `Settings` gains `locale`
+(`AppLanguage: en/id`, default `id`), `themeMode` (`AppThemeMode: system/light/dark`, a
+project-owned enum — never Flutter's own `ThemeMode` in the table layer), `seedColor`
+(nullable ARGB int, `null` = the app's default seed). Built via drift's guided
+migrations again, correctly extending the existing `stepByStep` chain (`from2To3`
+alongside `from1To2`) rather than replacing it.
+
+`CurrencyScreen` is now `SettingsScreen` — four sections (currency behavior unchanged,
+language, theme mode, eight preset color swatches). Real Flutter i18n
+(`flutter_localizations` + ARB files, ~107 keys in each of `app_en.arb`/`app_id.arb`)
+rather than a one-way string rewrite, since the owner asked for a runtime toggle, not a
+translation pass — every screen's strings now read from `AppLocalizations`, verified by
+grep across `app/lib/src/**` for zero remaining hardcoded `Text('...')`/label/tooltip
+literals. The Indonesian translations read as natural financial terminology ("Piutang
+saya" for owed-to-me, "Atur anggaran" for set budget), not literal word-for-word.
+
+136 tests green, including a proof test that switching language on `SettingsScreen`
+actually changes rendered text on a *different* screen — confirms the locale is wired
+through `MaterialApp`, not just stored and ignored.
+
+**[STATUS]** `class-settings.drawio` and `erd.drawio` updated in the main session — the
+coder flagged the gap itself rather than working around it (diagram authoring stays with
+the orchestrator). `docs/enums.md` gained the two new `textEnum` columns; `seedColor`
+correctly excluded (a plain nullable int, not an enum).
+
+**[TODO]** Three more items queued from the same feedback round, in order (each touches
+strings this issue already translated, so doing them after was deliberate): nav redesign
+(5th "Accounts" tab, rename "Balance Sheet", center Record button as a colored circular
+quick-action), category picker → autocomplete-with-inline-create, save-flow UX
+(auto-close/confirm on save, floppy-disk icon replaced) plus account-name uniqueness
+(warn, don't block).

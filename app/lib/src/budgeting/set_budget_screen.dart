@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import 'budgeting_providers.dart';
 
 /// `SetBudgetScreen` — UC-11: set, change or clear each budget group's
@@ -22,10 +23,11 @@ class SetBudgetScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loc = AppLocalizations.of(context)!;
     final rows = ref.watch(budgetProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Set the monthly budget')),
+      appBar: AppBar(title: Text(loc.setBudgetScreenTitle)),
       floatingActionButton: FloatingActionButton(
         // Explicit tag (FEAT02 plan D1): reached with `AppShell`'s
         // `IndexedStack` still mounted underneath, whose Balance Sheet tab
@@ -34,7 +36,7 @@ class SetBudgetScreen extends ConsumerWidget {
         // change.
         heroTag: 'set-budget-fab',
         onPressed: () => _promptAddGroup(context, ref),
-        tooltip: 'Add budget group',
+        tooltip: loc.addBudgetGroupTooltip,
         child: const Icon(Icons.add),
       ),
       body: rows.when(
@@ -53,8 +55,9 @@ class _BudgetGroupList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     if (rows.isEmpty) {
-      return const Center(child: Text('No budget groups yet'));
+      return Center(child: Text(loc.noBudgetGroupsYet));
     }
 
     return ListView(
@@ -97,6 +100,7 @@ class _BudgetGroupTileState extends State<_BudgetGroupTile> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Consumer(
       builder: (context, ref, _) {
         final row = widget.row;
@@ -105,14 +109,14 @@ class _BudgetGroupTileState extends State<_BudgetGroupTile> {
           subtitle: TextField(
             controller: _controller,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(hintText: 'Amount'),
+            decoration: InputDecoration(hintText: loc.amountHint),
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
                 icon: const Icon(Icons.save),
-                tooltip: 'Save amount',
+                tooltip: loc.saveAmountTooltip,
                 onPressed: () {
                   final amount = int.tryParse(_controller.text) ?? 0;
                   ref
@@ -123,14 +127,14 @@ class _BudgetGroupTileState extends State<_BudgetGroupTile> {
               if (row.periodId != null)
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
-                  tooltip: "Delete this month's period",
+                  tooltip: loc.deletePeriodTooltip,
                   onPressed: () => ref
                       .read(budgetProvider.notifier)
                       .delete(periodId: row.periodId!),
                 ),
               IconButton(
                 icon: const Icon(Icons.edit),
-                tooltip: 'Rename group',
+                tooltip: loc.renameGroupTooltip,
                 onPressed: () => _promptRenameGroup(
                   context,
                   ref,
@@ -140,7 +144,7 @@ class _BudgetGroupTileState extends State<_BudgetGroupTile> {
               ),
               IconButton(
                 icon: const Icon(Icons.delete),
-                tooltip: 'Delete group',
+                tooltip: loc.deleteGroupTooltip,
                 onPressed: () => ref
                     .read(budgetProvider.notifier)
                     .deleteGroup(groupId: row.groupId),
@@ -180,6 +184,7 @@ Future<String?> _promptForName(
   BuildContext context, {
   required String initialValue,
 }) {
+  final loc = AppLocalizations.of(context)!;
   final controller = TextEditingController(text: initialValue);
   return showDialog<String>(
     context: context,
@@ -188,7 +193,7 @@ Future<String?> _promptForName(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(controller.text),
-          child: const Text('Save'),
+          child: Text(loc.saveButton),
         ),
       ],
     ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../database/app_database.dart';
 import 'transactions_providers.dart';
 import 'transactions_table.dart';
@@ -29,13 +30,14 @@ class TransactionListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loc = AppLocalizations.of(context)!;
     final listAsync = ref.watch(transactionListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('All transactions')),
+      appBar: AppBar(title: Text(loc.allTransactionsTitle)),
       body: listAsync.when(
         data: (rows) => rows.isEmpty
-            ? const Center(child: Text('No transactions yet'))
+            ? Center(child: Text(loc.noTransactionsYet))
             : ListView(
                 children: [for (final row in rows) _TransactionTile(row: row)],
               ),
@@ -48,14 +50,14 @@ class TransactionListScreen extends ConsumerWidget {
 
 /// The kind label a list tile shows. Presentation only — nothing branches on
 /// kind anywhere below this string; the tile renders columns (UC-09 D3/D6).
-String _kindLabel(TransactionKind kind) => switch (kind) {
-  TransactionKind.expense => 'Expense',
-  TransactionKind.income => 'Income',
-  TransactionKind.transfer => 'Transfer',
-  TransactionKind.lend => 'Lend',
-  TransactionKind.borrow => 'Borrow',
-  TransactionKind.repayment => 'Repayment',
-  TransactionKind.adjustment => 'Adjustment',
+String _kindLabel(AppLocalizations loc, TransactionKind kind) => switch (kind) {
+  TransactionKind.expense => loc.kindExpense,
+  TransactionKind.income => loc.kindIncome,
+  TransactionKind.transfer => loc.kindTransfer,
+  TransactionKind.lend => loc.kindLend,
+  TransactionKind.borrow => loc.kindBorrow,
+  TransactionKind.repayment => loc.kindRepayment,
+  TransactionKind.adjustment => loc.kindAdjustment,
 };
 
 class _TransactionTile extends ConsumerWidget {
@@ -73,26 +75,29 @@ class _TransactionTile extends ConsumerWidget {
         '${date.day.toString().padLeft(2, '0')}';
   }
 
-  String get _sidesText {
+  String _sidesText(AppLocalizations loc) {
     final from = row.fromName;
     final to = row.toName;
     return switch ((from, to)) {
       (final String f, final String t) => '$f → $t',
       (final String f, null) => f,
       (null, final String t) => t,
-      (null, null) => 'no account set',
+      (null, null) => loc.noAccountSet,
     };
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loc = AppLocalizations.of(context)!;
     final transaction = row.transaction;
 
     return ListTile(
       onTap: () => _EditSheet.show(context, row: row),
-      title: Text('${_kindLabel(transaction.kind)} · ${transaction.amount}'),
+      title: Text(
+        '${_kindLabel(loc, transaction.kind)} · ${transaction.amount}',
+      ),
       subtitle: Text(
-        '$_dateText · $_sidesText'
+        '$_dateText · ${_sidesText(loc)}'
         '${transaction.note == null ? '' : ' · ${transaction.note}'}'
         '${transaction.categoryId == null ? '' : ' · category #${transaction.categoryId}'}'
         '${transaction.subcategoryId == null ? '' : ' · subcategory #${transaction.subcategoryId}'}'
@@ -103,7 +108,7 @@ class _TransactionTile extends ConsumerWidget {
         children: [
           IconButton(
             icon: const Icon(Icons.edit),
-            tooltip: 'Amend transaction',
+            tooltip: loc.amendTransactionTooltip,
             onPressed: () => _EditSheet.show(context, row: row),
           ),
           // UC-09 D5: delete runs immediately and unconditionally — no
@@ -111,7 +116,7 @@ class _TransactionTile extends ConsumerWidget {
           // disabled state ever (NFR-4's fit criterion is zero refusals).
           IconButton(
             icon: const Icon(Icons.delete),
-            tooltip: 'Delete transaction',
+            tooltip: loc.deleteTransactionTooltip,
             onPressed: () => ref
                 .read(transactionsProvider.notifier)
                 .delete(id: transaction.transactionId),
@@ -223,6 +228,7 @@ class _EditSheetState extends ConsumerState<_EditSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final accountsAsync = ref.watch(accountPickerProvider);
     final groupsAsync = ref.watch(budgetGroupPickerProvider);
     final treeAsync = ref.watch(categoryTreeProvider);
@@ -253,7 +259,7 @@ class _EditSheetState extends ConsumerState<_EditSheet> {
         shrinkWrap: true,
         children: [
           Text(
-            'Amend ${_kindLabel(kind)}',
+            loc.amendSheetTitle(_kindLabel(loc, kind)),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 16),
@@ -261,9 +267,9 @@ class _EditSheetState extends ConsumerState<_EditSheet> {
             key: const Key('edit-amount'),
             controller: _amountController,
             keyboardType: const TextInputType.numberWithOptions(signed: true),
-            decoration: const InputDecoration(
-              labelText: 'Amount',
-              hintText: 'Minor units, minus allowed',
+            decoration: InputDecoration(
+              labelText: loc.amountLabel,
+              hintText: loc.amountHintMinor,
             ),
           ),
           const SizedBox(height: 16),
@@ -289,12 +295,13 @@ class _EditSheetState extends ConsumerState<_EditSheet> {
           const SizedBox(height: 16),
           if (needsFrom)
             _accountDropdown(
+              loc,
               label: switch (kind) {
-                TransactionKind.lend => 'Own account',
+                TransactionKind.lend => loc.ownAccountLabel,
                 TransactionKind.borrow ||
                 TransactionKind.repayment ||
-                TransactionKind.adjustment => 'From-side account',
-                _ => 'Paying account',
+                TransactionKind.adjustment => loc.fromSideAccountLabel,
+                _ => loc.payingAccountLabel,
               },
               pool: accounts,
               value: _fromAccountId,
@@ -302,12 +309,13 @@ class _EditSheetState extends ConsumerState<_EditSheet> {
             ),
           if (needsTo)
             _accountDropdown(
+              loc,
               label: switch (kind) {
                 TransactionKind.lend ||
-                TransactionKind.borrow => 'Person / debt',
+                TransactionKind.borrow => loc.personDebtLabel,
                 TransactionKind.repayment ||
-                TransactionKind.adjustment => 'To-side account',
-                _ => 'Receiving account',
+                TransactionKind.adjustment => loc.toSideAccountLabel,
+                _ => loc.receivingAccountLabel,
               },
               pool: accounts,
               value: _toAccountId,
@@ -315,10 +323,10 @@ class _EditSheetState extends ConsumerState<_EditSheet> {
             ),
           DropdownButtonFormField<int?>(
             initialValue: _categoryId,
-            hint: const Text('(none)'),
-            decoration: const InputDecoration(labelText: 'Category'),
+            hint: Text(loc.noneHint),
+            decoration: InputDecoration(labelText: loc.categoryLabel),
             items: [
-              const DropdownMenuItem<int?>(value: null, child: Text('(none)')),
+              DropdownMenuItem<int?>(value: null, child: Text(loc.noneHint)),
               for (final category in categories)
                 DropdownMenuItem<int?>(
                   value: category.categoryId,
@@ -329,10 +337,10 @@ class _EditSheetState extends ConsumerState<_EditSheet> {
           ),
           DropdownButtonFormField<int?>(
             initialValue: _subcategoryId,
-            hint: const Text('(none)'),
-            decoration: const InputDecoration(labelText: 'Subcategory'),
+            hint: Text(loc.noneHint),
+            decoration: InputDecoration(labelText: loc.subcategoryLabel),
             items: [
-              const DropdownMenuItem<int?>(value: null, child: Text('(none)')),
+              DropdownMenuItem<int?>(value: null, child: Text(loc.noneHint)),
               for (final subcategory in subcategories)
                 DropdownMenuItem<int?>(
                   value: subcategory.subcategoryId,
@@ -343,10 +351,10 @@ class _EditSheetState extends ConsumerState<_EditSheet> {
           ),
           DropdownButtonFormField<int?>(
             initialValue: _budgetGroupId,
-            hint: const Text('(none)'),
-            decoration: const InputDecoration(labelText: 'Budget group'),
+            hint: Text(loc.noneHint),
+            decoration: InputDecoration(labelText: loc.budgetGroupLabel),
             items: [
-              const DropdownMenuItem<int?>(value: null, child: Text('(none)')),
+              DropdownMenuItem<int?>(value: null, child: Text(loc.noneHint)),
               for (final group in groups)
                 DropdownMenuItem<int?>(
                   value: group.budgetGroupId,
@@ -358,7 +366,7 @@ class _EditSheetState extends ConsumerState<_EditSheet> {
           TextField(
             key: const Key('edit-note'),
             controller: _noteController,
-            decoration: const InputDecoration(labelText: 'Note (optional)'),
+            decoration: InputDecoration(labelText: loc.noteOptionalLabel),
           ),
           const SizedBox(height: 16),
           // Always enabled (UC-09 D7): whatever the sheet holds gets written,
@@ -367,14 +375,15 @@ class _EditSheetState extends ConsumerState<_EditSheet> {
             key: const Key('edit-save'),
             onPressed: _save,
             icon: const Icon(Icons.save),
-            label: const Text('Save'),
+            label: Text(loc.saveButton),
           ),
         ],
       ),
     );
   }
 
-  Widget _accountDropdown({
+  Widget _accountDropdown(
+    AppLocalizations loc, {
     required String label,
     required List<Account> pool,
     required int? value,
@@ -382,7 +391,7 @@ class _EditSheetState extends ConsumerState<_EditSheet> {
   }) {
     return DropdownButtonFormField<int?>(
       initialValue: value,
-      hint: Text(pool.isEmpty ? 'No accounts yet' : '(none)'),
+      hint: Text(pool.isEmpty ? loc.noAccountsYetHint : loc.noneHint),
       decoration: InputDecoration(labelText: label),
       items: [
         for (final account in pool)

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../accounts/accounts_table.dart';
 import 'accounts_providers.dart';
 
@@ -143,8 +144,9 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(_title)),
+      appBar: AppBar(title: Text(_title(loc))),
       floatingActionButton: FloatingActionButton.extended(
         // Explicit tag (FEAT02 plan D1): reached with `AppShell`'s
         // `IndexedStack` still mounted underneath, whose Balance Sheet tab
@@ -153,35 +155,35 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
         // change.
         heroTag: 'account-form-fab',
         tooltip: _isAdjustFlow
-            ? 'Save correction'
-            : (_isEditFlow ? 'Save changes' : 'Save account'),
+            ? loc.saveCorrectionTooltip
+            : (_isEditFlow ? loc.saveChangesTooltip : loc.saveAccountTooltip),
         onPressed: _save,
         icon: const Icon(Icons.save),
-        label: const Text('Save'),
+        label: Text(loc.saveButton),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: _isAdjustFlow
-            ? _buildAdjustFlow()
-            : (_isEditFlow ? _buildEditFlow() : _buildNewAccountFlow()),
+            ? _buildAdjustFlow(loc)
+            : (_isEditFlow ? _buildEditFlow(loc) : _buildNewAccountFlow(loc)),
       ),
     );
   }
 
-  String get _title {
-    if (_isAdjustFlow) return 'Correct account';
-    if (_isEditFlow) return 'Edit account';
-    return 'New account';
+  String _title(AppLocalizations loc) {
+    if (_isAdjustFlow) return loc.titleCorrectAccount;
+    if (_isEditFlow) return loc.titleEditAccount;
+    return loc.titleNewAccount;
   }
 
-  Widget _buildNewAccountFlow() {
+  Widget _buildNewAccountFlow(AppLocalizations loc) {
     return ListView(
       children: [
         TextField(
           controller: _nameController,
-          decoration: const InputDecoration(
-            labelText: 'Name',
-            hintText: 'Wallet, credit card, person…',
+          decoration: InputDecoration(
+            labelText: loc.nameLabel,
+            hintText: loc.nameHint,
           ),
         ),
         const SizedBox(height: 16),
@@ -203,9 +205,9 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
         TextField(
           controller: _openingAmountController,
           keyboardType: const TextInputType.numberWithOptions(signed: true),
-          decoration: const InputDecoration(
-            labelText: 'Opening amount',
-            hintText: 'What is in it today (minus allowed)',
+          decoration: InputDecoration(
+            labelText: loc.openingAmountLabel,
+            hintText: loc.openingAmountHint,
           ),
         ),
       ],
@@ -216,7 +218,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
   /// show its current derived amount and accept the corrected target — save
   /// always enabled (D6, D7). No entry point in `AppShell` reaches this mode
   /// (FEAT02 plan D3, out of scope) — it is exercised only by tests.
-  Widget _buildAdjustFlow() {
+  Widget _buildAdjustFlow(AppLocalizations loc) {
     // Message 7: the current derived amount, once accountBalancesProvider
     // has emitted (UC-01, shipped). No read blocks the save — the flow
     // degrades gracefully to showing nothing yet, exactly as D3 requires
@@ -236,16 +238,16 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
       children: [
         Text(
           currentAmount == null
-              ? 'Current amount: —'
-              : 'Current amount: $currentAmount',
+              ? loc.currentAmountUnknown
+              : loc.currentAmountKnown(currentAmount),
         ),
         const SizedBox(height: 16),
         TextField(
           controller: _targetAmountController,
           keyboardType: const TextInputType.numberWithOptions(signed: true),
-          decoration: const InputDecoration(
-            labelText: 'What it should actually be',
-            hintText: 'Target amount (minus allowed)',
+          decoration: InputDecoration(
+            labelText: loc.targetAmountLabel,
+            hintText: loc.targetAmountHint,
           ),
         ),
       ],
@@ -256,7 +258,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
   /// `seq-uc02b-edit-account.drawio`: rename field, group selector and a
   /// delete control, all always enabled (D5) — `opening_amount` never
   /// appears here (D3, correcting it stays adjust mode's).
-  Widget _buildEditFlow() {
+  Widget _buildEditFlow(AppLocalizations loc) {
     // Message 7: the current name/group, once accountBalancesProvider has
     // emitted — the same graceful-degradation shape _buildAdjustFlow ships;
     // no read blocks either control.
@@ -275,9 +277,9 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
       children: [
         TextField(
           controller: _nameController,
-          decoration: const InputDecoration(
-            labelText: 'Name',
-            hintText: 'Wallet, credit card, person…',
+          decoration: InputDecoration(
+            labelText: loc.nameLabel,
+            hintText: loc.nameHint,
           ),
         ),
         const SizedBox(height: 16),
@@ -301,7 +303,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
         OutlinedButton.icon(
           onPressed: _delete,
           icon: const Icon(Icons.delete),
-          label: const Text('Delete account'),
+          label: Text(loc.deleteAccountButton),
         ),
       ],
     );

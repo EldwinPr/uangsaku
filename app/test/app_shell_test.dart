@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +9,8 @@ import 'package:uangsaku/src/accounts/debt_detail_screen.dart';
 import 'package:uangsaku/src/app.dart';
 import 'package:uangsaku/src/budgeting/set_budget_screen.dart';
 import 'package:uangsaku/src/database/app_database.dart';
-import 'package:uangsaku/src/settings/currency_screen.dart';
+import 'package:uangsaku/src/settings/settings_screen.dart';
+import 'package:uangsaku/src/settings/settings_table.dart';
 import 'package:uangsaku/src/transactions/category_manager_screen.dart';
 
 /// FEAT02's test (plan, Definition of done): every primary destination
@@ -17,9 +19,17 @@ import 'package:uangsaku/src/transactions/category_manager_screen.dart';
 void main() {
   late AppDatabase database;
 
-  setUp(() {
+  setUp(() async {
     // Fresh in-memory database per test — no mocking of drift (testing.md).
     database = AppDatabase(NativeDatabase.memory());
+    // FEAT03 D1 seeds `AppLanguage.id` by default. This file's navigation
+    // assertions predate FEAT03 and are written in English; forcing English
+    // here keeps them testing navigation, not translation — the locale
+    // toggle itself gets its own test below, which manages the language it
+    // needs explicitly.
+    await database
+        .update(database.settings)
+        .write(const SettingsCompanion(locale: Value(AppLanguage.en)));
   });
 
   tearDown(() => database.close());
@@ -153,7 +163,7 @@ void main() {
   });
 
   testWidgets(
-    'the two Balance Sheet app-bar actions reach CategoryManagerScreen and CurrencyScreen',
+    'the two Balance Sheet app-bar actions reach CategoryManagerScreen and SettingsScreen',
     (tester) async {
       await pumpShell(tester);
 
@@ -164,9 +174,9 @@ void main() {
       await tester.pageBack();
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Currency'));
+      await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
-      expect(find.byType(CurrencyScreen), findsOneWidget);
+      expect(find.byType(SettingsScreen), findsOneWidget);
 
       await unmountAndFlushTimers(tester);
     },
@@ -186,4 +196,67 @@ void main() {
 
     await unmountAndFlushTimers(tester);
   });
+
+  testWidgets(
+    'FEAT03 D4/D5: switching the language on SettingsScreen changes rendered '
+    'text on another screen — proves the locale is wired through '
+    'MaterialApp, not just stored',
+    (tester) async {
+      await pumpShell(tester);
+
+      // Starting locale is English (seeded in setUp) — confirm the
+      // Transactions tab renders in English first.
+      await tester.tap(find.text('Transactions'));
+      await tester.pumpAndSettle();
+      expect(find.text('All transactions').hitTestable(), findsOneWidget);
+
+      // Switch to Indonesian from Settings.
+      await tester.tap(find.text('Balance Sheet'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Settings'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Indonesian'));
+      await tester.pumpAndSettle();
+
+      // Not `tester.pageBack()`: it looks up the back button by its
+      // localized 'Back' tooltip, which no longer matches now that the
+      // locale just switched to Indonesian.
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.pumpAndSettle();
+
+      // The same Transactions tab, reached through its now-Indonesian nav
+      // label, renders its now-Indonesian title — the locale is a live
+      // toggle wired through MaterialApp, not a value that only sits in
+      // storage.
+      await tester.tap(find.text('Transaksi'));
+      await tester.pumpAndSettle();
+      expect(find.text('Semua transaksi').hitTestable(), findsOneWidget);
+      expect(find.text('All transactions'), findsNothing);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT03 D4: switching the theme mode on SettingsScreen changes the '
+    'resolved brightness',
+    (tester) async {
+      await pumpShell(tester);
+
+      await tester.tap(find.byTooltip('Settings'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Light'));
+      await tester.pumpAndSettle();
+      final lightContext = tester.element(find.byType(Scaffold).first);
+      expect(Theme.of(lightContext).brightness, Brightness.light);
+
+      await tester.tap(find.text('Dark'));
+      await tester.pumpAndSettle();
+      final darkContext = tester.element(find.byType(Scaffold).first);
+      expect(Theme.of(darkContext).brightness, Brightness.dark);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
 }

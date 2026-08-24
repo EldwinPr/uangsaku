@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../accounts/accounts_table.dart';
 import '../database/app_database.dart';
 import 'transactions_providers.dart';
@@ -209,6 +210,7 @@ class _RecordTransactionScreenState
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final accountsAsync = ref.watch(accountPickerProvider);
     final groupsAsync = ref.watch(budgetGroupPickerProvider);
     final treeAsync = ref.watch(categoryTreeProvider);
@@ -218,7 +220,7 @@ class _RecordTransactionScreenState
     final tree = treeAsync.value ?? const <Category, List<Subcategory>>{};
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Record money movement')),
+      appBar: AppBar(title: Text(loc.recordTransactionTitle)),
       floatingActionButton: FloatingActionButton.extended(
         // Explicit tag (FEAT02 plan D1): `AppShell`'s `IndexedStack` keeps
         // every tab mounted at once, so this FAB and Balance Sheet's FAB
@@ -226,10 +228,10 @@ class _RecordTransactionScreenState
         // otherwise share collides (Flutter's Hero identity requirement),
         // not a business-logic change.
         heroTag: 'record-transaction-fab',
-        tooltip: 'Save',
+        tooltip: loc.saveButton,
         onPressed: _save,
         icon: const Icon(Icons.save),
-        label: const Text('Save'),
+        label: Text(loc.saveButton),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -238,18 +240,18 @@ class _RecordTransactionScreenState
             DropdownButtonFormField<_Flow>(
               key: _kindFieldKey,
               initialValue: _flow,
-              decoration: const InputDecoration(labelText: 'What kind'),
+              decoration: InputDecoration(labelText: loc.kindFieldLabel),
               items: [
                 for (final flow in _Flow.values)
                   DropdownMenuItem<_Flow>(
                     value: flow,
                     child: Text(switch (flow) {
-                      _Flow.expense => 'Expense',
-                      _Flow.income => 'Income',
-                      _Flow.transfer => 'Transfer',
-                      _Flow.lend => 'Lend',
-                      _Flow.borrow => 'Borrow',
-                      _Flow.repay => 'Repay',
+                      _Flow.expense => loc.kindExpense,
+                      _Flow.income => loc.kindIncome,
+                      _Flow.transfer => loc.kindTransfer,
+                      _Flow.lend => loc.kindLend,
+                      _Flow.borrow => loc.kindBorrow,
+                      _Flow.repay => loc.kindRepay,
                     }),
                   ),
               ],
@@ -263,9 +265,9 @@ class _RecordTransactionScreenState
             TextField(
               controller: _amountController,
               keyboardType: const TextInputType.numberWithOptions(signed: true),
-              decoration: const InputDecoration(
-                labelText: 'Amount',
-                hintText: 'Minor units, minus allowed',
+              decoration: InputDecoration(
+                labelText: loc.amountLabel,
+                hintText: loc.amountHintMinor,
               ),
             ),
             const SizedBox(height: 16),
@@ -289,11 +291,11 @@ class _RecordTransactionScreenState
               ),
             ),
             const SizedBox(height: 16),
-            ..._sidePickers(accounts),
-            ..._tagPickers(tree, groups),
+            ..._sidePickers(loc, accounts),
+            ..._tagPickers(loc, tree, groups),
             TextField(
               controller: _noteController,
-              decoration: const InputDecoration(labelText: 'Note (optional)'),
+              decoration: InputDecoration(labelText: loc.noteOptionalLabel),
             ),
           ],
         ),
@@ -301,12 +303,13 @@ class _RecordTransactionScreenState
     );
   }
 
-  List<Widget> _sidePickers(List<Account> accounts) {
+  List<Widget> _sidePickers(AppLocalizations loc, List<Account> accounts) {
     switch (_flow) {
       case _Flow.expense:
         return [
           _accountDropdown(
-            label: 'Paying account',
+            loc,
+            label: loc.payingAccountLabel,
             pool: accounts,
             selectedId: _effective(_payingAccountId, accounts),
             onChanged: (id) => setState(() => _payingAccountId = id),
@@ -315,7 +318,8 @@ class _RecordTransactionScreenState
       case _Flow.income:
         return [
           _accountDropdown(
-            label: 'Receiving account',
+            loc,
+            label: loc.receivingAccountLabel,
             pool: accounts,
             selectedId: _effective(_receivingAccountId, accounts),
             onChanged: (id) => setState(() => _receivingAccountId = id),
@@ -324,13 +328,15 @@ class _RecordTransactionScreenState
       case _Flow.transfer:
         return [
           _accountDropdown(
-            label: 'Source account',
+            loc,
+            label: loc.sourceAccountLabel,
             pool: accounts,
             selectedId: _effective(_sourceAccountId, accounts),
             onChanged: (id) => setState(() => _sourceAccountId = id),
           ),
           _accountDropdown(
-            label: 'Destination account',
+            loc,
+            label: loc.destinationAccountLabel,
             pool: accounts,
             selectedId: _effective(_destinationAccountId, accounts),
             onChanged: (id) => setState(() => _destinationAccountId = id),
@@ -341,13 +347,17 @@ class _RecordTransactionScreenState
       case _Flow.repay:
         return [
           _accountDropdown(
-            label: _flow == _Flow.repay ? 'Debt / person' : 'Person / debt',
+            loc,
+            label: _flow == _Flow.repay
+                ? loc.debtPersonLabel
+                : loc.personDebtLabel,
             pool: personDebtChoices(accounts),
             selectedId: _effective(_personDebtId, personDebtChoices(accounts)),
             onChanged: (id) => setState(() => _personDebtId = id),
           ),
           _accountDropdown(
-            label: 'Own account',
+            loc,
+            label: loc.ownAccountLabel,
             pool: accounts,
             selectedId: _effective(_walletId, accounts),
             onChanged: (id) => setState(() => _walletId = id),
@@ -360,6 +370,7 @@ class _RecordTransactionScreenState
   /// `opt` fragment on `seq-uc04`/`seq-uc05`; seq-uc06 draws none, plan D8).
   /// Every dropdown offers the blank choice, stored as null.
   List<Widget> _tagPickers(
+    AppLocalizations loc,
     Map<Category, List<Subcategory>> tree,
     List<BudgetGroup> groups,
   ) {
@@ -382,10 +393,10 @@ class _RecordTransactionScreenState
     return [
       DropdownButtonFormField<int?>(
         initialValue: _categoryId,
-        hint: const Text('(none)'),
-        decoration: const InputDecoration(labelText: 'Category (optional)'),
+        hint: Text(loc.noneHint),
+        decoration: InputDecoration(labelText: loc.categoryOptionalLabel),
         items: [
-          const DropdownMenuItem<int?>(value: null, child: Text('(none)')),
+          DropdownMenuItem<int?>(value: null, child: Text(loc.noneHint)),
           for (final category in categories)
             DropdownMenuItem<int?>(
               value: category.categoryId,
@@ -399,10 +410,10 @@ class _RecordTransactionScreenState
       ),
       DropdownButtonFormField<int?>(
         initialValue: _subcategoryId,
-        hint: const Text('(none)'),
-        decoration: const InputDecoration(labelText: 'Subcategory (optional)'),
+        hint: Text(loc.noneHint),
+        decoration: InputDecoration(labelText: loc.subcategoryOptionalLabel),
         items: [
-          const DropdownMenuItem<int?>(value: null, child: Text('(none)')),
+          DropdownMenuItem<int?>(value: null, child: Text(loc.noneHint)),
           for (final subcategory in subcategories)
             DropdownMenuItem<int?>(
               value: subcategory.subcategoryId,
@@ -413,10 +424,10 @@ class _RecordTransactionScreenState
       ),
       DropdownButtonFormField<int?>(
         initialValue: _budgetGroupId,
-        hint: const Text('(none)'),
-        decoration: const InputDecoration(labelText: 'Budget group (optional)'),
+        hint: Text(loc.noneHint),
+        decoration: InputDecoration(labelText: loc.budgetGroupOptionalLabel),
         items: [
-          const DropdownMenuItem<int?>(value: null, child: Text('(none)')),
+          DropdownMenuItem<int?>(value: null, child: Text(loc.noneHint)),
           for (final group in groups)
             DropdownMenuItem<int?>(
               value: group.budgetGroupId,
@@ -429,7 +440,8 @@ class _RecordTransactionScreenState
     ];
   }
 
-  Widget _accountDropdown({
+  Widget _accountDropdown(
+    AppLocalizations loc, {
     required String label,
     required List<Account> pool,
     required int? selectedId,
@@ -437,7 +449,7 @@ class _RecordTransactionScreenState
   }) {
     return DropdownButtonFormField<int?>(
       initialValue: selectedId,
-      hint: Text(pool.isEmpty ? 'No accounts yet' : '(none)'),
+      hint: Text(pool.isEmpty ? loc.noAccountsYetHint : loc.noneHint),
       decoration: InputDecoration(labelText: label),
       items: [
         for (final account in pool)

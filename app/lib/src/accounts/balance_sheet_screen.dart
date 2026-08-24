@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../settings/currency_screen.dart';
+import '../../l10n/app_localizations.dart';
+import '../settings/settings_screen.dart';
 import '../transactions/category_manager_screen.dart';
 import 'account_dao.dart';
 import 'account_form_screen.dart';
@@ -26,6 +27,10 @@ import 'debt_detail_screen.dart';
 ///
 /// Loading states show zeros / placeholders; an error shows a message rather
 /// than silently rendering zeros as if they were real figures.
+///
+/// The currency app-bar action reaches [SettingsScreen] (FEAT03 D3) — was
+/// `CurrencyScreen` before this issue; the currency section inside it is
+/// unchanged.
 class BalanceSheetScreen extends ConsumerWidget {
   const BalanceSheetScreen({super.key});
 
@@ -40,15 +45,16 @@ class BalanceSheetScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loc = AppLocalizations.of(context)!;
     final positionAsync = ref.watch(financialPositionProvider);
     final balancesAsync = ref.watch(accountBalancesProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('uangsaku'),
+        title: Text(loc.balanceSheetTitle),
         actions: [
           IconButton(
-            tooltip: 'Categories',
+            tooltip: loc.categoriesTooltip,
             icon: const Icon(Icons.category_outlined),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -57,10 +63,10 @@ class BalanceSheetScreen extends ConsumerWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Currency',
-            icon: const Icon(Icons.attach_money),
+            tooltip: loc.settingsTooltip,
+            icon: const Icon(Icons.settings_outlined),
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const CurrencyScreen()),
+              MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
             ),
           ),
         ],
@@ -72,7 +78,7 @@ class BalanceSheetScreen extends ConsumerWidget {
         // share collides (Flutter's Hero identity requirement), not a
         // business-logic change.
         heroTag: 'balance-sheet-fab',
-        tooltip: 'Add account',
+        tooltip: loc.addAccountTooltip,
         onPressed: () => Navigator.of(context).push(
           MaterialPageRoute<void>(builder: (_) => const AccountFormScreen()),
         ),
@@ -82,16 +88,19 @@ class BalanceSheetScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           ...positionAsync.when(
-            data: _figures,
-            loading: () => _figures(_zero),
-            error: (_, _) => const [Text('The figures could not be loaded.')],
+            data: (position) => _figures(loc, position),
+            loading: () => _figures(loc, _zero),
+            error: (_, _) => [Text(loc.figuresLoadError)],
           ),
           const SizedBox(height: 24),
-          Text('Accounts', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            loc.accountsSectionTitle,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           ...balancesAsync.when(
-            data: (balances) => _accountRows(context, balances),
-            loading: () => const [Text('Loading accounts…')],
-            error: (_, _) => const [Text('The accounts could not be loaded.')],
+            data: (balances) => _accountRows(context, loc, balances),
+            loading: () => [Text(loc.accountsLoading)],
+            error: (_, _) => [Text(loc.accountsLoadError)],
           ),
         ],
       ),
@@ -101,25 +110,25 @@ class BalanceSheetScreen extends ConsumerWidget {
   /// The four figures, each its own card — spendable is never merged with
   /// owed-to-me; FR-1's "money sitting with Budi cannot buy lunch" is this
   /// list not being one number.
-  List<Widget> _figures(FinancialPosition position) => [
+  List<Widget> _figures(AppLocalizations loc, FinancialPosition position) => [
     _FigureCard(
       figureKey: const ValueKey('figure-spendable'),
-      label: 'What I can spend now',
+      label: loc.figureSpendable,
       minorUnits: position.spendable,
     ),
     _FigureCard(
       figureKey: const ValueKey('figure-owed-to-me'),
-      label: 'Owed to me',
+      label: loc.figureOwedToMe,
       minorUnits: position.owedToMe,
     ),
     _FigureCard(
       figureKey: const ValueKey('figure-owed-by-me'),
-      label: 'Owed by me',
+      label: loc.figureOwedByMe,
       minorUnits: position.owedByMe,
     ),
     _FigureCard(
       figureKey: const ValueKey('figure-net'),
-      label: 'Net',
+      label: loc.figureNet,
       minorUnits: position.net,
     ),
   ];
@@ -130,10 +139,11 @@ class BalanceSheetScreen extends ConsumerWidget {
   /// (FEAT02 plan D1) — the screen is meaningless for `HOLDING` accounts.
   List<Widget> _accountRows(
     BuildContext context,
+    AppLocalizations loc,
     List<AccountBalance> balances,
   ) => [
     if (balances.isEmpty)
-      const Text('No accounts yet.', key: ValueKey('no-accounts'))
+      Text(loc.noAccountsYetPeriod, key: const ValueKey('no-accounts'))
     else
       for (final entry in balances)
         ListTile(
@@ -154,7 +164,7 @@ class BalanceSheetScreen extends ConsumerWidget {
               if (entry.account.group == AccountGroup.RECEIVABLE ||
                   entry.account.group == AccountGroup.PAYABLE)
                 IconButton(
-                  tooltip: 'Debt details',
+                  tooltip: loc.debtDetailsTooltip,
                   icon: const Icon(Icons.info_outline),
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(

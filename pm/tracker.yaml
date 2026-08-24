@@ -544,3 +544,34 @@ issues:
       implicit default hero tag collided across tabs, a real runtime crash caught and
       fixed, not a business-logic change). Closes pm/findings.md F8.
 
+  - id: FEAT03-settings-and-i18n
+    slug: settings-and-i18n
+    title: Settings hub - language, theme, currency; full Indonesian translation
+    status: DONE
+    plan: pm/issues/feat03-settings-and-i18n/plan.md
+    depends_on: [FEAT02-navigation-host]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-24. No UC owns this - infrastructure. Owner's direct request during
+      manual testing: full Indonesian UI with a language toggle, plus light/dark mode and
+      a theme color folded into the currency screen as one Settings hub. This project's
+      third schema change (schemaVersion 2 -> 3): Settings gains locale (AppLanguage: en
+      default id), themeMode (AppThemeMode: system/light/dark, a project-owned enum,
+      never Flutter's own ThemeMode in the table layer), seedColor (nullable ARGB int,
+      null = app default seed), via drift's guided migrations - v2 snapshot unchanged, v3
+      new, a real data-integrity migration test. CurrencyScreen renamed to
+      SettingsScreen, currency behavior unchanged (D3). Real Flutter l10n
+      (flutter_localizations + ARB files under app/lib/l10n/, ~107 keys each language),
+      not hardcoded string replacement, since a runtime toggle was asked for - every
+      screen's strings now read from AppLocalizations, verified by grep (zero remaining
+      hardcoded Text('...')/label/tooltip literals). 136 tests green, including a proof
+      test that switching language on SettingsScreen changes rendered text on another
+      screen (confirms locale is wired through MaterialApp, not just stored).
+      class-settings.drawio and erd.drawio updated in the main session (Settings table
+      gains three columns; SettingsDao/Notifier/providers gain the new methods;
+      AppLanguage/AppThemeMode enum boxes chained after Currency's). enums.md gained the
+      two new textEnum columns (seedColor is a plain nullable int, not an enum, so it
+      does not belong there). First of four polish items from the same feedback round;
+      the rest (nav redesign, category autocomplete, save UX, account-name uniqueness)
+      queue behind it since they touch strings this issue translated.
+

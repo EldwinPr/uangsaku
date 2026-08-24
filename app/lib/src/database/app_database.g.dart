@@ -2274,7 +2274,44 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
         requiredDuringInsert: true,
       ).withConverter<Currency>($SettingsTable.$convertercurrency);
   @override
-  List<GeneratedColumn> get $columns => [settingsId, currency];
+  late final GeneratedColumnWithTypeConverter<AppLanguage, String> locale =
+      GeneratedColumn<String>(
+        'locale',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('id'),
+      ).withConverter<AppLanguage>($SettingsTable.$converterlocale);
+  @override
+  late final GeneratedColumnWithTypeConverter<AppThemeMode, String> themeMode =
+      GeneratedColumn<String>(
+        'theme_mode',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('system'),
+      ).withConverter<AppThemeMode>($SettingsTable.$converterthemeMode);
+  static const VerificationMeta _seedColorMeta = const VerificationMeta(
+    'seedColor',
+  );
+  @override
+  late final GeneratedColumn<int> seedColor = GeneratedColumn<int>(
+    'seed_color',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    settingsId,
+    currency,
+    locale,
+    themeMode,
+    seedColor,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2291,6 +2328,12 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
       context.handle(
         _settingsIdMeta,
         settingsId.isAcceptableOrUnknown(data['settings_id']!, _settingsIdMeta),
+      );
+    }
+    if (data.containsKey('seed_color')) {
+      context.handle(
+        _seedColorMeta,
+        seedColor.isAcceptableOrUnknown(data['seed_color']!, _seedColorMeta),
       );
     }
     return context;
@@ -2312,6 +2355,22 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
           data['${effectivePrefix}currency'],
         )!,
       ),
+      locale: $SettingsTable.$converterlocale.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}locale'],
+        )!,
+      ),
+      themeMode: $SettingsTable.$converterthemeMode.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}theme_mode'],
+        )!,
+      ),
+      seedColor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}seed_color'],
+      ),
     );
   }
 
@@ -2322,12 +2381,32 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
 
   static JsonTypeConverter2<Currency, String, String> $convertercurrency =
       const EnumNameConverter<Currency>(Currency.values);
+  static JsonTypeConverter2<AppLanguage, String, String> $converterlocale =
+      const EnumNameConverter<AppLanguage>(AppLanguage.values);
+  static JsonTypeConverter2<AppThemeMode, String, String> $converterthemeMode =
+      const EnumNameConverter<AppThemeMode>(AppThemeMode.values);
 }
 
 class Setting extends DataClass implements Insertable<Setting> {
   final int settingsId;
   final Currency currency;
-  const Setting({required this.settingsId, required this.currency});
+
+  /// FEAT03 D1 — defaults to `AppLanguage.id`, the app's home market.
+  final AppLanguage locale;
+
+  /// FEAT03 D1 — defaults to `AppThemeMode.system`.
+  final AppThemeMode themeMode;
+
+  /// An ARGB32 int (`Color.toARGB32()`). `null` means "use the app's default
+  /// seed" (FEAT03 D1) — nullable, so no SQL-level default is needed.
+  final int? seedColor;
+  const Setting({
+    required this.settingsId,
+    required this.currency,
+    required this.locale,
+    required this.themeMode,
+    this.seedColor,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -2337,6 +2416,19 @@ class Setting extends DataClass implements Insertable<Setting> {
         $SettingsTable.$convertercurrency.toSql(currency),
       );
     }
+    {
+      map['locale'] = Variable<String>(
+        $SettingsTable.$converterlocale.toSql(locale),
+      );
+    }
+    {
+      map['theme_mode'] = Variable<String>(
+        $SettingsTable.$converterthemeMode.toSql(themeMode),
+      );
+    }
+    if (!nullToAbsent || seedColor != null) {
+      map['seed_color'] = Variable<int>(seedColor);
+    }
     return map;
   }
 
@@ -2344,6 +2436,11 @@ class Setting extends DataClass implements Insertable<Setting> {
     return SettingsCompanion(
       settingsId: Value(settingsId),
       currency: Value(currency),
+      locale: Value(locale),
+      themeMode: Value(themeMode),
+      seedColor: seedColor == null && nullToAbsent
+          ? const Value.absent()
+          : Value(seedColor),
     );
   }
 
@@ -2357,6 +2454,13 @@ class Setting extends DataClass implements Insertable<Setting> {
       currency: $SettingsTable.$convertercurrency.fromJson(
         serializer.fromJson<String>(json['currency']),
       ),
+      locale: $SettingsTable.$converterlocale.fromJson(
+        serializer.fromJson<String>(json['locale']),
+      ),
+      themeMode: $SettingsTable.$converterthemeMode.fromJson(
+        serializer.fromJson<String>(json['themeMode']),
+      ),
+      seedColor: serializer.fromJson<int?>(json['seedColor']),
     );
   }
   @override
@@ -2367,12 +2471,28 @@ class Setting extends DataClass implements Insertable<Setting> {
       'currency': serializer.toJson<String>(
         $SettingsTable.$convertercurrency.toJson(currency),
       ),
+      'locale': serializer.toJson<String>(
+        $SettingsTable.$converterlocale.toJson(locale),
+      ),
+      'themeMode': serializer.toJson<String>(
+        $SettingsTable.$converterthemeMode.toJson(themeMode),
+      ),
+      'seedColor': serializer.toJson<int?>(seedColor),
     };
   }
 
-  Setting copyWith({int? settingsId, Currency? currency}) => Setting(
+  Setting copyWith({
+    int? settingsId,
+    Currency? currency,
+    AppLanguage? locale,
+    AppThemeMode? themeMode,
+    Value<int?> seedColor = const Value.absent(),
+  }) => Setting(
     settingsId: settingsId ?? this.settingsId,
     currency: currency ?? this.currency,
+    locale: locale ?? this.locale,
+    themeMode: themeMode ?? this.themeMode,
+    seedColor: seedColor.present ? seedColor.value : this.seedColor,
   );
   Setting copyWithCompanion(SettingsCompanion data) {
     return Setting(
@@ -2380,6 +2500,9 @@ class Setting extends DataClass implements Insertable<Setting> {
           ? data.settingsId.value
           : this.settingsId,
       currency: data.currency.present ? data.currency.value : this.currency,
+      locale: data.locale.present ? data.locale.value : this.locale,
+      themeMode: data.themeMode.present ? data.themeMode.value : this.themeMode,
+      seedColor: data.seedColor.present ? data.seedColor.value : this.seedColor,
     );
   }
 
@@ -2387,49 +2510,77 @@ class Setting extends DataClass implements Insertable<Setting> {
   String toString() {
     return (StringBuffer('Setting(')
           ..write('settingsId: $settingsId, ')
-          ..write('currency: $currency')
+          ..write('currency: $currency, ')
+          ..write('locale: $locale, ')
+          ..write('themeMode: $themeMode, ')
+          ..write('seedColor: $seedColor')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(settingsId, currency);
+  int get hashCode =>
+      Object.hash(settingsId, currency, locale, themeMode, seedColor);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Setting &&
           other.settingsId == this.settingsId &&
-          other.currency == this.currency);
+          other.currency == this.currency &&
+          other.locale == this.locale &&
+          other.themeMode == this.themeMode &&
+          other.seedColor == this.seedColor);
 }
 
 class SettingsCompanion extends UpdateCompanion<Setting> {
   final Value<int> settingsId;
   final Value<Currency> currency;
+  final Value<AppLanguage> locale;
+  final Value<AppThemeMode> themeMode;
+  final Value<int?> seedColor;
   const SettingsCompanion({
     this.settingsId = const Value.absent(),
     this.currency = const Value.absent(),
+    this.locale = const Value.absent(),
+    this.themeMode = const Value.absent(),
+    this.seedColor = const Value.absent(),
   });
   SettingsCompanion.insert({
     this.settingsId = const Value.absent(),
     required Currency currency,
+    this.locale = const Value.absent(),
+    this.themeMode = const Value.absent(),
+    this.seedColor = const Value.absent(),
   }) : currency = Value(currency);
   static Insertable<Setting> custom({
     Expression<int>? settingsId,
     Expression<String>? currency,
+    Expression<String>? locale,
+    Expression<String>? themeMode,
+    Expression<int>? seedColor,
   }) {
     return RawValuesInsertable({
       if (settingsId != null) 'settings_id': settingsId,
       if (currency != null) 'currency': currency,
+      if (locale != null) 'locale': locale,
+      if (themeMode != null) 'theme_mode': themeMode,
+      if (seedColor != null) 'seed_color': seedColor,
     });
   }
 
   SettingsCompanion copyWith({
     Value<int>? settingsId,
     Value<Currency>? currency,
+    Value<AppLanguage>? locale,
+    Value<AppThemeMode>? themeMode,
+    Value<int?>? seedColor,
   }) {
     return SettingsCompanion(
       settingsId: settingsId ?? this.settingsId,
       currency: currency ?? this.currency,
+      locale: locale ?? this.locale,
+      themeMode: themeMode ?? this.themeMode,
+      seedColor: seedColor ?? this.seedColor,
     );
   }
 
@@ -2444,6 +2595,19 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
         $SettingsTable.$convertercurrency.toSql(currency.value),
       );
     }
+    if (locale.present) {
+      map['locale'] = Variable<String>(
+        $SettingsTable.$converterlocale.toSql(locale.value),
+      );
+    }
+    if (themeMode.present) {
+      map['theme_mode'] = Variable<String>(
+        $SettingsTable.$converterthemeMode.toSql(themeMode.value),
+      );
+    }
+    if (seedColor.present) {
+      map['seed_color'] = Variable<int>(seedColor.value);
+    }
     return map;
   }
 
@@ -2451,7 +2615,10 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
   String toString() {
     return (StringBuffer('SettingsCompanion(')
           ..write('settingsId: $settingsId, ')
-          ..write('currency: $currency')
+          ..write('currency: $currency, ')
+          ..write('locale: $locale, ')
+          ..write('themeMode: $themeMode, ')
+          ..write('seedColor: $seedColor')
           ..write(')'))
         .toString();
   }
@@ -5075,10 +5242,16 @@ typedef $$BudgetPeriodsTableProcessedTableManager =
 typedef $$SettingsTableCreateCompanionBuilder = SettingsCompanion Function({
   Value<int> settingsId,
   required Currency currency,
+  Value<AppLanguage> locale,
+  Value<AppThemeMode> themeMode,
+  Value<int?> seedColor,
 });
 typedef $$SettingsTableUpdateCompanionBuilder = SettingsCompanion Function({
   Value<int> settingsId,
   Value<Currency> currency,
+  Value<AppLanguage> locale,
+  Value<AppThemeMode> themeMode,
+  Value<int?> seedColor,
 });
 
 class $$SettingsTableFilterComposer
@@ -5100,6 +5273,23 @@ class $$SettingsTableFilterComposer
         column: $table.currency,
         builder: (column) => ColumnWithTypeConverterFilters(column),
       );
+
+  ColumnWithTypeConverterFilters<AppLanguage, AppLanguage, String> get locale =>
+      $composableBuilder(
+        column: $table.locale,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnWithTypeConverterFilters<AppThemeMode, AppThemeMode, String>
+  get themeMode => $composableBuilder(
+    column: $table.themeMode,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<int> get seedColor => $composableBuilder(
+    column: $table.seedColor,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$SettingsTableOrderingComposer
@@ -5120,6 +5310,21 @@ class $$SettingsTableOrderingComposer
     column: $table.currency,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get locale => $composableBuilder(
+    column: $table.locale,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get themeMode => $composableBuilder(
+    column: $table.themeMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get seedColor => $composableBuilder(
+    column: $table.seedColor,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SettingsTableAnnotationComposer
@@ -5138,6 +5343,15 @@ class $$SettingsTableAnnotationComposer
 
   GeneratedColumnWithTypeConverter<Currency, String> get currency =>
       $composableBuilder(column: $table.currency, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<AppLanguage, String> get locale =>
+      $composableBuilder(column: $table.locale, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<AppThemeMode, String> get themeMode =>
+      $composableBuilder(column: $table.themeMode, builder: (column) => column);
+
+  GeneratedColumn<int> get seedColor =>
+      $composableBuilder(column: $table.seedColor, builder: (column) => column);
 }
 
 class $$SettingsTableTableManager
@@ -5166,17 +5380,33 @@ class $$SettingsTableTableManager
               $$SettingsTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$SettingsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<int> settingsId = const Value.absent(),
-            Value<Currency> currency = const Value.absent(),
-          }) => SettingsCompanion(settingsId: settingsId, currency: currency),
+          updateCompanionCallback:
+              ({
+                Value<int> settingsId = const Value.absent(),
+                Value<Currency> currency = const Value.absent(),
+                Value<AppLanguage> locale = const Value.absent(),
+                Value<AppThemeMode> themeMode = const Value.absent(),
+                Value<int?> seedColor = const Value.absent(),
+              }) => SettingsCompanion(
+                settingsId: settingsId,
+                currency: currency,
+                locale: locale,
+                themeMode: themeMode,
+                seedColor: seedColor,
+              ),
           createCompanionCallback:
               ({
                 Value<int> settingsId = const Value.absent(),
                 required Currency currency,
+                Value<AppLanguage> locale = const Value.absent(),
+                Value<AppThemeMode> themeMode = const Value.absent(),
+                Value<int?> seedColor = const Value.absent(),
               }) => SettingsCompanion.insert(
                 settingsId: settingsId,
                 currency: currency,
+                locale: locale,
+                themeMode: themeMode,
+                seedColor: seedColor,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

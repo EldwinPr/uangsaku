@@ -18,8 +18,8 @@ void main() {
     await database.customSelect('SELECT 1').get();
   });
 
-  test('UC02B D1: schemaVersion is 2 — Accounts gained deleted/deletedAt', () {
-    expect(database.schemaVersion, 2);
+  test('FEAT03 D1: schemaVersion is 3 — Settings gained locale/themeMode/seedColor', () {
+    expect(database.schemaVersion, 3);
   });
 
   test('FEAT01: all seven tables exist', () async {
@@ -37,9 +37,14 @@ void main() {
     });
   });
 
-  test('ISSUE-001 D6: exactly one Settings row is seeded with Currency.IDR on a fresh database', () async {
+  test('ISSUE-001 D6 / FEAT03 D1: exactly one Settings row is seeded with '
+      'Currency.IDR, AppLanguage.id, AppThemeMode.system and a null seedColor '
+      'on a fresh database', () async {
     final rows = await database.select(database.settings).get();
     expect(rows, hasLength(1));
     expect(rows.single.currency, Currency.IDR);
+    expect(rows.single.locale, AppLanguage.id);
+    expect(rows.single.themeMode, AppThemeMode.system);
+    expect(rows.single.seedColor, isNull);
   });
 }

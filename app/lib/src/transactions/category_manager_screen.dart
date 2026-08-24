@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../database/app_database.dart';
 import 'transactions_providers.dart';
 
@@ -22,10 +23,11 @@ class CategoryManagerScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loc = AppLocalizations.of(context)!;
     final tree = ref.watch(categoryTreeProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Categories and subcategories')),
+      appBar: AppBar(title: Text(loc.categoryManagerTitle)),
       floatingActionButton: FloatingActionButton(
         // Explicit tag (FEAT02 plan D1): reached with `AppShell`'s
         // `IndexedStack` still mounted underneath, whose Balance Sheet tab
@@ -34,7 +36,7 @@ class CategoryManagerScreen extends ConsumerWidget {
         // change.
         heroTag: 'category-manager-fab',
         onPressed: () => _promptAdd(context, ref, categoryId: null),
-        tooltip: 'Add category',
+        tooltip: loc.addCategoryTooltip,
         child: const Icon(Icons.add),
       ),
       body: tree.when(
@@ -53,10 +55,11 @@ class _CategoryList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loc = AppLocalizations.of(context)!;
     final categoryEntries = tree.entries.toList();
 
     if (categoryEntries.isEmpty) {
-      return const Center(child: Text('No categories yet'));
+      return Center(child: Text(loc.noCategoriesYet));
     }
 
     return ListView(
@@ -76,6 +79,7 @@ class _CategoryTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loc = AppLocalizations.of(context)!;
     return ExpansionTile(
       title: Text(category.name),
       trailing: Row(
@@ -83,13 +87,13 @@ class _CategoryTile extends ConsumerWidget {
         children: [
           IconButton(
             icon: const Icon(Icons.add),
-            tooltip: 'Add subcategory',
+            tooltip: loc.addSubcategoryTooltip,
             onPressed: () =>
                 _promptAdd(context, ref, categoryId: category.categoryId),
           ),
           IconButton(
             icon: const Icon(Icons.edit),
-            tooltip: 'Rename category',
+            tooltip: loc.renameCategoryTooltip,
             onPressed: () => _promptRename(
               context,
               ref,
@@ -100,7 +104,7 @@ class _CategoryTile extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.delete),
-            tooltip: 'Delete category',
+            tooltip: loc.deleteCategoryTooltip,
             onPressed: () => ref
                 .read(categoriesProvider.notifier)
                 .remove(id: category.categoryId, isSubcategory: false),
@@ -116,7 +120,7 @@ class _CategoryTile extends ConsumerWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.edit),
-                  tooltip: 'Rename subcategory',
+                  tooltip: loc.renameSubcategoryTooltip,
                   onPressed: () => _promptRename(
                     context,
                     ref,
@@ -127,7 +131,7 @@ class _CategoryTile extends ConsumerWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete),
-                  tooltip: 'Delete subcategory',
+                  tooltip: loc.deleteSubcategoryTooltip,
                   onPressed: () => ref
                       .read(categoriesProvider.notifier)
                       .remove(
@@ -177,6 +181,7 @@ Future<String?> _promptForName(
   BuildContext context, {
   required String initialValue,
 }) {
+  final loc = AppLocalizations.of(context)!;
   final controller = TextEditingController(text: initialValue);
   return showDialog<String>(
     context: context,
@@ -185,7 +190,7 @@ Future<String?> _promptForName(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(controller.text),
-          child: const Text('Save'),
+          child: Text(loc.saveButton),
         ),
       ],
     ),

@@ -13,10 +13,10 @@ are legal. An enum classifies, so it needs none — every value is reachable fro
 other by editing the record. If a proposed value forbids something, it is a status and
 belongs in `statuses.md`; if it only labels, it belongs here.
 
-As of 2026-08-20 `statuses.md` lists **no** values for any entity, and this file lists
-**twelve** across three columns. That asymmetry is the expected shape for an app built on
-NFR-4 ("the app assists; it does not police") — such an app accumulates classifications
-freely and statuses not at all.
+As of 2026-08-24 `statuses.md` lists **no** values for any entity, and this file lists
+**seventeen** across five columns. That asymmetry is the expected shape for an app built
+on NFR-4 ("the app assists; it does not police") — such an app accumulates
+classifications freely and statuses not at all.
 
 ---
 
@@ -128,6 +128,32 @@ currency is a schema change, weighed and withdrawn on 2026-08-20.
 the fit criterion is zero refusals.
 
 ---
+
+## `Settings.locale` — 2 values
+
+The app's UI language (FEAT03, no FR/UC — a preference, not a domain classification).
+**A real toggle, not a one-way rewrite**: both values have a complete translation via
+Flutter's `AppLocalizations` (`app/lib/l10n/app_en.arb`, `app_id.arb`).
+
+| Value | Meaning |
+|---|---|
+| `en` | English. |
+| `id` | Bahasa Indonesia — the default (the app's home market). |
+
+Unlike `Settings.currency`, changing this re-derives nothing and needs no warning
+dialog — no recorded amount depends on which language renders it.
+
+## `Settings.themeMode` — 3 values
+
+The app's light/dark preference. A project-owned enum, never Flutter's own `ThemeMode`
+in the table layer (`settings_table.dart` imports only `package:drift/drift.dart`) —
+mapped to `ThemeMode` in the widget layer (`app.dart`) only.
+
+| Value | Meaning |
+|---|---|
+| `system` | Follows the platform brightness. |
+| `light` | Always light. |
+| `dark` | Always dark. |
 
 ## Stated non-members
 

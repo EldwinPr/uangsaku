@@ -16,7 +16,9 @@ part 'app_database.g.dart';
 /// `docs/diagrams/erd.drawio` for the column-level source of truth.
 /// `schemaVersion` is `2` as of UC02B D1: `Accounts` gained `deleted`/
 /// `deleted_at`, this project's first guided migration (`drift.md`
-/// "Migrations", `drift_schemas/app_database/`).
+/// "Migrations", `drift_schemas/app_database/`). `schemaVersion` is `3` as
+/// of FEAT03 D1: `Settings` gained `locale`/`themeMode`/`seedColor`, the
+/// second guided migration.
 ///
 /// No `daos: […]` entry: `CategoryDao` is a plain composition over this
 /// class rather than a `@DriftAccessor`/`DatabaseAccessor` subtype (see
@@ -37,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -50,13 +52,26 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(schema.accounts, schema.accounts.deleted);
           await m.addColumn(schema.accounts, schema.accounts.deletedAt);
         },
+        // FEAT03 D1: `Settings` gains `locale`/`themeMode`/`seedColor`.
+        from2To3: (m, schema) async {
+          await m.addColumn(schema.settings, schema.settings.locale);
+          await m.addColumn(schema.settings, schema.settings.themeMode);
+          await m.addColumn(schema.settings, schema.settings.seedColor);
+        },
       ),
       beforeOpen: (details) async {
         // The currency has to exist before any amount can be interpreted
-        // (ISSUE-001 D6) — seed only a fresh database.
+        // (ISSUE-001 D6) — seed only a fresh database. Language, theme mode
+        // and seed color are seeded alongside it (FEAT03 D1).
         if (details.wasCreated) {
-          await into(settings)
-              .insert(const SettingsCompanion(currency: Value(Currency.IDR)));
+          await into(settings).insert(
+            const SettingsCompanion(
+              currency: Value(Currency.IDR),
+              locale: Value(AppLanguage.id),
+              themeMode: Value(AppThemeMode.system),
+              seedColor: Value(null),
+            ),
+          );
         }
       },
     );

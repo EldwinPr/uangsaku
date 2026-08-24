@@ -3,12 +3,14 @@ import 'package:drift/drift.dart';
 import '../database/app_database.dart';
 import 'settings_table.dart';
 
-/// `SettingsDao` — the one settings row (UC-14).
+/// `SettingsDao` — the one settings row (UC-14, FEAT03).
 ///
 /// Reads and writes `Settings` only. `setCurrency()` re-labels the app's
 /// currency; it never touches `Account.opening_amount`, `Transaction.amount`
 /// or `Budget_Period.amount`, and no exponent arithmetic runs here — the
 /// exponent (`docs/enums.md`) is a rendering concern, not a storage one (D6).
+/// `setLanguage()`/`setThemeMode()`/`setSeedColor()` (FEAT03 D2) follow the
+/// same shape: each write touches only its own column.
 ///
 /// **Not a `@DriftAccessor`/`DatabaseAccessor` subtype** — a plain
 /// composition over `AppDatabase`, the same shape `CategoryDao` and
@@ -35,5 +37,44 @@ class SettingsDao {
     await _db
         .update(_db.settings)
         .write(SettingsCompanion(currency: Value(currency)));
+  }
+
+  /// The app's current UI language (FEAT03 D2).
+  Stream<AppLanguage> watchLanguage() {
+    return _db.select(_db.settings).watchSingle().map((row) => row.locale);
+  }
+
+  /// Writes only the `locale` column (FEAT03 D2) — never touches currency,
+  /// theme mode or seed color.
+  Future<void> setLanguage(AppLanguage language) async {
+    await _db
+        .update(_db.settings)
+        .write(SettingsCompanion(locale: Value(language)));
+  }
+
+  /// The app's current theme mode preference (FEAT03 D2).
+  Stream<AppThemeMode> watchThemeMode() {
+    return _db.select(_db.settings).watchSingle().map((row) => row.themeMode);
+  }
+
+  /// Writes only the `themeMode` column (FEAT03 D2).
+  Future<void> setThemeMode(AppThemeMode themeMode) async {
+    await _db
+        .update(_db.settings)
+        .write(SettingsCompanion(themeMode: Value(themeMode)));
+  }
+
+  /// The app's current theme seed color, or `null` for the app's default
+  /// seed (FEAT03 D1).
+  Stream<int?> watchSeedColor() {
+    return _db.select(_db.settings).watchSingle().map((row) => row.seedColor);
+  }
+
+  /// Writes only the `seedColor` column (FEAT03 D2). `null` resets to the
+  /// app's default seed.
+  Future<void> setSeedColor(int? seedColor) async {
+    await _db
+        .update(_db.settings)
+        .write(SettingsCompanion(seedColor: Value(seedColor)));
   }
 }

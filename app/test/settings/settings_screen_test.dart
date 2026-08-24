@@ -1,12 +1,17 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:uangsaku/l10n/app_localizations.dart';
 import 'package:uangsaku/src/accounts/accounts_table.dart';
 import 'package:uangsaku/src/database/app_database.dart';
-import 'package:uangsaku/src/settings/currency_screen.dart';
+import 'package:uangsaku/src/settings/settings_screen.dart';
 import 'package:uangsaku/src/settings/settings_table.dart';
 
+/// FEAT03's screen test: `SettingsScreen` (was `CurrencyScreen`, D3) folds
+/// currency, language, theme mode and theme color into one hub. The
+/// currency section's behavior is unchanged from UC-14.
 void main() {
   late AppDatabase database;
 
@@ -21,7 +26,16 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [appDatabaseProvider.overrideWithValue(database)],
-        child: const MaterialApp(home: CurrencyScreen()),
+        child: const MaterialApp(
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SettingsScreen(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -38,7 +52,7 @@ void main() {
   }
 
   testWidgets(
-    'UC-14: the screen renders whatever currencyProvider emits (message 7)',
+    'UC-14: the currency section renders whatever currencyProvider emits (message 7)',
     (tester) async {
       await pumpScreen(tester);
 
@@ -133,6 +147,93 @@ void main() {
 
       final stored = await database.select(database.settings).getSingle();
       expect(stored.currency, Currency.USD);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT03 D2/D3: the language section renders both options enabled and writes only the locale column',
+    (tester) async {
+      await pumpScreen(tester);
+
+      final languageButton = find.byType(SegmentedButton<AppLanguage>);
+      expect(languageButton, findsOneWidget);
+      final segmentedButton = tester.widget<SegmentedButton<AppLanguage>>(
+        languageButton,
+      );
+      expect(segmentedButton.selected, {AppLanguage.id});
+      for (final segment in segmentedButton.segments) {
+        expect(segment.enabled, isTrue);
+      }
+
+      await tester.tap(find.text('English'));
+      await tester.pumpAndSettle();
+
+      final stored = await database.select(database.settings).getSingle();
+      expect(stored.locale, AppLanguage.en);
+      // Only the locale column changed — currency, theme mode and seed
+      // color are untouched (D2's independent-writes rule).
+      expect(stored.currency, Currency.IDR);
+      expect(stored.themeMode, AppThemeMode.system);
+      expect(stored.seedColor, isNull);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT03 D2/D3: the theme mode section renders all three options enabled and writes only the themeMode column',
+    (tester) async {
+      await pumpScreen(tester);
+
+      final themeModeButton = find.byType(SegmentedButton<AppThemeMode>);
+      expect(themeModeButton, findsOneWidget);
+      final segmentedButton = tester.widget<SegmentedButton<AppThemeMode>>(
+        themeModeButton,
+      );
+      expect(segmentedButton.selected, {AppThemeMode.system});
+      expect(segmentedButton.segments, hasLength(3));
+      for (final segment in segmentedButton.segments) {
+        expect(segment.enabled, isTrue);
+      }
+
+      await tester.tap(find.text('Dark'));
+      await tester.pumpAndSettle();
+
+      final stored = await database.select(database.settings).getSingle();
+      expect(stored.themeMode, AppThemeMode.dark);
+      expect(stored.locale, AppLanguage.id);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT03 D1/D2: every theme color swatch stays tappable, including the one already selected, and writes only the seedColor column',
+    (tester) async {
+      await pumpScreen(tester);
+
+      // Eight preset swatches (FEAT03 D1), each keyed `theme-swatch-$index`
+      // — every one, including index 0 (the already-selected default)
+      // stays tappable (NFR-4 zero refusals).
+      for (var index = 0; index < 8; index++) {
+        final swatch = find.byKey(ValueKey('theme-swatch-$index'));
+        expect(swatch, findsOneWidget);
+        final inkWell = tester.widget<InkWell>(
+          find.descendant(of: swatch, matching: find.byType(InkWell)),
+        );
+        expect(inkWell.onTap, isNotNull);
+      }
+
+      // Tap the second swatch (index 1 — index 0 is the "reset to default"
+      // swatch, `null`).
+      await tester.tap(find.byKey(const ValueKey('theme-swatch-1')));
+      await tester.pumpAndSettle();
+
+      final stored = await database.select(database.settings).getSingle();
+      expect(stored.seedColor, isNotNull);
+      expect(stored.currency, Currency.IDR);
 
       await unmountAndFlushTimers(tester);
     },

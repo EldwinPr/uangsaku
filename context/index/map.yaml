@@ -69,10 +69,10 @@ code:
   UC-14:
     dao:       app/lib/src/settings/settings_dao.dart        # watchCurrency/setCurrency
     providers: app/lib/src/settings/settings_providers.dart  # currencyProvider (no autoDispose), SettingsNotifier as settingsProvider
-    screen:    app/lib/src/settings/currency_screen.dart     # CurrencyScreen
+    screen:    app/lib/src/settings/settings_screen.dart     # SettingsScreen (was CurrencyScreen - renamed FEAT03)
     tests:
       - app/test/settings/settings_dao_test.dart
-      - app/test/settings/currency_screen_test.dart
+      - app/test/settings/settings_screen_test.dart
 
   # UC02-add-account, DONE 2026-08-22. The Accounts module's first DAO, provider and
   # screen. Create-only by the owner's Q2 ruling (pm/questions.md): rename/edit/delete
@@ -230,7 +230,8 @@ code:
   # Transactions, Budget) over an IndexedStack so switching tabs never rebuilds a tab's
   # provider subscriptions. Contextual entry points wired inside BalanceSheetScreen
   # (FAB -> AccountFormScreen create; row tap -> edit mode; RECEIVABLE/PAYABLE row icon
-  # -> DebtDetailScreen; app-bar actions -> CategoryManagerScreen/CurrencyScreen) and
+  # -> DebtDetailScreen; app-bar actions -> CategoryManagerScreen/SettingsScreen, renamed
+  # from CurrencyScreen by FEAT03) and
   # BudgetOverviewScreen (app-bar action -> SetBudgetScreen). No screen's own business
   # logic, DAO or provider changed; no schema change. UC-03's adjust flow deliberately
   # has no entry point (plan D3, out of scope). 128 tests green - every FAB needed an
@@ -243,6 +244,32 @@ code:
       - app/lib/src/budgeting/budget_overview_screen.dart # + SetBudgetScreen link
     tests:
       - app/test/app_shell_test.dart
+
+  # FEAT03-settings-and-i18n, DONE 2026-08-24. No UC - infrastructure. Owner's direct
+  # request during manual testing: full Indonesian UI with a language toggle, plus
+  # light/dark mode and a theme color, folded into the renamed CurrencyScreen ->
+  # SettingsScreen. Third schema change (schemaVersion 2 -> 3): Settings gains locale
+  # (AppLanguage), themeMode (AppThemeMode, a project-owned enum - never Flutter's own
+  # ThemeMode in the table layer), seedColor (nullable ARGB int, null = app default
+  # seed), via drift's guided migrations - v2 snapshot unchanged, v3 new, a real
+  # data-integrity migration test. Real Flutter l10n (flutter_localizations + ARB
+  # files under app/lib/l10n/), not hardcoded string replacement, since a runtime
+  # toggle was asked for - every screen's strings moved to AppLocalizations. currency
+  # behavior itself is unchanged (D3). class-settings.drawio and erd.drawio amended in
+  # the main session (Settings table gains three columns; new provider/DAO methods;
+  # AppLanguage/AppThemeMode enum boxes chained after Currency's, matching the
+  # Accounts/settled precedent for a two-column addition). 136 tests green.
+  FEAT03:
+    table:     app/lib/src/settings/settings_table.dart      # + AppLanguage, AppThemeMode, locale/themeMode/seedColor
+    dao:       app/lib/src/settings/settings_dao.dart        # + watchLanguage/setLanguage, watchThemeMode/setThemeMode, watchSeedColor/setSeedColor
+    providers: app/lib/src/settings/settings_providers.dart  # + languageProvider, themeModeProvider, seedColorProvider
+    screen:    app/lib/src/settings/settings_screen.dart     # SettingsScreen (renamed from CurrencyScreen)
+    l10n:      app/lib/l10n/                                 # app_en.arb, app_id.arb, generated AppLocalizations
+    migration: app/lib/src/database/app_database.steps.dart  # drift guided migration, v2 -> v3
+    tests:
+      - app/test/settings/settings_screen_test.dart
+      - app/test/app_shell_test.dart
+      - app/test/drift/app_database/migration_test.dart
 
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
