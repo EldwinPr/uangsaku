@@ -14,8 +14,8 @@ before starting work.
 
 ## Current state — 2026-08-24
 
-**Phase.** **The planned backlog and all SEVEN of the owner's manual-testing feedback
-rounds are DONE.** The app compiles and its test suite is green (**233 tests**). Ten
+**Phase.** **The planned backlog and all EIGHT of the owner's manual-testing feedback
+rounds are DONE.** The app compiles and its test suite is green (**239 tests**). Ten
 screens/tabs built end to end — every one of them now reachable, including UC-03's
 adjust mode, which FEAT14 gave its first navigation entry point (an "Adjust balance"
 button on `AccountFormScreen`'s edit flow). `home` is `AppShell`: a five-tab bottom nav (Home, Accounts, Record as a colored
@@ -44,13 +44,16 @@ the remaining balance via a real `adjustment` transaction tagged with a literal
 "Ikhlaskan" category, rather than only flipping the `settled` flag (FEAT14 D1);
 Transfer/Lend/Borrow/Repay can each carry a manual admin fee, written as a second
 linked `expense` row tagged with a literal "Admin Fee" category rather than a field
-subtracted from the main transaction (FEAT16).
+subtracted from the main transaction (FEAT16); debt-type balances (the account list,
+the "I owe" figure) always read as a positive magnitude, matching `DebtDetailScreen`'s
+long-standing convention, while `net` keeps its real sign but turns red when negative
+(FEAT17).
 
 **Active issue.** None. Nothing is queued. `FEAT03` through `FEAT06` (round one),
 `FEAT07`/`FEAT08` (round two), `FEAT09`/`FEAT10` (round three), `FEAT11` (round four),
-`FEAT12` (a same-day follow-up), `FEAT13`/`FEAT14`/`FEAT15` (rounds five and six), and
-`FEAT16` (round seven) — fifteen feedback issues total — all closed the same day,
-2026-08-24, alongside
+`FEAT12` (a same-day follow-up), `FEAT13`/`FEAT14`/`FEAT15` (rounds five and six),
+`FEAT16` (round seven), and `FEAT17` (round eight) — sixteen feedback issues total —
+all closed the same day, 2026-08-24, alongside
 the third schema change (`FEAT03`'s `Settings.locale`/`themeMode`/`seedColor`; every
 issue after that added no schema, including `FEAT11`'s new enum value — confirmed no
 migration was needed since `Accounts.group` carries no `CHECK` constraint). Both
@@ -1730,6 +1733,54 @@ analyze` — No issues found!, full `flutter test` — **233 tests green** (was 
 `git diff --stat app/drift_schemas/` empty — no schema change. `python audit.py` — 14
 passed / 0 warnings / 0 failures both before dispatch and after the plan/tracker
 status flip to DONE.
+
+**[TODO]** The same two small items flagged earlier remain open, pending the owner:
+(1) `RecordTransactionScreen`'s kind switch not clearing a typed-but-uncreated person
+name; (2) the leftover "Rina" test account in real app data.
+
+---
+
+## 2026-08-24 — FEAT17: eighth feedback round — "net is wrong" turns out to be a
+## display convention, not a calculation bug
+
+**[DECISION]** Owner: *"in beranda the bersih is wrong the total."* Before writing
+any plan, read `AccountDao.watchPosition()` and `watchDebtProgress()` to check whether
+this was a real arithmetic bug — it wasn't: `net = SUM(balance)` over every
+non-deleted account, and every downstream figure derived from it, was already
+correct. The owner then self-diagnosed the actual cause mid-conversation: *"turns out
+it was because of -, if possible all positive, so payable looks negative but stored
+in positive, check if it's like that or not."* Confirmed by reading the code: storage
+is deliberately signed (`PAYABLE`/negative-`PERSON` balances are genuinely negative,
+UC-02 D6), but two display spots printed that raw signed number instead of following
+the magnitude convention `DebtDetailScreen.remaining` already established
+(`ABS(balance)`). One `AskUserQuestion` round settled the fix: debt-type figures
+should always read as a positive magnitude (matching `DebtDetailScreen`); `net`
+specifically should keep its real sign (a negative net worth is genuine information)
+but get a visual (red) flag instead. See `decisions.md` 2026-08-24.
+
+**[STATUS]** `AccountsScreen`'s per-row balance switched from an unformatted raw
+`int` (`Text('${entry.balance}')` — a second, unrelated bug: it never ran through
+`formatMinorUnits` at all) to `formatMinorUnits(context, displayBalance, currency)`,
+where `displayBalance` is the signed balance for `HOLDING` accounts (overdrawn is
+real information, same reasoning `spendable` already gets) and `entry.balance.abs()`
+for `RECEIVABLE`/`PAYABLE`/`PERSON`. `BalanceSheetScreen`'s "I owe" figure card now
+shows `position.owedByMe.abs()` instead of the raw negative value. `net` keeps
+`minorUnits: position.net` unchanged (still signed) but its card's `color`/`tinted`
+now switch to `colorScheme.error`/tinted when `net < 0`, reusing `_FigureCard`'s
+existing parameters — no widget changes needed there. Purely presentation: no
+`AccountDao` query, provider, or schema touched; no class-diagram edit needed since
+nothing new was added to a tracked class.
+
+**[STATUS]** Planned, tracker-entered and dispatched to a single `flutter-coder`.
+Reviewed the returned diff line by line against the plan (matched exactly — the
+`HOLDING`-stays-signed branch, the two `.abs()` call sites, and the `netColor`/
+`tinted` computation), then re-ran all four verification commands personally:
+`dart run build_runner build --delete-conflicting-outputs` clean, `dart format
+--set-exit-if-changed .` — 0 changed, `flutter analyze` — No issues found!, full
+`flutter test` — **239 tests green** (was 233). `git diff --stat
+app/drift_schemas/` empty — no schema change. `python audit.py` — 14 passed / 0
+warnings / 0 failures both before dispatch and after the plan/tracker status flip to
+DONE.
 
 **[TODO]** The same two small items flagged earlier remain open, pending the owner:
 (1) `RecordTransactionScreen`'s kind switch not clearing a typed-but-uncreated person

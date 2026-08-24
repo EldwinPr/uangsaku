@@ -911,3 +911,29 @@ issues:
       visually verified - CategoryDao's box shifted down to keep its gap). 233 tests
       green (was 218). No schema change. See decisions.md 2026-08-24.
 
+  - id: FEAT17-positive-magnitude-display
+    slug: positive-magnitude-display
+    title: Debt figures show as a positive magnitude; net gets a red tint when negative
+    status: DONE
+    plan: pm/issues/feat17-positive-magnitude-display/plan.md
+    depends_on: []
+    traces_to: []
+    summary: >-
+      DONE 2026-08-24. No UC owns this - infrastructure. Eighth round of the owner's
+      manual-testing feedback, following up a "net total looks wrong on Beranda"
+      report that turned out to be a display convention, not a calculation bug:
+      every figure's arithmetic was already correct (confirmed by reading
+      AccountDao.watchPosition() and watchDebtProgress()); the owner correctly
+      self-diagnosed it as "because of -, if possible all positive, so payable looks
+      negative but stored in positive." AccountsScreen's per-row balance switched
+      from an unformatted raw int to formatMinorUnits, showing entry.balance.abs()
+      for RECEIVABLE/PAYABLE/PERSON accounts (HOLDING stays signed - overdrawn is
+      real information) - matching DebtDetailScreen.remaining's existing ABS()
+      convention. BalanceSheetScreen's "I owe" figure card shows
+      position.owedByMe.abs() instead of the raw negative value. net keeps its
+      literal sign (a negative net worth is real information) but its card recolors
+      to colorScheme.error with a matching tint when negative, reusing _FigureCard's
+      existing color/tinted params with no widget changes. 239 tests green (was
+      233). No DAO/provider/schema change - presentation only, no class-diagram edit
+      needed. See decisions.md 2026-08-24.
+

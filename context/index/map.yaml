@@ -569,6 +569,28 @@ code:
       - app/test/transactions/transactions_notifier_test.dart
       - app/test/transactions/record_transaction_screen_test.dart
 
+  # FEAT17-positive-magnitude-display, DONE 2026-08-24. No UC - infrastructure.
+  # Eighth round of the owner's manual-testing feedback, following up a "net total
+  # looks wrong on Beranda" report that turned out, on inspection, to be a display
+  # convention gap rather than a calculation bug - every figure's SQL was already
+  # arithmetically correct. AccountsScreen's per-row balance switches from an
+  # unformatted raw int to formatMinorUnits, showing entry.balance.abs() for
+  # RECEIVABLE/PAYABLE/PERSON accounts (HOLDING stays signed - overdrawn is real
+  # information) - matching DebtDetailScreen.remaining's existing ABS() convention.
+  # BalanceSheetScreen's "I owe" figure card shows position.owedByMe.abs() instead
+  # of the raw negative value. net keeps its literal sign (a negative net worth is
+  # real information) but its card recolors to colorScheme.error with a matching
+  # tint when negative, reusing _FigureCard's existing color/tinted params with no
+  # widget changes. 239 tests green (was 233). No DAO/provider/schema change,
+  # display only.
+  FEAT17:
+    screens_changed:
+      - app/lib/src/accounts/accounts_screen.dart      # per-row balance: formatMinorUnits + ABS for non-HOLDING
+      - app/lib/src/accounts/balance_sheet_screen.dart # owed-by-me ABS, net recolors when negative
+    tests:
+      - app/test/accounts/accounts_screen_test.dart
+      - app/test/accounts/balance_sheet_screen_test.dart
+
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
 # each other in BOTH directions (balances need Transactions; the record screen needs

@@ -102,14 +102,14 @@ class AccountsScreen extends ConsumerWidget {
         key: const ValueKey('accounts-section'),
         title: loc.accountsSectionTitle,
         sumText: formatMinorUnits(context, accountsSum, currency),
-        rows: _accountRows(context, loc, accounts),
+        rows: _accountRows(context, loc, accounts, currency),
       ),
       const SizedBox(height: 8),
       _AccountSection(
         key: const ValueKey('person-section'),
         title: loc.accountGroupLabelPerson,
         sumText: formatMinorUnits(context, peopleSum, currency),
-        rows: _accountRows(context, loc, people),
+        rows: _accountRows(context, loc, people, currency),
       ),
     ];
   }
@@ -123,6 +123,7 @@ class AccountsScreen extends ConsumerWidget {
     BuildContext context,
     AppLocalizations loc,
     List<AccountBalance> balances,
+    Currency currency,
   ) => [
     if (balances.isEmpty)
       Padding(
@@ -145,7 +146,15 @@ class AccountsScreen extends ConsumerWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('${entry.balance}'),
+              Text(
+                formatMinorUnits(
+                  context,
+                  entry.account.group == AccountGroup.HOLDING
+                      ? entry.balance
+                      : entry.balance.abs(),
+                  currency,
+                ),
+              ),
               if (entry.account.group == AccountGroup.RECEIVABLE ||
                   entry.account.group == AccountGroup.PAYABLE ||
                   entry.account.group == AccountGroup.PERSON)

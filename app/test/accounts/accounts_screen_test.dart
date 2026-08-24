@@ -78,10 +78,81 @@ void main() {
     expect(find.text('Budi'), findsOneWidget);
     expect(find.text('HOLDING'), findsOneWidget);
     expect(find.text('RECEIVABLE'), findsOneWidget);
-    expect(find.text('50000'), findsOneWidget);
+    // FEAT17 D1: formatted with a grouping separator, not the raw int.
+    expect(find.text('50,000'), findsOneWidget);
 
     await unmountAndFlushTimers(tester);
   });
+
+  // The section-header sum stays signed (D1's out-of-scope note) and is
+  // itself rendered via an `ExpansionTile`, which builds its own internal
+  // `ListTile` — so scoping by `ListTile` type alone isn't enough to avoid
+  // colliding with it. Anchor on the account row's own `ListTile` instead
+  // (the one whose subtree contains that account's name).
+  Finder accountRow(String accountName) =>
+      find.widgetWithText(ListTile, accountName);
+
+  testWidgets(
+    'FEAT17 D1: a PAYABLE account with a negative derived balance renders '
+    'its row balance as a positive, formatted string',
+    (tester) async {
+      await insertAccount('Card', AccountGroup.PAYABLE, -75000);
+
+      await pumpScreen(tester);
+
+      expect(
+        find.descendant(of: accountRow('Card'), matching: find.text('75,000')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: accountRow('Card'), matching: find.text('-75,000')),
+        findsNothing,
+      );
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT17 D1: a HOLDING account with a negative balance still renders '
+    'signed',
+    (tester) async {
+      await insertAccount('Wallet', AccountGroup.HOLDING, -30000);
+
+      await pumpScreen(tester);
+
+      expect(
+        find.descendant(
+          of: accountRow('Wallet'),
+          matching: find.text('-30,000'),
+        ),
+        findsOneWidget,
+      );
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT17 D1: a PERSON account currently owed by the owner (negative '
+    'balance) also renders positive',
+    (tester) async {
+      await insertAccount('Ivy', AccountGroup.PERSON, -12000);
+
+      await pumpScreen(tester);
+
+      expect(
+        find.descendant(of: accountRow('Ivy'), matching: find.text('12,000')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: accountRow('Ivy'), matching: find.text('-12,000')),
+        findsNothing,
+      );
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
 
   testWidgets(
     '2026-08-24: an empty database renders both sections with their own '
@@ -149,8 +220,11 @@ void main() {
 
     await pumpScreen(tester);
 
-    expect(find.text('100,000'), findsOneWidget);
-    expect(find.text('30,000'), findsOneWidget);
+    // FEAT17 D1: the row balance is now formatted the same way as the
+    // section sum, so with a single account per section the two coincide
+    // (header sum + row balance) — two widgets, not one.
+    expect(find.text('100,000'), findsNWidgets(2));
+    expect(find.text('30,000'), findsNWidgets(2));
 
     await unmountAndFlushTimers(tester);
   });

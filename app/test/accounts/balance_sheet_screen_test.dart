@@ -153,6 +153,95 @@ void main() {
   });
 
   testWidgets(
+    'FEAT17 D2: a negative owedByMe renders the owed-by-me figure as a '
+    'positive magnitude, no literal minus sign',
+    (tester) async {
+      await insertAccount('Kartu kredit', AccountGroup.PAYABLE, -40000);
+
+      await pumpScreen(tester);
+
+      expect(
+        figureText(tester, 'figure-owed-by-me'),
+        expectedFigureText(tester, 'figure-owed-by-me', 40000),
+      );
+      expect(figureText(tester, 'figure-owed-by-me').contains('-'), isFalse);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT17 D3: a negative net still shows a literal minus sign, and the '
+    "net card's icon/text paint colorScheme.error",
+    (tester) async {
+      await insertAccount('Kartu kredit', AccountGroup.PAYABLE, -60000);
+
+      await pumpScreen(tester);
+
+      expect(figureText(tester, 'figure-net').contains('-'), isTrue);
+
+      final context = tester.element(find.byKey(const ValueKey('figure-net')));
+      final errorColor = Theme.of(context).colorScheme.error;
+      final netIcon = tester
+          .widgetList<Icon>(
+            find.descendant(
+              of: find.ancestor(
+                of: find.byKey(const ValueKey('figure-net')),
+                matching: find.byType(Card),
+              ),
+              matching: find.byType(Icon),
+            ),
+          )
+          .first;
+      expect(netIcon.color, errorColor);
+
+      final netCard = tester.widget<Card>(
+        find.ancestor(
+          of: find.byKey(const ValueKey('figure-net')),
+          matching: find.byType(Card),
+        ),
+      );
+      expect(netCard.color, errorColor.withValues(alpha: 0.12));
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT17 D3: a non-negative net keeps colorScheme.primary, untinted',
+    (tester) async {
+      await insertAccount('Wallet', AccountGroup.HOLDING, 10000);
+
+      await pumpScreen(tester);
+
+      final context = tester.element(find.byKey(const ValueKey('figure-net')));
+      final primaryColor = Theme.of(context).colorScheme.primary;
+      final netIcon = tester
+          .widgetList<Icon>(
+            find.descendant(
+              of: find.ancestor(
+                of: find.byKey(const ValueKey('figure-net')),
+                matching: find.byType(Card),
+              ),
+              matching: find.byType(Icon),
+            ),
+          )
+          .first;
+      expect(netIcon.color, primaryColor);
+
+      final netCard = tester.widget<Card>(
+        find.ancestor(
+          of: find.byKey(const ValueKey('figure-net')),
+          matching: find.byType(Card),
+        ),
+      );
+      expect(netCard.color, isNull);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
     'FEAT09 D2: the spendable/owed-to-me/owed-by-me figure cards render their AccountGroup color on their icon',
     (tester) async {
       await pumpScreen(tester);

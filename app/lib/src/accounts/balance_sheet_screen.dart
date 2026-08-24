@@ -119,6 +119,9 @@ class BalanceSheetScreen extends ConsumerWidget {
     Currency currency,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
+    // D3: net recolors to error (and tints) when negative; stays the
+    // original neutral primary/untinted otherwise.
+    final netColor = position.net < 0 ? colorScheme.error : colorScheme.primary;
     return Column(
       children: [
         IntrinsicHeight(
@@ -160,7 +163,7 @@ class BalanceSheetScreen extends ConsumerWidget {
                 child: _FigureCard(
                   figureKey: const ValueKey('figure-owed-by-me'),
                   label: loc.figureOwedByMe,
-                  minorUnits: position.owedByMe,
+                  minorUnits: position.owedByMe.abs(),
                   currency: currency,
                   color: accountGroupColor(context, AccountGroup.PAYABLE),
                   icon: accountGroupIcon(AccountGroup.PAYABLE),
@@ -174,11 +177,11 @@ class BalanceSheetScreen extends ConsumerWidget {
                   label: loc.figureNet,
                   minorUnits: position.net,
                   currency: currency,
-                  color: colorScheme.primary,
+                  color: netColor,
                   icon: Icons.account_balance,
                   tooltip: loc.figureNetTooltip,
-                  // D2: net keeps the original neutral card styling, no tint.
-                  tinted: false,
+                  // D3: tint follows the same negative check as the color.
+                  tinted: position.net < 0,
                 ),
               ),
             ],

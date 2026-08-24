@@ -1229,3 +1229,34 @@ app on the user's behalf) assigns to a transaction, not UI chrome.
 the main transaction (matching UC-04's existing empty-pool handling, which already
 lets a save proceed with a null side rather than refusing) but silently skips the fee
 row — an admin fee charged against no account isn't a real expense anywhere yet.
+
+## 2026-08-24 — "Net total looks wrong" was a display convention, not a calculation
+## bug (FEAT17)
+
+**Every figure was already arithmetically correct.** The owner reported *"in beranda
+the bersih is wrong the total"* (Home's net figure looks wrong); reading
+`AccountDao.watchPosition()` and `watchDebtProgress()` confirmed both queries were
+already correct — `PAYABLE`/negative-`PERSON` balances are genuinely, deliberately
+signed negative internally (UC-02 D6), and `net = SUM(balance)` over every account
+correctly folds that in. The owner then self-diagnosed the real cause mid-conversation
+(*"turns out it was because of -, if possible all positive, so payable looks negative
+but stored in positive"*): the number *looked* wrong because two display spots printed
+the raw signed value instead of a magnitude, not because any total was miscomputed.
+
+**The fix generalizes a convention this app already had in exactly one place.**
+`DebtDetailScreen.remaining` has always been `ABS(balance)` (UC-02 D6, decisions.md)
+— "how much of this debt is outstanding" is inherently a magnitude, never a signed
+number. `AccountsScreen`'s per-row balance and `BalanceSheetScreen`'s "I owe" figure
+card had simply never been brought into line with that same convention when they were
+built (the per-row balance additionally had a second, unrelated bug: it was never
+run through `formatMinorUnits` at all, a plain oversight independent of sign).
+
+**`net` is deliberately the one figure that keeps its sign.** Unlike "I owe" or a
+per-account debt balance — which are magnitudes by definition, always describing "how
+much," never "which direction" (the label already says that) — `net` is a genuine net
+worth figure that can legitimately be negative, and a negative net is real information
+worth stating plainly rather than hiding behind an always-positive number. The
+resolution: keep the literal `-`, but recolor the card to `colorScheme.error`
+(with the same light-tint treatment every other colored figure card already uses) so
+a negative net is still visually flagged, the same way every other card on this
+screen already uses color to carry meaning.
