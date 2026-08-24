@@ -1,6 +1,6 @@
 <mxfile host="Electron">
   <diagram id="moneytracker-class-accounts" name="Accounts classes">
-    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1840" pageHeight="920" math="0" shadow="0">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1840" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -8,31 +8,34 @@
         <mxCell id="title" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=16;" value="moneytracker &#8212; Accounts module classes" vertex="1">
           <mxGeometry height="30" width="700" x="40" y="30" as="geometry" />
         </mxCell>
-        <mxCell id="subtitle" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#666666;" value="Flutter / Dart &#183; drift &#183; Riverpod. UC-01, UC-02, UC-02B, UC-03, UC-10." vertex="1">
+        <mxCell id="subtitle" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#666666;" value="Flutter / Dart &#183; drift &#183; Riverpod. UC-01, UC-02, UC-02B, UC-03, UC-10, FEAT04." vertex="1">
           <mxGeometry height="20" width="700" x="40" y="60" as="geometry" />
         </mxCell>
 
         <mxCell id="bandA" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;fontStyle=1;fontColor=#666666;" value="Screen (Flutter widget)" vertex="1">
-          <mxGeometry height="560" width="320" x="20" y="100" as="geometry" />
+          <mxGeometry height="640" width="320" x="20" y="100" as="geometry" />
         </mxCell>
         <mxCell id="bandB" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;fontStyle=1;fontColor=#666666;" value="Riverpod providers (state + logic)" vertex="1">
-          <mxGeometry height="560" width="320" x="400" y="100" as="geometry" />
+          <mxGeometry height="640" width="320" x="400" y="100" as="geometry" />
         </mxCell>
         <mxCell id="bandC" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;fontStyle=1;fontColor=#666666;" value="DAO and its query results (data access)" vertex="1">
-          <mxGeometry height="560" width="620" x="780" y="100" as="geometry" />
+          <mxGeometry height="640" width="620" x="780" y="100" as="geometry" />
         </mxCell>
         <mxCell id="bandD" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;fontStyle=1;fontColor=#666666;" value="drift tables (the database)" vertex="1">
-          <mxGeometry height="560" width="320" x="1460" y="100" as="geometry" />
+          <mxGeometry height="640" width="320" x="1460" y="100" as="geometry" />
         </mxCell>
 
-        <mxCell id="s1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BalanceSheetScreen&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;UC-01 &#183; ConsumerWidget&lt;/font&gt;" vertex="1">
-          <mxGeometry height="80" width="280" x="40" y="160" as="geometry" />
+        <mxCell id="s1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="BalanceSheetScreen&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;UC-01 &#183; ConsumerWidget&lt;br&gt;the four figures only since FEAT04&lt;/font&gt;" vertex="1">
+          <mxGeometry height="90" width="280" x="40" y="160" as="geometry" />
         </mxCell>
         <mxCell id="s2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="AccountFormScreen&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;UC-02, UC-02B, UC-03 &#183; ConsumerWidget&lt;/font&gt;" vertex="1">
-          <mxGeometry height="80" width="280" x="40" y="340" as="geometry" />
+          <mxGeometry height="80" width="280" x="40" y="360" as="geometry" />
         </mxCell>
         <mxCell id="s3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="DebtDetailScreen&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;UC-10 &#183; ConsumerWidget&lt;/font&gt;" vertex="1">
-          <mxGeometry height="80" width="280" x="40" y="480" as="geometry" />
+          <mxGeometry height="80" width="280" x="40" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="s4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="AccountsScreen&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;FEAT04 &#183; ConsumerWidget&lt;br&gt;split from BalanceSheetScreen: the per-account list, add/edit/debt-detail entry points&lt;/font&gt;" vertex="1">
+          <mxGeometry height="100" width="280" x="40" y="620" as="geometry" />
         </mxCell>
 
         <mxCell id="p1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="financialPositionProvider&lt;br&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;StreamProvider &#183; UC-01&lt;/font&gt;" vertex="1">
@@ -75,13 +78,8 @@
         <mxCell id="e1" edge="1" parent="1" source="s1" target="p1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.857;entryDx=0;entryDy=0;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e2" edge="1" parent="1" source="s1" target="p2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="370" y="200" />
-              <mxPoint x="370" y="285" />
-            </Array>
-          </mxGeometry>
+        <mxCell id="e2" edge="1" parent="1" source="s4" target="p2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="e3" edge="1" parent="1" source="s2" target="p4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.2;entryDx=0;entryDy=0;">
           <mxGeometry relative="1" as="geometry">
@@ -138,19 +136,19 @@
         </mxCell>
 
         <mxCell id="n1" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="Arrows mean &quot;calls / depends on&quot; and only ever point left to right. A screen never touches the DAO or the database &#8212; it watches a provider." vertex="1">
-          <mxGeometry height="60" width="660" x="40" y="700" as="geometry" />
+          <mxGeometry height="60" width="660" x="40" y="770" as="geometry" />
         </mxCell>
         <mxCell id="n2" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="drift also generates a row class (Account) and a companion (AccountsCompanion) from the Accounts table declaration. Omitted here by decision &#8212; only hand-written classes get a box." vertex="1">
-          <mxGeometry height="90" width="380" x="1100" y="700" as="geometry" />
+          <mxGeometry height="90" width="380" x="1100" y="770" as="geometry" />
         </mxCell>
         <mxCell id="n3" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="Reads travel back the other way as streams: a row changes, drift pushes a new value up through the DAO and the provider, and every widget watching that provider rebuilds. The screen never receives an answer from the write it triggered &#8212; it sees the result arrive on the read path, the same as any other change. This is why no balance is ever stored (NFR-2)." vertex="1">
-          <mxGeometry height="70" width="1020" x="40" y="800" as="geometry" />
+          <mxGeometry height="70" width="1020" x="40" y="870" as="geometry" />
         </mxCell>
         <mxCell id="n4" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="Legal values for every enum: docs/enums.md" vertex="1">
           <mxGeometry height="30" width="280" x="1480" y="545" as="geometry" />
         </mxCell>
         <mxCell id="n5" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#333333;fontStyle=2;whiteSpace=wrap;" value="AccountDao.delete() is a soft delete (Q3, decisions.md 2026-08-23): it sets Accounts.deleted/deleted_at, never DELETE FROM Accounts. watchPosition()/watchBalances()/watchDebtProgress() filter WHERE NOT deleted; TransactionDao.watchAll() (UC-09) does not, so a deleted account's history still displays." vertex="1">
-          <mxGeometry height="60" width="1020" x="40" y="880" as="geometry" />
+          <mxGeometry height="60" width="1020" x="40" y="950" as="geometry" />
         </mxCell>
 
       </root>
