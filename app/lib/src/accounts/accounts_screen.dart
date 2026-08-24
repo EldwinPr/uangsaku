@@ -59,8 +59,9 @@ class AccountsScreen extends ConsumerWidget {
 
   /// Row tap opens [AccountFormScreen] in edit mode (FEAT02 plan D3 — never
   /// adjust mode; UC-03's adjust flow has no entry point in this shell). A
-  /// trailing icon on `RECEIVABLE`/`PAYABLE` rows opens [DebtDetailScreen]
-  /// (FEAT02 plan D1) — the screen is meaningless for `HOLDING` accounts.
+  /// trailing icon on `RECEIVABLE`/`PAYABLE`/`PERSON` rows opens
+  /// [DebtDetailScreen] (FEAT02 plan D1, extended by FEAT11 D5) — the
+  /// screen is meaningless for `HOLDING` accounts.
   List<Widget> _accountRows(
     BuildContext context,
     AppLocalizations loc,
@@ -86,7 +87,8 @@ class AccountsScreen extends ConsumerWidget {
             children: [
               Text('${entry.balance}'),
               if (entry.account.group == AccountGroup.RECEIVABLE ||
-                  entry.account.group == AccountGroup.PAYABLE)
+                  entry.account.group == AccountGroup.PAYABLE ||
+                  entry.account.group == AccountGroup.PERSON)
                 IconButton(
                   tooltip: loc.debtDetailsTooltip,
                   icon: const Icon(Icons.info_outline),

@@ -56,6 +56,7 @@
   "accountGroupDescriptionHolding": "Money you hold and can spend directly — a wallet, bank account, or e-wallet.",
   "accountGroupDescriptionReceivable": "Money someone else owes you.",
   "accountGroupDescriptionPayable": "Money you owe someone else.",
+  "accountGroupDescriptionPerson": "A person whose balance can go either way — you might owe them, or they might owe you, depending on what's happened.",
   "duplicateAccountNameBlockedTitle": "Name already used",
   "duplicateAccountNameBlockedContent": "Another account already has this name. Choose a different name to save.",
 
@@ -118,6 +119,9 @@
   "noAccountsYetHint": "No accounts yet",
   "createOptionLabel": "Create '{name}'",
   "@createOptionLabel": {"placeholders": {"name": {"type": "String"}}},
+  "createPersonCheckboxLabel": "New person, balance can go either way",
+  "repayDirectionTheyPaidMe": "They paid me",
+  "repayDirectionIPaidThem": "I paid them",
   "recordedMessage": "Recorded",
 
   "allTransactionsTitle": "All transactions",

@@ -386,6 +386,12 @@ abstract class AppLocalizations {
   /// **'Money you owe someone else.'**
   String get accountGroupDescriptionPayable;
 
+  /// No description provided for @accountGroupDescriptionPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'A person whose balance can go either way — you might owe them, or they might owe you, depending on what\'s happened.'**
+  String get accountGroupDescriptionPerson;
+
   /// No description provided for @duplicateAccountNameBlockedTitle.
   ///
   /// In en, this message translates to:
@@ -721,6 +727,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create \'{name}\''**
   String createOptionLabel(String name);
+
+  /// No description provided for @createPersonCheckboxLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New person, balance can go either way'**
+  String get createPersonCheckboxLabel;
+
+  /// No description provided for @repayDirectionTheyPaidMe.
+  ///
+  /// In en, this message translates to:
+  /// **'They paid me'**
+  String get repayDirectionTheyPaidMe;
+
+  /// No description provided for @repayDirectionIPaidThem.
+  ///
+  /// In en, this message translates to:
+  /// **'I paid them'**
+  String get repayDirectionIPaidThem;
 
   /// No description provided for @recordedMessage.
   ///

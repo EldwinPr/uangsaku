@@ -50,6 +50,13 @@ void main() {
       );
       expect(find.text('Money someone else owes you.'), findsOneWidget);
       expect(find.text('Money you owe someone else.'), findsOneWidget);
+      // FEAT11 D4: PERSON reuses the same ARB key AccountFormScreen uses.
+      expect(
+        find.text(
+          "A person whose balance can go either way — you might owe them, or they might owe you, depending on what's happened.",
+        ),
+        findsOneWidget,
+      );
     },
   );
 

@@ -41,6 +41,20 @@ void main() {
         );
   }
 
+  Future<int> insertAccount(
+    String name,
+    AccountGroup group,
+    int openingAmount,
+  ) => database
+      .into(database.accounts)
+      .insert(
+        AccountsCompanion.insert(
+          name: name,
+          group: group,
+          openingAmount: openingAmount,
+        ),
+      );
+
   Future<void> pumpScreen(WidgetTester tester, {VoidCallback? onSaved}) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -310,6 +324,191 @@ void main() {
         ),
         findsOneWidget,
       );
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  Future<void> switchTo(WidgetTester tester, String kindLabel) async {
+    await tester.tap(find.byKey(const Key('kind-dropdown')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(kindLabel).last);
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets(
+    'FEAT11 D7: Lend flow, unchecked create writes the flow default group, RECEIVABLE',
+    (tester) async {
+      await seedAccounts();
+      await pumpScreen(tester);
+      await switchTo(tester, 'Lend');
+
+      final personField = find.byKey(const Key('person-debt-field'));
+      await tester.enterText(
+        find.descendant(of: personField, matching: find.byType(TextField)),
+        'NewPerson',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text("Create 'NewPerson'"), findsOneWidget);
+      expect(
+        find.byKey(const Key('create-as-person-checkbox')),
+        findsOneWidget,
+      );
+      await tester.tap(find.widgetWithText(ListTile, "Create 'NewPerson'"));
+      await tester.pumpAndSettle();
+
+      final created = await (database.select(
+        database.accounts,
+      )..where((r) => r.name.equals('NewPerson'))).getSingle();
+      expect(created.group, AccountGroup.RECEIVABLE);
+      expect(created.openingAmount, 0);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT11 D7: Lend flow, checking the checkbox before creating writes PERSON instead',
+    (tester) async {
+      await seedAccounts();
+      await pumpScreen(tester);
+      await switchTo(tester, 'Lend');
+
+      final personField = find.byKey(const Key('person-debt-field'));
+      await tester.enterText(
+        find.descendant(of: personField, matching: find.byType(TextField)),
+        'NewPerson',
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('create-as-person-checkbox')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, "Create 'NewPerson'"));
+      await tester.pumpAndSettle();
+
+      final created = await (database.select(
+        database.accounts,
+      )..where((r) => r.name.equals('NewPerson'))).getSingle();
+      expect(created.group, AccountGroup.PERSON);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT11 D7: Borrow flow, unchecked create writes the flow default group, PAYABLE',
+    (tester) async {
+      await seedAccounts();
+      await pumpScreen(tester);
+      await switchTo(tester, 'Borrow');
+
+      final personField = find.byKey(const Key('person-debt-field'));
+      await tester.enterText(
+        find.descendant(of: personField, matching: find.byType(TextField)),
+        'NewDebt',
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(ListTile, "Create 'NewDebt'"));
+      await tester.pumpAndSettle();
+
+      final created = await (database.select(
+        database.accounts,
+      )..where((r) => r.name.equals('NewDebt'))).getSingle();
+      expect(created.group, AccountGroup.PAYABLE);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT11 D7: Repay flow shows no checkbox, and creating a new person there always writes PERSON',
+    (tester) async {
+      await seedAccounts();
+      await pumpScreen(tester);
+      await switchTo(tester, 'Repay');
+
+      final personField = find.byKey(const Key('person-debt-field'));
+      await tester.enterText(
+        find.descendant(of: personField, matching: find.byType(TextField)),
+        'NewRepayPerson',
+      );
+      await tester.pumpAndSettle();
+
+      // No sensible "normal" default in Repay — the checkbox never shows.
+      expect(find.byKey(const Key('create-as-person-checkbox')), findsNothing);
+      await tester.tap(
+        find.widgetWithText(ListTile, "Create 'NewRepayPerson'"),
+      );
+      await tester.pumpAndSettle();
+
+      final created = await (database.select(
+        database.accounts,
+      )..where((r) => r.name.equals('NewRepayPerson'))).getSingle();
+      expect(created.group, AccountGroup.PERSON);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT11 D8: selecting a RECEIVABLE debt in the Repay flow shows no direction toggle',
+    (tester) async {
+      await seedAccounts();
+      await pumpScreen(tester);
+      await switchTo(tester, 'Repay');
+
+      // 'Budi' (RECEIVABLE) is the pool's first and only debt — preselected.
+      expect(find.byKey(const Key('repay-direction-toggle')), findsNothing);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT11 D8: selecting a PERSON debt in Repay shows the toggle, pre-selected from its balance sign, and save honors a flipped choice',
+    (tester) async {
+      await seedAccounts();
+      await insertAccount('Sam', AccountGroup.PERSON, 30000);
+      await pumpScreen(tester);
+      await switchTo(tester, 'Repay');
+
+      final personField = find.byKey(const Key('person-debt-field'));
+      await tester.enterText(
+        find.descendant(of: personField, matching: find.byType(TextField)),
+        'Sam',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'Sam'));
+      await tester.pumpAndSettle();
+
+      final toggleFinder = find.byKey(const Key('repay-direction-toggle'));
+      expect(toggleFinder, findsOneWidget);
+      // Positive balance (30000) pre-selects "They paid me" (true).
+      var toggle = tester.widget<SegmentedButton<bool>>(toggleFinder);
+      expect(toggle.selected, {true});
+
+      // Flip it to "I paid them" before saving — fully user-changeable
+      // (D8: never silently trusted).
+      await tester.tap(find.text('I paid them'));
+      await tester.pumpAndSettle();
+      toggle = tester.widget<SegmentedButton<bool>>(toggleFinder);
+      expect(toggle.selected, {false});
+
+      await tester.enterText(find.byType(TextField).first, '5000');
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      final sam = await (database.select(
+        database.accounts,
+      )..where((r) => r.name.equals('Sam'))).getSingle();
+      final row = await database.select(database.transactions).getSingle();
+      expect(row.kind, TransactionKind.repayment);
+      // "I paid them" (debtIsSource = false): money leaves the wallet into
+      // Sam's account.
+      expect(row.toAccountId, sam.accountId);
+      expect(row.fromAccountId, isNot(sam.accountId));
 
       await unmountAndFlushTimers(tester);
     },

@@ -1112,3 +1112,47 @@ uniqueness only. No other field on any screen (category names, budget group name
 transaction contents, anything else) gains a refusal from this decision — every other
 screen's zero-refusals discipline (delete, save-with-empty-fields, same-account transfer,
 etc.) is untouched.
+
+## 2026-08-24 — A fourth `Account.group`, `PERSON`, whose direction is re-evaluated on read (FEAT11)
+
+`AccountGroup` gains a fourth value, `PERSON`, alongside the existing `HOLDING`/
+`RECEIVABLE`/`PAYABLE`. Owner's direct request: `RECEIVABLE`/`PAYABLE` commit a
+person's direction at account-creation time, which is right for a credit card but
+wrong for an actual person who might owe the owner this month and be owed next month.
+
+**Not a fifth figure.** FR-1's four figures stay four. `PERSON` folds into the
+existing `owedToMe`/`owedByMe` split by the **sign of its current balance**, decided
+fresh on every read in `AccountDao.watchPosition()` — positive → `owedToMe`, negative
+(signed, matching `PAYABLE`'s existing convention) → `owedByMe`. Nothing is stored
+about which side a `PERSON` account is currently on; NFR-2's "derived, never stored"
+rule extends to this bucketing decision the same as everything else.
+
+**Additive, not a replacement.** `RECEIVABLE` and `PAYABLE` are unchanged and keep
+existing — the owner was explicit this is a fourth option, not a migration of
+existing accounts. A credit card that will only ever be `PAYABLE` gains nothing from
+becoming a `PERSON`; the new value exists for the case the owner doesn't want to
+commit to a direction upfront.
+
+**Not a schema migration.** `Accounts.group` is `textEnum<AccountGroup>()()`, a plain
+`TextColumn` with no `CHECK` constraint — adding a fourth legal Dart-side value needed
+no `schemaVersion` bump, no `drift_dev make-migrations`, nothing in
+`app/drift_schemas/`. Worth recording because every schema-touching issue up to this
+one *did* need that dance (FEAT03's Settings columns, UC02B's soft-delete flags); this
+one looked similar at a glance and genuinely wasn't.
+
+**Repayment direction, resolved case by case.** `RecordTransactionScreen`'s `Repay`
+flow already infers direction from `RECEIVABLE` vs `PAYABLE` with no user prompt —
+unambiguous, left exactly as it was. For a `PERSON` account the same trick doesn't
+work, since its direction isn't fixed; asked directly, the owner chose an explicit
+toggle ("they paid me" / "I paid them" — plain wording, not "utang"/"piutang" jargon,
+per the owner: *"i dont know the correct word so it's easy to understand"*) over
+inferring silently from the current balance, though the current balance still seeds
+which side the toggle starts on.
+
+**Inline account creation reuses FEAT05's pattern, not a new one.** The Lend/Borrow/
+Repay person-picker becomes autocomplete-with-inline-create, the same shape
+`_CategoryAutocompleteField` already established — a checkbox decides the created
+group (unchecked: the flow's contextual default, `RECEIVABLE` for Lend/`PAYABLE` for
+Borrow; checked: `PERSON`). Repay shows no checkbox at all — there is no sensible
+"normal" default for inline-creating someone you're repaying before ever having lent
+to or borrowed from them, so that path always creates `PERSON`.

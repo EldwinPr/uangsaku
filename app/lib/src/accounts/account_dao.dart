@@ -198,6 +198,13 @@ class AccountDao {
   /// Enum literals arrive as bound variables holding `AccountGroup`'s stored
   /// text (`.textEnum` stores `.name`) rather than string literals inlined
   /// into the SQL, so the enum's storage stays defined in exactly one place.
+  ///
+  /// FEAT11 D2: a `PERSON` account has no fixed direction, so it is bucketed
+  /// by the SIGN of its own derived balance rather than by group — a
+  /// positive `PERSON` balance folds into `owed_to_me`, a negative one into
+  /// `owed_by_me` (kept signed-negative there, matching `PAYABLE`'s existing
+  /// convention). `spendable` is untouched; `net` already summed every
+  /// account regardless of group.
   Stream<FinancialPosition> watchPosition() {
     return _db
         .customSelect(
@@ -217,9 +224,15 @@ class AccountDao {
           SELECT
             COALESCE(SUM(CASE WHEN group_name = ? THEN balance ELSE 0 END), 0)
               AS spendable,
-            COALESCE(SUM(CASE WHEN group_name = ? THEN balance ELSE 0 END), 0)
+            COALESCE(SUM(CASE
+              WHEN group_name = ? THEN balance
+              WHEN group_name = ? AND balance > 0 THEN balance
+              ELSE 0 END), 0)
               AS owed_to_me,
-            COALESCE(SUM(CASE WHEN group_name = ? THEN balance ELSE 0 END), 0)
+            COALESCE(SUM(CASE
+              WHEN group_name = ? THEN balance
+              WHEN group_name = ? AND balance < 0 THEN balance
+              ELSE 0 END), 0)
               AS owed_by_me,
             COALESCE(SUM(balance), 0) AS net
           FROM balances
@@ -227,7 +240,9 @@ class AccountDao {
           variables: [
             Variable.withString(AccountGroup.HOLDING.name),
             Variable.withString(AccountGroup.RECEIVABLE.name),
+            Variable.withString(AccountGroup.PERSON.name),
             Variable.withString(AccountGroup.PAYABLE.name),
+            Variable.withString(AccountGroup.PERSON.name),
           ],
           readsFrom: {_db.accounts, _db.transactions},
         )

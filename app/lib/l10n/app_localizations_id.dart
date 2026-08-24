@@ -165,6 +165,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Uang yang menjadi utang Anda kepada orang lain.';
 
   @override
+  String get accountGroupDescriptionPerson =>
+      'Seseorang yang saldonya bisa berubah arah — bisa jadi Anda berutang padanya, atau dia berutang pada Anda, tergantung apa yang terjadi.';
+
+  @override
   String get duplicateAccountNameBlockedTitle => 'Nama sudah dipakai';
 
   @override
@@ -342,6 +346,15 @@ class AppLocalizationsId extends AppLocalizations {
   String createOptionLabel(String name) {
     return 'Buat \'$name\'';
   }
+
+  @override
+  String get createPersonCheckboxLabel => 'Orang baru, saldo bisa berubah arah';
+
+  @override
+  String get repayDirectionTheyPaidMe => 'Dia membayar saya';
+
+  @override
+  String get repayDirectionIPaidThem => 'Saya membayar dia';
 
   @override
   String get recordedMessage => 'Tercatat';

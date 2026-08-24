@@ -246,4 +246,51 @@ void main() {
 
     expect(await dao.watchBalances().first, isEmpty);
   });
+
+  test('FEAT11 D2: a PERSON account with a positive balance lands in owedToMe, not spendable or owedByMe', () async {
+    await insertAccount('Wallet', AccountGroup.HOLDING, 100000);
+    await insertAccount('Sam', AccountGroup.PERSON, 20000);
+
+    final position = await dao.watchPosition().first;
+
+    expect(position.spendable, 100000);
+    expect(position.owedToMe, 20000);
+    expect(position.owedByMe, 0);
+    expect(position.net, 120000);
+  });
+
+  test('FEAT11 D2: a PERSON account with a negative balance lands in owedByMe, signed-negative, not spendable or owedToMe', () async {
+    await insertAccount('Wallet', AccountGroup.HOLDING, 100000);
+    await insertAccount('Sam', AccountGroup.PERSON, -20000);
+
+    final position = await dao.watchPosition().first;
+
+    expect(position.spendable, 100000);
+    expect(position.owedToMe, 0);
+    expect(position.owedByMe, -20000);
+    expect(position.net, 80000);
+  });
+
+  test('FEAT11 D2: a PERSON account with a zero balance lands in neither owedToMe nor owedByMe, but net still counts it', () async {
+    await insertAccount('Sam', AccountGroup.PERSON, 0);
+
+    final position = await dao.watchPosition().first;
+
+    expect(position.owedToMe, 0);
+    expect(position.owedByMe, 0);
+    expect(position.net, 0);
+  });
+
+  test('FEAT11 D2: PERSON and RECEIVABLE/PAYABLE balances combine within owedToMe/owedByMe', () async {
+    await insertAccount('Budi', AccountGroup.RECEIVABLE, 30000);
+    await insertAccount('Card', AccountGroup.PAYABLE, -10000);
+    await insertAccount('Sam', AccountGroup.PERSON, 5000);
+    await insertAccount('Dee', AccountGroup.PERSON, -7000);
+
+    final position = await dao.watchPosition().first;
+
+    expect(position.owedToMe, 35000); // 30000 (RECEIVABLE) + 5000 (PERSON>0)
+    expect(position.owedByMe, -17000); // -10000 (PAYABLE) + -7000 (PERSON<0)
+    expect(position.net, 18000);
+  });
 }

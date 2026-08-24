@@ -93,4 +93,19 @@ void main() {
       await unmountAndFlushTimers(tester);
     },
   );
+
+  testWidgets(
+    'FEAT11 D5: a PERSON row shows the debt-detail icon, same as RECEIVABLE/PAYABLE rows',
+    (tester) async {
+      await insertAccount('Wallet', AccountGroup.HOLDING, 100000);
+      await insertAccount('Sam', AccountGroup.PERSON, 20000);
+
+      await pumpScreen(tester);
+
+      // One icon per debt-shaped row — HOLDING gets none.
+      expect(find.byIcon(Icons.info_outline), findsOneWidget);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
 }

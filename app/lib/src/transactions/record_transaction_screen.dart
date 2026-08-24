@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../accounts/account_dao.dart';
+import '../accounts/accounts_providers.dart';
 import '../accounts/accounts_table.dart';
 import '../database/app_database.dart';
 import '../settings/tab_app_bar_actions.dart';
@@ -23,17 +25,20 @@ enum _Flow { expense, income, transfer, lend, borrow, repay }
 const Key _kindFieldKey = Key('kind-dropdown');
 
 /// The person/debt pool for the lend/borrow/repay pickers: the accounts list
-/// narrowed to `RECEIVABLE`/`PAYABLE` groups — a person and a debt *are*
-/// accounts (`docs/enums.md`: *"the owner re-confirmed that a debt is an
-/// account"*), so this is not a fourth source (plan D7). Exposed for the
-/// D7 test that pins the narrowing.
+/// narrowed to `RECEIVABLE`/`PAYABLE`/`PERSON` groups — a person and a debt
+/// *are* accounts (`docs/enums.md`: *"the owner re-confirmed that a debt is
+/// an account"*), so this is not a fourth source (plan D7). `PERSON` joins
+/// the pool per FEAT11 D6 — a person whose balance can swing either way is
+/// still drawn from this same pool. Exposed for the D7 test that pins the
+/// narrowing.
 @visibleForTesting
 List<Account> personDebtChoices(List<Account> accounts) {
   return accounts
       .where(
         (account) =>
             account.group == AccountGroup.RECEIVABLE ||
-            account.group == AccountGroup.PAYABLE,
+            account.group == AccountGroup.PAYABLE ||
+            account.group == AccountGroup.PERSON,
       )
       .toList();
 }
@@ -89,6 +94,14 @@ class _RecordTransactionScreenState
   int? _personDebtId;
   int? _walletId;
 
+  /// FEAT11 D8: explicit repay-direction toggle, read only when the picked
+  /// debt account's group is `PERSON` — `RECEIVABLE`/`PAYABLE` stay fully
+  /// inferred from group, untouched. `null` means "use the balance-sign
+  /// default" ([_defaultTheyPaidMe]); set once the owner taps a toggle
+  /// option, and reset whenever the picked debt account changes so a stale
+  /// choice never survives a different person.
+  bool? _repayTheyPaidMeOverride;
+
   int? _categoryId;
   int? _subcategoryId;
   int? _budgetGroupId;
@@ -137,6 +150,29 @@ class _RecordTransactionScreenState
   /// null side (plan's flagged open-question handling, NFR-4).
   int? _effective(int? selected, List<Account> pool) =>
       selected ?? _firstIdOf(pool);
+
+  /// FEAT11 D8: the repay-direction toggle's starting suggestion for a
+  /// `PERSON`-group debt — a positive current balance suggests "they paid
+  /// me" (`true`), negative-or-zero (including "no balance data yet")
+  /// suggests "I paid them" (`false`). Never trusted silently — the owner
+  /// can always flip it before saving (D8).
+  ///
+  /// Reads [accountBalancesProvider] rather than [accountPickerProvider]
+  /// deliberately: this is the one place in this screen that genuinely
+  /// needs a derived balance, not just the account list `personDebtChoices`
+  /// draws from (`transactions_providers.dart`'s D7 note is about the
+  /// picker's *options*, not this toggle's default).
+  bool _defaultTheyPaidMe(int? accountId) {
+    if (accountId == null) return false;
+    final balances =
+        ref.read(accountBalancesProvider).value ?? const <AccountBalance>[];
+    for (final entry in balances) {
+      if (entry.account.accountId == accountId) {
+        return entry.balance > 0;
+      }
+    }
+    return false;
+  }
 
   void _save() {
     // F7 precedent (`pm/findings.md`): an empty or unparseable amount
@@ -215,7 +251,9 @@ class _RecordTransactionScreenState
         // Both `alt` arms of `seq-uc08-repayment.drawio`, resolved by the
         // picked debt's group (group-dependent mapping, `pm/active.json`):
         // off a RECEIVABLE account the money enters the wallet (arm 1);
-        // into a PAYABLE account it leaves it (arm 2).
+        // into a PAYABLE account it leaves it (arm 2). This line stays
+        // exactly as it was for RECEIVABLE/PAYABLE — still fully
+        // unambiguous (FEAT11 D8).
         final debts = personDebtChoices(accounts);
         final debtId = _effective(_personDebtId, debts);
         final walletId = _effective(_walletId, accounts);
@@ -226,7 +264,13 @@ class _RecordTransactionScreenState
             break;
           }
         }
-        final debtIsSource = debt?.group == AccountGroup.RECEIVABLE;
+        // FEAT11 D8: a PERSON-group debt has no fixed direction, so
+        // `debtIsSource` resolves from the explicit toggle instead
+        // (defaulting to the balance-sign suggestion until the owner
+        // changes it).
+        final debtIsSource = debt?.group == AccountGroup.PERSON
+            ? (_repayTheyPaidMeOverride ?? _defaultTheyPaidMe(debtId))
+            : debt?.group == AccountGroup.RECEIVABLE;
         unawaited(
           notifier.repay(
             amount: amount,
@@ -254,6 +298,7 @@ class _RecordTransactionScreenState
       _destinationAccountId = null;
       _personDebtId = null;
       _walletId = null;
+      _repayTheyPaidMeOverride = null;
       _categoryId = null;
       _subcategoryId = null;
       _budgetGroupId = null;
@@ -273,6 +318,11 @@ class _RecordTransactionScreenState
     final accountsAsync = ref.watch(accountPickerProvider);
     final groupsAsync = ref.watch(budgetGroupPickerProvider);
     final treeAsync = ref.watch(categoryTreeProvider);
+    // FEAT11 D8: kept subscribed only so [_defaultTheyPaidMe]'s `ref.read`
+    // sees a live emission and the repay-direction toggle's default
+    // rebuilds once the stream resolves — not for populating any picker's
+    // *options*, which stays `accountPickerProvider` alone (D7's note).
+    ref.watch(accountBalancesProvider);
 
     final accounts = accountsAsync.value ?? const <Account>[];
     final groups = groupsAsync.value ?? const <BudgetGroup>[];
@@ -413,16 +463,35 @@ class _RecordTransactionScreenState
         ];
       case _Flow.lend:
       case _Flow.borrow:
-      case _Flow.repay:
+        // FEAT11 D7: autocomplete-with-inline-create, checkbox shown —
+        // unchecked creates the flow's contextual default group.
+        final defaultGroupWhenUnchecked = _flow == _Flow.lend
+            ? AccountGroup.RECEIVABLE
+            : AccountGroup.PAYABLE;
         return [
-          _accountDropdown(
-            loc,
-            label: _flow == _Flow.repay
-                ? loc.debtPersonLabel
-                : loc.personDebtLabel,
-            pool: personDebtChoices(accounts),
-            selectedId: _effective(_personDebtId, personDebtChoices(accounts)),
-            onChanged: (id) => setState(() => _personDebtId = id),
+          _PersonAccountField(
+            key: const Key('person-debt-field'),
+            label: loc.personDebtLabel,
+            options: [
+              for (final account in personDebtChoices(accounts))
+                (id: account.accountId, name: account.name),
+            ],
+            selectedId: _personDebtId,
+            onSelected: (id) => setState(() => _personDebtId = id),
+            onCreate: (name, {required asPerson}) => unawaited(
+              ref
+                  .read(accountsProvider.notifier)
+                  .addAccount(
+                    name: name,
+                    group: asPerson
+                        ? AccountGroup.PERSON
+                        : defaultGroupWhenUnchecked,
+                    openingAmount: 0,
+                  ),
+            ),
+            createLabel: loc.createOptionLabel,
+            showCheckbox: true,
+            checkboxLabel: loc.createPersonCheckboxLabel,
           ),
           _accountDropdown(
             loc,
@@ -432,7 +501,87 @@ class _RecordTransactionScreenState
             onChanged: (id) => setState(() => _walletId = id),
           ),
         ];
+      case _Flow.repay:
+        final debtsPool = personDebtChoices(accounts);
+        final debtId = _effective(_personDebtId, debtsPool);
+        Account? debtAccount;
+        for (final account in accounts) {
+          if (account.accountId == debtId) {
+            debtAccount = account;
+            break;
+          }
+        }
+        return [
+          // FEAT11 D7: same field, no checkbox — there is no sensible
+          // "normal" default here (you cannot repay a debt that was never
+          // established), so Repay's inline-create always writes PERSON.
+          _PersonAccountField(
+            key: const Key('person-debt-field'),
+            label: loc.debtPersonLabel,
+            options: [
+              for (final account in debtsPool)
+                (id: account.accountId, name: account.name),
+            ],
+            selectedId: debtId,
+            onSelected: (id) => setState(() {
+              _personDebtId = id;
+              // FEAT11 D8: a stale toggle choice must not survive a
+              // different picked debt account.
+              _repayTheyPaidMeOverride = null;
+            }),
+            onCreate: (name, {required asPerson}) => unawaited(
+              ref
+                  .read(accountsProvider.notifier)
+                  .addAccount(
+                    name: name,
+                    group: AccountGroup.PERSON,
+                    openingAmount: 0,
+                  ),
+            ),
+            createLabel: loc.createOptionLabel,
+            showCheckbox: false,
+            checkboxLabel: loc.createPersonCheckboxLabel,
+          ),
+          // FEAT11 D8: only PERSON-group debts are ambiguous enough to need
+          // this — RECEIVABLE/PAYABLE stay fully inferred, no toggle shown.
+          if (debtAccount?.group == AccountGroup.PERSON)
+            _repayDirectionToggle(loc, debtAccount!.accountId),
+          _accountDropdown(
+            loc,
+            label: loc.ownAccountLabel,
+            pool: accounts,
+            selectedId: _effective(_walletId, accounts),
+            onChanged: (id) => setState(() => _walletId = id),
+          ),
+        ];
     }
+  }
+
+  /// FEAT11 D8: the explicit "who paid" toggle, shown only for a
+  /// PERSON-group debt. Pre-selected from [_defaultTheyPaidMe] as a
+  /// starting suggestion only — fully user-changeable before save.
+  Widget _repayDirectionToggle(AppLocalizations loc, int debtAccountId) {
+    final theyPaidMe =
+        _repayTheyPaidMeOverride ?? _defaultTheyPaidMe(debtAccountId);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: SegmentedButton<bool>(
+        key: const Key('repay-direction-toggle'),
+        segments: [
+          ButtonSegment<bool>(
+            value: true,
+            label: Text(loc.repayDirectionTheyPaidMe),
+          ),
+          ButtonSegment<bool>(
+            value: false,
+            label: Text(loc.repayDirectionIPaidThem),
+          ),
+        ],
+        selected: {theyPaidMe},
+        onSelectionChanged: (chosen) =>
+            setState(() => _repayTheyPaidMeOverride = chosen.single),
+      ),
+    );
   }
 
   /// The three optional tags — drawn only on the expense/income flows (the
@@ -714,6 +863,224 @@ class _CategoryAutocompleteFieldState
                       ),
                       onTap: () => onSelected(option),
                     ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// FEAT11 D7: the Lend/Borrow/Repay person-picker, autocomplete with an
+/// inline "create new" affordance replacing the dropdown — same shape as
+/// [_CategoryAutocompleteField] (FEAT05 D1/D2), duplicated rather than
+/// shared (different backing data — `Accounts`, not `Categories`/
+/// `Subcategories` — matching FEAT05's own precedent of not sharing across
+/// screens).
+///
+/// Typing an existing name (case-insensitive) selects it, identical to the
+/// category field. Typing a name matching nothing shows a "Create '{name}'"
+/// suggestion **plus, when [showCheckbox] is true, a checkbox**
+/// ([checkboxLabel]) — unchecked, creating writes an account in
+/// [defaultGroupWhenUnchecked]; checked, it writes `PERSON` regardless.
+/// When [showCheckbox] is false (the Repay flow — there is no sensible
+/// "normal" default there, you cannot repay a debt that was never
+/// established), creating always writes `PERSON`.
+///
+/// Resolution after creation follows the exact `_pendingCreateName` /
+/// `didUpdateWidget` / `addPostFrameCallback` pattern
+/// [_CategoryAutocompleteField] ships (the setState-during-build fix) —
+/// `AccountsNotifier.addAccount` returns nothing to the screen either (the
+/// read/write asymmetry), so this field resolves the same way: match the
+/// new name in the next `options` the parent passes down.
+class _PersonAccountField extends StatefulWidget {
+  const _PersonAccountField({
+    super.key,
+    required this.label,
+    required this.options,
+    required this.selectedId,
+    required this.onSelected,
+    required this.onCreate,
+    required this.createLabel,
+    required this.showCheckbox,
+    required this.checkboxLabel,
+  });
+
+  final String label;
+  final List<({int id, String name})> options;
+  final int? selectedId;
+  final ValueChanged<int?> onSelected;
+
+  /// [asPerson] is the checkbox's state at confirmation time — always
+  /// `true` when [showCheckbox] is `false` (D7: Repay's inline-create
+  /// always writes `PERSON`).
+  final void Function(String name, {required bool asPerson}) onCreate;
+  final String Function(String name) createLabel;
+
+  /// `true` for Lend/Borrow, `false` for Repay (D7).
+  final bool showCheckbox;
+  final String checkboxLabel;
+
+  @override
+  State<_PersonAccountField> createState() => _PersonAccountFieldState();
+}
+
+class _PersonAccountFieldState extends State<_PersonAccountField> {
+  late final TextEditingController _controller;
+  late final FocusNode _focusNode;
+
+  /// The checkbox's live value, held outside `setState` so ticking it
+  /// doesn't have to rebuild the whole field to update the overlay —
+  /// [ValueListenableBuilder] below listens to it directly.
+  final ValueNotifier<bool> _createAsPerson = ValueNotifier<bool>(false);
+
+  /// Set right after firing [_PersonAccountField.onCreate]; cleared once an
+  /// option by this name shows up in a later [_PersonAccountField.options]
+  /// and the field resolves to its id.
+  String? _pendingCreateName;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: _labelFor(widget.selectedId));
+    _focusNode = FocusNode();
+  }
+
+  String _labelFor(int? id) {
+    if (id == null) return '';
+    for (final option in widget.options) {
+      if (option.id == id) return option.name;
+    }
+    return '';
+  }
+
+  @override
+  void didUpdateWidget(covariant _PersonAccountField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedId != oldWidget.selectedId) {
+      _controller.text = _labelFor(widget.selectedId);
+    }
+    final pending = _pendingCreateName;
+    if (pending != null) {
+      for (final option in widget.options) {
+        if (option.name.toLowerCase() == pending.toLowerCase()) {
+          _pendingCreateName = null;
+          _controller.text = option.name;
+          // Deferred: this runs from didUpdateWidget, still inside a build
+          // phase — calling the setState-bound callback synchronously here
+          // is exactly the "setState during build" framework forbids.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              widget.onSelected(option.id);
+            }
+          });
+          break;
+        }
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    _createAsPerson.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RawAutocomplete<({int? id, String name, bool isCreateNew})>(
+      textEditingController: _controller,
+      focusNode: _focusNode,
+      optionsBuilder: (value) {
+        final query = value.text.trim();
+        final lowerQuery = query.toLowerCase();
+        final matches = <({int? id, String name, bool isCreateNew})>[
+          for (final option in widget.options)
+            if (option.name.toLowerCase().contains(lowerQuery))
+              (id: option.id, name: option.name, isCreateNew: false),
+        ];
+        final exists = widget.options.any(
+          (option) => option.name.toLowerCase() == lowerQuery,
+        );
+        if (query.isNotEmpty && !exists) {
+          matches.add((id: null, name: query, isCreateNew: true));
+        }
+        return matches;
+      },
+      displayStringForOption: (choice) => choice.name,
+      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+        return TextField(
+          controller: controller,
+          focusNode: focusNode,
+          decoration: InputDecoration(labelText: widget.label),
+          onChanged: (text) {
+            if (text.isEmpty) {
+              widget.onSelected(null);
+            }
+          },
+        );
+      },
+      onSelected: (choice) {
+        if (choice.isCreateNew) {
+          _pendingCreateName = choice.name;
+          _controller.text = choice.name;
+          final asPerson = !widget.showCheckbox || _createAsPerson.value;
+          widget.onCreate(choice.name, asPerson: asPerson);
+          _createAsPerson.value = false;
+        } else {
+          _controller.text = choice.name;
+          widget.onSelected(choice.id);
+        }
+        // Closes the suggestion overlay on selection, same as a dropdown's
+        // menu closing once an item is picked. Deferred a frame: unfocusing
+        // synchronously here races the overlay's own removal when selection
+        // also triggers a rebuild (the create-new path always does).
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _focusNode.unfocus();
+          }
+        });
+      },
+      optionsViewBuilder: (context, onSelected, options) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 4,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 250),
+              child: ListView(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                children: [
+                  for (final option in options) ...[
+                    if (option.isCreateNew && widget.showCheckbox)
+                      ValueListenableBuilder<bool>(
+                        valueListenable: _createAsPerson,
+                        builder: (context, checked, _) => CheckboxListTile(
+                          key: const Key('create-as-person-checkbox'),
+                          value: checked,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Text(widget.checkboxLabel),
+                          onChanged: (value) =>
+                              _createAsPerson.value = value ?? false,
+                        ),
+                      ),
+                    ListTile(
+                      leading: option.isCreateNew
+                          ? const Icon(Icons.add)
+                          : null,
+                      title: Text(
+                        option.isCreateNew
+                            ? widget.createLabel(option.name)
+                            : option.name,
+                      ),
+                      onTap: () => onSelected(option),
+                    ),
+                  ],
                 ],
               ),
             ),

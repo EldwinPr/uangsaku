@@ -76,7 +76,7 @@ void main() {
     },
   );
 
-  testWidgets('NFR-4: all three AccountGroup values are selectable', (
+  testWidgets('NFR-4: all four AccountGroup values are selectable', (
     tester,
   ) async {
     await pumpScreen(tester);
@@ -84,11 +84,15 @@ void main() {
     final selector = find.byType(SegmentedButton<AccountGroup>);
     expect(selector, findsOneWidget);
     final segmented = tester.widget<SegmentedButton<AccountGroup>>(selector);
-    // Every value on the diagram is offered and none is disabled.
+    // Every value on the diagram is offered and none is disabled — FEAT11
+    // D4: AccountFormScreen's picker needs no code change, PERSON appears
+    // here automatically because the SegmentedButton iterates
+    // AccountGroup.values.
     expect(segmented.segments.map((segment) => segment.value), [
       AccountGroup.HOLDING,
       AccountGroup.RECEIVABLE,
       AccountGroup.PAYABLE,
+      AccountGroup.PERSON,
     ]);
     for (final segment in segmented.segments) {
       expect(segment.enabled, isTrue);
@@ -313,6 +317,17 @@ void main() {
       await tester.pump();
 
       expect(find.text('Money you owe someone else.'), findsOneWidget);
+
+      await tester.tap(find.text('PERSON'));
+      await tester.pump();
+
+      // FEAT11 D4: PERSON's description, plain wording, no jargon.
+      expect(
+        find.text(
+          "A person whose balance can go either way — you might owe them, or they might owe you, depending on what's happened.",
+        ),
+        findsOneWidget,
+      );
 
       await unmountAndFlushTimers(tester);
     },

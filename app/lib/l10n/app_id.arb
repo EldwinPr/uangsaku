@@ -53,6 +53,7 @@
   "accountGroupDescriptionHolding": "Uang yang Anda pegang dan bisa langsung dibelanjakan — dompet, rekening bank, atau e-wallet.",
   "accountGroupDescriptionReceivable": "Uang yang menjadi piutang Anda kepada orang lain.",
   "accountGroupDescriptionPayable": "Uang yang menjadi utang Anda kepada orang lain.",
+  "accountGroupDescriptionPerson": "Seseorang yang saldonya bisa berubah arah — bisa jadi Anda berutang padanya, atau dia berutang pada Anda, tergantung apa yang terjadi.",
   "duplicateAccountNameBlockedTitle": "Nama sudah dipakai",
   "duplicateAccountNameBlockedContent": "Akun lain sudah memakai nama ini. Pilih nama lain untuk menyimpan.",
 
@@ -113,6 +114,9 @@
   "budgetGroupOptionalLabel": "Kelompok anggaran (opsional)",
   "noAccountsYetHint": "Belum ada akun",
   "createOptionLabel": "Buat '{name}'",
+  "createPersonCheckboxLabel": "Orang baru, saldo bisa berubah arah",
+  "repayDirectionTheyPaidMe": "Dia membayar saya",
+  "repayDirectionIPaidThem": "Saya membayar dia",
   "recordedMessage": "Tercatat",
 
   "allTransactionsTitle": "Semua transaksi",

@@ -14,27 +14,38 @@ other by editing the record. If a proposed value forbids something, it is a stat
 belongs in `statuses.md`; if it only labels, it belongs here.
 
 As of 2026-08-24 `statuses.md` lists **no** values for any entity, and this file lists
-**seventeen** across five columns. That asymmetry is the expected shape for an app built
+**eighteen** across five columns. That asymmetry is the expected shape for an app built
 on NFR-4 ("the app assists; it does not police") — such an app accumulates
 classifications freely and statuses not at all.
 
 ---
 
-## `Account.group` — 3 values
+## `Account.group` — 4 values
 
-Which of FR-1's three kinds of money an account holds. Required; every account has
-exactly one.
+Which of FR-1's three kinds of money an account holds, plus a fourth value whose
+direction isn't fixed. Required; every account has exactly one.
 
 | Value | Meaning | Example |
 |---|---|---|
 | `HOLDING` | Money I hold and can actually spend | Cash, bank account, e-wallet (FR-2, FR-3) |
 | `RECEIVABLE` | Money owed to me | What Budi owes me (FR-5) |
 | `PAYABLE` | Money I owe | Credit card, loan (FR-4) |
+| `PERSON` | A person whose balance can swing either way over time | A friend I sometimes lend to, sometimes borrow from (FEAT11, 2026-08-24) |
 
 **Why three and not two.** FR-1 refuses to merge spendable with owed-to-me: *"money
 sitting with Budi is mine, but it cannot buy lunch."* `HOLDING` and `RECEIVABLE` are
 both positive and both the owner's; only `HOLDING` is reachable. The balance sheet's
 four figures (UC-01) are three sums over this column plus their net.
+
+**Why a fourth, added 2026-08-24 (FEAT11).** `RECEIVABLE`/`PAYABLE` fix a person's
+direction at account-creation time — right for a credit card, wrong for an actual
+person, who might owe the owner this month and be owed next month. `PERSON` is not a
+third bucket alongside `owedToMe`/`owedByMe` — it has none of its own. It is
+re-evaluated into one or the other **by the sign of its current balance, on every
+read** (`AccountDao.watchPosition()`): positive folds into `owedToMe`, negative
+(signed, matching `PAYABLE`'s convention) into `owedByMe`. `RECEIVABLE` and `PAYABLE`
+are unchanged and still exist — `PERSON` is additive, not a replacement, for the case
+where the owner doesn't want to commit to a direction upfront.
 
 **The naming was closed by constraint, not preference** — worth knowing before anyone
 proposes "renaming these to something more standard." NFR-1's fit criterion forbids a

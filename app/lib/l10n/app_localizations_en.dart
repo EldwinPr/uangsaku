@@ -164,6 +164,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountGroupDescriptionPayable => 'Money you owe someone else.';
 
   @override
+  String get accountGroupDescriptionPerson =>
+      'A person whose balance can go either way — you might owe them, or they might owe you, depending on what\'s happened.';
+
+  @override
   String get duplicateAccountNameBlockedTitle => 'Name already used';
 
   @override
@@ -341,6 +345,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String createOptionLabel(String name) {
     return 'Create \'$name\'';
   }
+
+  @override
+  String get createPersonCheckboxLabel =>
+      'New person, balance can go either way';
+
+  @override
+  String get repayDirectionTheyPaidMe => 'They paid me';
+
+  @override
+  String get repayDirectionIPaidThem => 'I paid them';
 
   @override
   String get recordedMessage => 'Recorded';

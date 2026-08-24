@@ -757,3 +757,34 @@ issues:
       balance_sheet_screen.dart - sequenced, not parallel, to avoid a working-tree
       collision). 179 tests green (was 172), no schema change.
 
+  - id: FEAT11-person-account-type
+    slug: person-account-type
+    title: A fourth account type (Person) that can owe or be owed, plus inline account creation from Lend/Borrow/Repay
+    status: DONE
+    plan: pm/issues/feat11-person-account-type/plan.md
+    depends_on: [FEAT08-transaction-ux-and-name-block]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-24. No UC owns this - infrastructure. Fourth round of the owner's
+      manual-testing feedback. AccountGroup gains a fourth value, PERSON, additive
+      alongside HOLDING/RECEIVABLE/PAYABLE - confirmed NOT a schema migration (textEnum,
+      no CHECK constraint, no new column/table; git diff --stat app/drift_schemas/
+      stayed empty). AccountDao.watchPosition() buckets a PERSON account into owedToMe
+      or owedByMe by the SIGN of its current balance, re-evaluated on every read, never
+      stored - spendable/net untouched. New _PersonAccountField (record_transaction_
+      screen.dart) replaces the plain dropdown for Lend/Borrow/Repay's person picker
+      with autocomplete-with-inline-create (FEAT05's _CategoryAutocompleteField pattern,
+      new backing data): a checkbox decides the created group for Lend (default
+      RECEIVABLE)/Borrow (default PAYABLE); Repay shows no checkbox and always creates
+      PERSON, since there's no sensible default for someone you're repaying before ever
+      lending to or borrowing from them. Repay gained an explicit "who paid" toggle
+      (repayDirectionTheyPaidMe/IPaidThem, plain wording, not utang/piutang jargon) that
+      appears only when the picked debt is PERSON-group, pre-selected from its current
+      balance sign but always user-changeable - RECEIVABLE/PAYABLE keep today's
+      unambiguous group-inferred debtIsSource line completely untouched. group_style.dart
+      gained PERSON => colorScheme.tertiary / Icons.sync_alt; AccountsScreen's
+      debt-detail icon and personDebtChoices() both extended to include PERSON;
+      AccountFormScreen's and HelpScreen's group descriptions both gained a PERSON arm
+      reusing one new ARB key. 197 tests green (was 185), no schema change. See
+      decisions.md 2026-08-24 for the full rationale.
+

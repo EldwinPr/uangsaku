@@ -267,6 +267,45 @@ void main() {
     expect(choices.map((account) => account.name), ['Budi', 'Credit card']);
   });
 
+  test('FEAT11 D6: the person/debt picker also surfaces PERSON rows', () {
+    final accounts = [
+      Account(
+        accountId: 1,
+        name: 'Cash',
+        group: AccountGroup.HOLDING,
+        openingAmount: 100000,
+        settled: false,
+        settledAt: null,
+        deleted: false,
+        deletedAt: null,
+      ),
+      Account(
+        accountId: 2,
+        name: 'Budi',
+        group: AccountGroup.RECEIVABLE,
+        openingAmount: 0,
+        settled: false,
+        settledAt: null,
+        deleted: false,
+        deletedAt: null,
+      ),
+      Account(
+        accountId: 3,
+        name: 'Sam',
+        group: AccountGroup.PERSON,
+        openingAmount: 0,
+        settled: false,
+        settledAt: null,
+        deleted: false,
+        deletedAt: null,
+      ),
+    ];
+
+    final choices = personDebtChoices(accounts);
+
+    expect(choices.map((account) => account.name), ['Budi', 'Sam']);
+  });
+
   test('D7: watchBudgetGroups() emits the seeded groups', () async {
     await database
         .into(database.budgetGroups)

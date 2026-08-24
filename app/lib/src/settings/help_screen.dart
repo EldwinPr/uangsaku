@@ -37,6 +37,7 @@ class HelpScreen extends StatelessWidget {
                     AccountGroup.RECEIVABLE =>
                       loc.accountGroupDescriptionReceivable,
                     AccountGroup.PAYABLE => loc.accountGroupDescriptionPayable,
+                    AccountGroup.PERSON => loc.accountGroupDescriptionPerson,
                   },
                 ),
             ],

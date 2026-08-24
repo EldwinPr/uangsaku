@@ -420,6 +420,36 @@ code:
     tests:
       - app/test/settings/help_screen_test.dart
 
+  # FEAT11-person-account-type, DONE 2026-08-24. No UC - infrastructure. Fourth round
+  # of the owner's manual-testing feedback. AccountGroup gains a fourth value, PERSON
+  # (accounts_table.dart) - additive alongside HOLDING/RECEIVABLE/PAYABLE, confirmed
+  # NOT a schema migration (textEnum, no CHECK constraint; drift_schemas/ untouched).
+  # AccountDao.watchPosition() buckets PERSON into owedToMe/owedByMe by the SIGN of its
+  # current balance, re-evaluated on every read, never stored - one new bound variable
+  # reused at both CASE WHEN positions. New _PersonAccountField (record_transaction_
+  # screen.dart, private, not shared with _CategoryAutocompleteField per FEAT05's own
+  # precedent) replaces the Lend/Borrow/Repay person dropdown with autocomplete-with-
+  # inline-create: a checkbox picks the created group for Lend/Borrow (unchecked =
+  # RECEIVABLE/PAYABLE respectively, checked = PERSON); Repay shows no checkbox and
+  # always creates PERSON. Repay also gained an explicit "who paid" toggle, shown only
+  # for a PERSON-group debt, pre-selected from its balance sign but always user-
+  # changeable - RECEIVABLE/PAYABLE's existing group-inferred direction line is
+  # completely untouched. group_style.dart, AccountsScreen's debt-detail icon,
+  # personDebtChoices(), AccountFormScreen's and HelpScreen's group descriptions all
+  # extended to recognize PERSON. 197 tests green (was 185), no schema change.
+  FEAT11:
+    dao_method_changed: app/lib/src/accounts/account_dao.dart   # watchPosition() SQL
+    style_helper_changed: app/lib/src/accounts/group_style.dart
+    widget_added: app/lib/src/transactions/record_transaction_screen.dart   # _PersonAccountField
+    tests:
+      - app/test/accounts/balance_queries_test.dart
+      - app/test/accounts/group_style_test.dart
+      - app/test/accounts/accounts_screen_test.dart
+      - app/test/accounts/account_form_screen_test.dart
+      - app/test/settings/help_screen_test.dart
+      - app/test/transactions/record_transaction_screen_test.dart
+      - app/test/transactions/transaction_dao_test.dart
+
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
 # each other in BOTH directions (balances need Transactions; the record screen needs

@@ -36,6 +36,10 @@ void main() {
       accountGroupColor(capturedContext, AccountGroup.PAYABLE),
       colorScheme.error,
     );
+    expect(
+      accountGroupColor(capturedContext, AccountGroup.PERSON),
+      colorScheme.tertiary,
+    );
 
     expect(
       accountGroupIcon(AccountGroup.HOLDING),
@@ -43,6 +47,7 @@ void main() {
     );
     expect(accountGroupIcon(AccountGroup.RECEIVABLE), Icons.call_received);
     expect(accountGroupIcon(AccountGroup.PAYABLE), Icons.call_made);
+    expect(accountGroupIcon(AccountGroup.PERSON), Icons.sync_alt);
   });
 
   testWidgets('FEAT09 D1: RECEIVABLE swaps its green shade in dark mode', (

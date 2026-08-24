@@ -14,30 +14,35 @@ before starting work.
 
 ## Current state — 2026-08-24
 
-**Phase.** **The planned backlog and all THREE of the owner's manual-testing feedback
-rounds are DONE.** The app compiles and its test suite is green (**185 tests**). Ten
+**Phase.** **The planned backlog and all FOUR of the owner's manual-testing feedback
+rounds are DONE.** The app compiles and its test suite is green (**197 tests**). Ten
 screens/tabs built end to end, all reachable except one deliberately unrouted flow
 (UC-03's adjust mode, never asked for). `home` is `AppShell`: a five-tab bottom nav
 (Home, Accounts, Record as a colored circular docked FAB, Transactions, Budget) with
 every other screen reached contextually. Full EN/ID language toggle, light/dark/system
-theme and a theme-color choice live in `SettingsScreen`; category/subcategory pickers
-are autocomplete-with-inline-create; every save action closes/clears and confirms
-instead of sitting silently re-tappable; `Home` carries three charts (balance trend,
-income vs expense, spending by category, `fl_chart`) below four now-colored figure
-cards; transaction rows are colored by kind; `RecordTransactionScreen` switches back
-to Home on a successful save; **account-name collisions hard-block** — the one
-deliberate, owner-cited exception to NFR-4's otherwise-zero-refusals rule
-(`docs/fr-nfr.md`, `decisions.md` 2026-08-24); every `AccountGroup`/`TransactionKind`
-now has one consistent color+icon, reused across Home's figure cards and two picker
-descriptions (`group_style.dart`/`kind_style.dart`); a new in-app `HelpScreen` explains
-accounts/recording/budgets/debts, reached — alongside Settings — from every tab, with
-Categories staying scoped to Home and Transactions only.
+theme and a theme-color choice live in `SettingsScreen`; category/subcategory AND
+Lend/Borrow/Repay person pickers are autocomplete-with-inline-create; every save
+action closes/clears and confirms instead of sitting silently re-tappable; `Home`
+carries three charts (balance trend, income vs expense, spending by category,
+`fl_chart`) below four now-colored figure cards; transaction rows are colored by
+kind; `RecordTransactionScreen` switches back to Home on a successful save;
+**account-name collisions hard-block** — the one deliberate, owner-cited exception to
+NFR-4's otherwise-zero-refusals rule (`docs/fr-nfr.md`, `decisions.md` 2026-08-24);
+`AccountGroup` now has a fourth value, `PERSON`, whose direction (owed to me / owed by
+me) is decided fresh on every read from its balance's sign rather than fixed at
+creation; every `AccountGroup`/`TransactionKind` has one consistent color+icon, reused
+across Home's figure cards and picker descriptions (`group_style.dart`/
+`kind_style.dart`); a new in-app `HelpScreen` explains accounts/recording/budgets/
+debts, reached — alongside Settings — from every tab, with Categories staying scoped
+to Home and Transactions only.
 
 **Active issue.** None. Nothing is queued. `FEAT03` through `FEAT06` (round one),
-`FEAT07`/`FEAT08` (round two), and `FEAT09`/`FEAT10` (round three) — eight feedback
-issues total — all closed the same day, 2026-08-24, alongside the third schema change
-(`FEAT03`'s `Settings.locale`/`themeMode`/`seedColor`; every issue after that added no
-schema). Both original tracked-backlog questions (Q3, Q4) were answered 2026-08-23;
+`FEAT07`/`FEAT08` (round two), `FEAT09`/`FEAT10` (round three), and `FEAT11` (round
+four) — nine feedback issues total — all closed the same day, 2026-08-24, alongside
+the third schema change (`FEAT03`'s `Settings.locale`/`themeMode`/`seedColor`; every
+issue after that added no schema, including `FEAT11`'s new enum value — confirmed no
+migration was needed since `Accounts.group` carries no `CHECK` constraint). Both
+original tracked-backlog questions (Q3, Q4) were answered 2026-08-23;
 `UC03-adjust-account` and `UC02B-edit-account` closed the same day/next (`UC02B` being
 the first schema change). CI broke right after (a real `_slugdir` bug in `audit.py`)
 and was found and fixed the same day, confirmed green via the actual failing log, not
@@ -1421,3 +1426,67 @@ tests, up from 183. `git diff --stat app/drift_schemas/` empty — no schema cha
 `python audit.py` — 14 passed / 0 warnings / 0 failures.
 
 **[TODO]** Nothing queued.
+
+## 2026-08-24 — FEAT11-person-account-type DONE: a fourth AccountGroup and inline account creation
+
+**[STATUS]** The owner's FOURTH round of manual-testing feedback, this one a real
+architectural addition rather than polish: `RECEIVABLE`/`PAYABLE` fix a person's
+direction at account-creation time, which doesn't fit an actual person you sometimes
+lend to and sometimes borrow from. Resolved via three follow-up answers before
+planning: `PERSON` is additive (not replacing `RECEIVABLE`/`PAYABLE`); Repay shows an
+explicit "who paid" toggle for a `PERSON` debt rather than inferring silently, worded
+plainly (not "utang"/"piutang" jargon — the owner asked for wording "easy to
+understand"); and the Lend/Borrow/Repay person-picker gains a checkbox controlling
+which type an inline-created account becomes.
+
+**[DECISION]** `AccountGroup` gains a fourth value, `PERSON` — **confirmed not a
+schema migration** before any code was written: `Accounts.group` is
+`textEnum<AccountGroup>()()`, a plain `TextColumn` with no `CHECK` constraint, so a
+new legal Dart-side value needed only `dart run build_runner build`, nothing in
+`app/drift_schemas/`. `AccountDao.watchPosition()` buckets a `PERSON` account into
+`owedToMe` or `owedByMe` by the **sign of its current balance**, decided fresh on
+every read (NFR-2 — nothing about which side it's on is ever stored); `RECEIVABLE`/
+`PAYABLE` accounts are completely unaffected, still fixed at creation as before.
+
+**[STATUS]** The Lend/Borrow/Repay person-picker (previously a plain dropdown
+requiring the account to already exist) is now `_PersonAccountField` —
+autocomplete-with-inline-create, mirroring `_CategoryAutocompleteField`'s shape
+(FEAT05) with new backing data (`Accounts`, not `Categories`). A checkbox in the
+create-new suggestion decides the group: unchecked writes the flow's contextual
+default (`Lend`→`RECEIVABLE`, `Borrow`→`PAYABLE`); checked always writes `PERSON`.
+`Repay` shows no checkbox at all and always creates `PERSON` — there's no sensible
+"normal" default for inline-creating someone you're repaying before ever having lent
+to or borrowed from them.
+
+**[STATUS]** `Repay`'s existing direction inference (`debtIsSource = debt?.group ==
+AccountGroup.RECEIVABLE`) is untouched for `RECEIVABLE`/`PAYABLE` — still fully
+unambiguous. When the picked debt is `PERSON`, a new explicit toggle appears ("They
+paid me" / "I paid them"), pre-selected from the account's current balance sign as a
+starting suggestion only, and reset whenever a different debt is picked so a stale
+choice never survives across accounts.
+
+**[DISCOVERY]** The repay-direction toggle's balance-sign default initially stayed
+stuck at its `false` fallback in testing — the screen only `ref.read` the balances
+provider inside the default-computing helper, never `ref.watch`'d it anywhere, so the
+stream's first real emission never triggered a rebuild. Fixed by adding one narrow
+`ref.watch(accountBalancesProvider)` in `build()`, documented inline as distinct from
+the picker's own options source (`accountPickerProvider`, untouched) — a reminder that
+`ref.read` alone doesn't subscribe a widget to anything.
+
+**[STATUS]** `group_style.dart` gained `PERSON` → `colorScheme.tertiary` /
+`Icons.sync_alt` (bidirectional arrows, deliberately distinct from `RECEIVABLE`'s
+one-directional `call_received`/`PAYABLE`'s `call_made`). `AccountsScreen`'s
+debt-detail icon and `personDebtChoices()` both extended to recognize `PERSON`;
+`AccountFormScreen`'s and `HelpScreen`'s group descriptions both gained a `PERSON` arm
+reusing one new ARB key, `accountGroupDescriptionPerson`, so the two never drift out
+of sync.
+
+**[STATUS]** Four commands green: `dart run build_runner build
+--delete-conflicting-outputs`, `flutter gen-l10n`, `dart format
+--set-exit-if-changed .`, `flutter analyze` (No issues found!), `flutter test` — 197
+tests, up from 185. `git diff --stat app/drift_schemas/` and `git status --porcelain
+app/drift_schemas/` both empty, confirming the no-migration call was correct.
+`python audit.py` — 14 passed / 0 warnings / 0 failures.
+
+**[TODO]** Nothing queued. Four rounds of the owner's manual-testing feedback
+(`FEAT03`-`FEAT06`, `FEAT07`-`FEAT08`, `FEAT09`-`FEAT10`, `FEAT11`) are all DONE.

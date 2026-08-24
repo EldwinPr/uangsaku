@@ -19,6 +19,11 @@ Color accountGroupColor(BuildContext context, AccountGroup group) {
           ? Colors.green.shade300
           : Colors.green.shade700,
     AccountGroup.PAYABLE => colorScheme.error,
+    // FEAT11 D3: PERSON has no fixed direction (it can owe or be owed
+    // depending on the sign of its balance), so it gets no fixed
+    // directional color — deliberately distinct from RECEIVABLE's green
+    // and PAYABLE's colorScheme.error.
+    AccountGroup.PERSON => colorScheme.tertiary,
   };
 }
 
@@ -28,4 +33,8 @@ IconData accountGroupIcon(AccountGroup group) => switch (group) {
   AccountGroup.HOLDING => Icons.account_balance_wallet,
   AccountGroup.RECEIVABLE => Icons.call_received,
   AccountGroup.PAYABLE => Icons.call_made,
+  // FEAT11 D3: sync_alt (bidirectional arrows) reads as "can flip," unlike
+  // RECEIVABLE's call_received/PAYABLE's call_made, which are
+  // one-directional by design.
+  AccountGroup.PERSON => Icons.sync_alt,
 };

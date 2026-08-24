@@ -252,6 +252,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
         AccountGroup.HOLDING => loc.accountGroupDescriptionHolding,
         AccountGroup.RECEIVABLE => loc.accountGroupDescriptionReceivable,
         AccountGroup.PAYABLE => loc.accountGroupDescriptionPayable,
+        AccountGroup.PERSON => loc.accountGroupDescriptionPerson,
       };
 
   Widget _groupDescriptionText(AppLocalizations loc) {

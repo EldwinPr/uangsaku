@@ -12,6 +12,13 @@ enum AccountGroup {
 
   /// Money the owner owes (FR-4).
   PAYABLE,
+
+  /// A person whose balance can swing either way over time — some months
+  /// they owe you, some months you owe them. Unlike RECEIVABLE/PAYABLE,
+  /// which are fixed at creation, PERSON is bucketed into "owed to me" or
+  /// "owed by me" (FR-1) by the SIGN of its current balance, re-evaluated
+  /// on every read (D2). Owner's direct request, 2026-08-24.
+  PERSON,
 }
 
 /// `Account` — one row per wallet, debt or receivable (FR-1).
