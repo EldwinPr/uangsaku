@@ -79,6 +79,14 @@ class _RecordTransactionScreenState
   late final TextEditingController _amountController;
   late final TextEditingController _noteController;
 
+  /// FEAT16 D5: the admin-fee toggle's live checkbox value and its manual
+  /// amount field — shown only for Transfer/Lend/Borrow/Repay (D1). Reset to
+  /// unchecked/blank after every save and every flow switch, the same way
+  /// every other per-flow field already resets (`_save()`'s `setState`
+  /// block).
+  bool _addAdminFee = false;
+  late final TextEditingController _adminFeeController;
+
   /// Pre-filled from today (plan step 5); changeable, never gated.
   DateTime _date = DateTime.now();
 
@@ -111,14 +119,25 @@ class _RecordTransactionScreenState
     super.initState();
     _amountController = TextEditingController();
     _noteController = TextEditingController();
+    _adminFeeController = TextEditingController();
   }
 
   @override
   void dispose() {
     _amountController.dispose();
     _noteController.dispose();
+    _adminFeeController.dispose();
     super.dispose();
   }
+
+  /// FEAT16 D1: the four flows a manual admin fee can attach to — the
+  /// scope's exact boundary (Transfer/Lend/Borrow/Repay, not Expense/
+  /// Income).
+  bool get _flowSupportsAdminFee =>
+      _flow == _Flow.transfer ||
+      _flow == _Flow.lend ||
+      _flow == _Flow.borrow ||
+      _flow == _Flow.repay;
 
   /// The stored [TransactionKind] this flow saves as (messages 3 on
   /// `seq-uc04`..`seq-uc08`) — used only to look up FEAT09 D1's shared
@@ -186,6 +205,14 @@ class _RecordTransactionScreenState
     final accounts = ref.read(accountPickerProvider).value ?? const <Account>[];
     final notifier = ref.read(transactionsProvider.notifier);
 
+    // FEAT16 D5: F7 precedent — an empty or unparseable fee proceeds as 0,
+    // which the DAO's `feeAmount != 0` guard then skips (NFR-4, never a
+    // refusal). Only computed when the checkbox is actually checked, so a
+    // stray value left in the hidden field never reaches a write.
+    final feeAmount = _addAdminFee
+        ? (int.tryParse(_adminFeeController.text) ?? 0)
+        : null;
+
     switch (_flow) {
       case _Flow.expense:
         unawaited(
@@ -219,6 +246,7 @@ class _RecordTransactionScreenState
             toAccountId: _effective(_destinationAccountId, accounts),
             note: note,
             date: _date,
+            feeAmount: feeAmount,
           ),
         );
       case _Flow.lend:
@@ -232,6 +260,7 @@ class _RecordTransactionScreenState
             fromAccountId: _effective(_walletId, accounts),
             note: note,
             date: _date,
+            feeAmount: feeAmount,
           ),
         );
       case _Flow.borrow:
@@ -245,6 +274,7 @@ class _RecordTransactionScreenState
             toAccountId: _effective(_walletId, accounts),
             note: note,
             date: _date,
+            feeAmount: feeAmount,
           ),
         );
       case _Flow.repay:
@@ -278,6 +308,7 @@ class _RecordTransactionScreenState
             toAccountId: debtIsSource ? walletId : debtId,
             note: note,
             date: _date,
+            feeAmount: feeAmount,
           ),
         );
     }
@@ -289,6 +320,7 @@ class _RecordTransactionScreenState
     // fired, since this tab has nothing to pop.
     _amountController.clear();
     _noteController.clear();
+    _adminFeeController.clear();
     setState(() {
       _flow = _Flow.expense;
       _date = DateTime.now();
@@ -302,6 +334,7 @@ class _RecordTransactionScreenState
       _categoryId = null;
       _subcategoryId = null;
       _budgetGroupId = null;
+      _addAdminFee = false;
     });
     final loc = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context)
@@ -369,7 +402,14 @@ class _RecordTransactionScreenState
               ],
               onChanged: (chosen) {
                 if (chosen != null) {
-                  setState(() => _flow = chosen);
+                  // FEAT16 D5: every flow switch resets the admin-fee
+                  // toggle and its typed amount, the same way every other
+                  // per-flow field already resets on a flow switch.
+                  _adminFeeController.clear();
+                  setState(() {
+                    _flow = chosen;
+                    _addAdminFee = false;
+                  });
                 }
               },
             ),
@@ -390,6 +430,37 @@ class _RecordTransactionScreenState
               ),
             ),
             const SizedBox(height: 16),
+            // FEAT16 D1/D5: persistent, shown only for the four flows whose
+            // sequence diagrams admit a second account a real fee could move
+            // between (Transfer/Lend/Borrow/Repay) — Expense/Income never
+            // render this.
+            if (_flowSupportsAdminFee) ...[
+              Row(
+                children: [
+                  Checkbox(
+                    key: const Key('admin-fee-checkbox'),
+                    value: _addAdminFee,
+                    onChanged: (value) =>
+                        setState(() => _addAdminFee = value ?? false),
+                  ),
+                  Text(loc.adminFeeCheckboxLabel),
+                ],
+              ),
+              if (_addAdminFee) ...[
+                TextField(
+                  key: const Key('admin-fee-field'),
+                  controller: _adminFeeController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    signed: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: loc.adminFeeAmountLabel,
+                    hintText: loc.amountHintMinor,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ],
             OutlinedButton.icon(
               onPressed: () async {
                 final chosen = await showDatePicker(

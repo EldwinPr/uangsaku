@@ -372,6 +372,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get repayDirectionIPaidThem => 'Saya membayar dia';
 
   @override
+  String get adminFeeCheckboxLabel => 'Tambahkan biaya admin';
+
+  @override
+  String get adminFeeAmountLabel => 'Biaya admin';
+
+  @override
   String get recordedMessage => 'Tercatat';
 
   @override

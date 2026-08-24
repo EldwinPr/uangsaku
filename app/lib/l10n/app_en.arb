@@ -127,6 +127,8 @@
   "createPersonCheckboxLabel": "New person, balance can go either way",
   "repayDirectionTheyPaidMe": "They paid me",
   "repayDirectionIPaidThem": "I paid them",
+  "adminFeeCheckboxLabel": "Add admin fee",
+  "adminFeeAmountLabel": "Admin fee",
   "recordedMessage": "Recorded",
 
   "allTransactionsTitle": "All transactions",

@@ -776,6 +776,18 @@ abstract class AppLocalizations {
   /// **'I paid them'**
   String get repayDirectionIPaidThem;
 
+  /// No description provided for @adminFeeCheckboxLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Add admin fee'**
+  String get adminFeeCheckboxLabel;
+
+  /// No description provided for @adminFeeAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin fee'**
+  String get adminFeeAmountLabel;
+
   /// No description provided for @recordedMessage.
   ///
   /// In en, this message translates to:

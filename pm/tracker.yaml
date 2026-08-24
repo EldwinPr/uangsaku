@@ -884,3 +884,30 @@ issues:
       Touches only budget_overview_screen.dart and ARB files. Full merged-tree
       `flutter test` (218 tests) green once FEAT13/14/15 all landed.
 
+  - id: FEAT16-admin-fee-toggle
+    slug: admin-fee-toggle
+    title: A manual admin-fee toggle on Transfer/Lend/Borrow/Repay
+    status: DONE
+    plan: pm/issues/feat16-admin-fee-toggle/plan.md
+    depends_on: [UC04-record-money-movement]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-24. No UC owns this - infrastructure. Seventh round of the owner's
+      manual-testing feedback: "for transfer or some transactions make sure there is
+      admin fee toggle manual input." Scope clarified via AskUserQuestion to
+      Transfer/Lend/Borrow/Repay (not Expense/Income, which have no second account).
+      New TransactionDao.insertWithAdminFee() wraps the existing insert() (main
+      transaction unchanged) plus, when checked and nonzero, a second linked
+      TransactionKind.expense row for the typed fee - same fromAccountId the main
+      transaction already debits, tagged with a get-or-create "Admin Fee" category
+      (plain data, not localized, same rule as FEAT14's "Ikhlaskan"), both writes in
+      one drift transaction. TransactionsNotifier.transfer()/lend()/borrow()/repay()
+      each gained an optional feeAmount parameter and now call insertWithAdminFee()
+      instead of plain insert(); recordExpense/recordIncome/edit/delete untouched.
+      RecordTransactionScreen gained a persistent checkbox + manual amount field,
+      visible only for the four in-scope flows, resetting after save and after every
+      flow switch. class-transactions.drawio's TransactionDao box gained
+      insertWithAdminFee() (edited in the main session before dispatch, render
+      visually verified - CategoryDao's box shifted down to keep its gap). 233 tests
+      green (was 218). No schema change. See decisions.md 2026-08-24.
+

@@ -223,20 +223,27 @@ class TransactionsNotifier extends Notifier<void> {
   /// A same-account transfer proceeds unrefused (NFR-4): both balances move
   /// by the same amount in opposite directions, netting zero — harmless, and
   /// the owner's call.
+  ///
+  /// FEAT16 D4: [feeAmount] forwards straight through to
+  /// `TransactionDao.insertWithAdminFee()`, which writes it as a second,
+  /// linked expense row charged against [fromAccountId] — this method no
+  /// longer calls plain [TransactionDao.insert].
   Future<void> transfer({
     required int amount,
     int? fromAccountId,
     int? toAccountId,
     String? note,
     DateTime? date,
+    int? feeAmount,
   }) {
-    return _dao.insert(
+    return _dao.insertWithAdminFee(
       kind: TransactionKind.transfer,
       amount: amount,
       occurredOn: date ?? DateTime.now(),
       fromAccountId: fromAccountId,
       toAccountId: toAccountId,
       note: note,
+      feeAmount: feeAmount,
     );
   }
 
@@ -246,20 +253,26 @@ class TransactionsNotifier extends Notifier<void> {
   /// ([personAccountId]). Lending the same person again adds to the single
   /// RECEIVABLE account already held against them (FR-5); no account is
   /// created here.
+  ///
+  /// FEAT16 D4: [feeAmount] forwards straight through to
+  /// `TransactionDao.insertWithAdminFee()`, charged against [fromAccountId]
+  /// — this method no longer calls plain [TransactionDao.insert].
   Future<void> lend({
     required int amount,
     int? personAccountId,
     int? fromAccountId,
     String? note,
     DateTime? date,
+    int? feeAmount,
   }) {
-    return _dao.insert(
+    return _dao.insertWithAdminFee(
       kind: TransactionKind.lend,
       amount: amount,
       occurredOn: date ?? DateTime.now(),
       fromAccountId: fromAccountId,
       toAccountId: personAccountId,
       note: note,
+      feeAmount: feeAmount,
     );
   }
 
@@ -267,20 +280,27 @@ class TransactionsNotifier extends Notifier<void> {
   /// arm: `borrow(debtAccountId, toAccountId, amount, note, date)` — from
   /// the PAYABLE account ([debtAccountId]) into the own wallet
   /// ([toAccountId]).
+  ///
+  /// FEAT16 D4: [feeAmount] forwards straight through to
+  /// `TransactionDao.insertWithAdminFee()`, charged against [debtAccountId]
+  /// (this flow's resolved `fromAccountId`) — this method no longer calls
+  /// plain [TransactionDao.insert].
   Future<void> borrow({
     required int amount,
     int? debtAccountId,
     int? toAccountId,
     String? note,
     DateTime? date,
+    int? feeAmount,
   }) {
-    return _dao.insert(
+    return _dao.insertWithAdminFee(
       kind: TransactionKind.borrow,
       amount: amount,
       occurredOn: date ?? DateTime.now(),
       fromAccountId: debtAccountId,
       toAccountId: toAccountId,
       note: note,
+      feeAmount: feeAmount,
     );
   }
 
@@ -302,20 +322,27 @@ class TransactionsNotifier extends Notifier<void> {
   /// which holds the picked account and its group (the repayment form's
   /// group-dependent mapping, noted in `pm/active.json`). Both directions
   /// land here so the class diagram keeps its six methods, not seven.
+  ///
+  /// FEAT16 D4: [feeAmount] forwards straight through to
+  /// `TransactionDao.insertWithAdminFee()`, charged against whichever side
+  /// the caller already resolved as [fromAccountId] — this method no longer
+  /// calls plain [TransactionDao.insert].
   Future<void> repay({
     required int amount,
     int? fromAccountId,
     int? toAccountId,
     String? note,
     DateTime? date,
+    int? feeAmount,
   }) {
-    return _dao.insert(
+    return _dao.insertWithAdminFee(
       kind: TransactionKind.repayment,
       amount: amount,
       occurredOn: date ?? DateTime.now(),
       fromAccountId: fromAccountId,
       toAccountId: toAccountId,
       note: note,
+      feeAmount: feeAmount,
     );
   }
 

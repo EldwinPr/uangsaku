@@ -471,6 +471,153 @@ void main() {
     );
   }
 
+  // FEAT16 D1/D5: the admin-fee checkbox + amount field render only for
+  // Transfer/Lend/Borrow/Repay — Expense/Income never show it.
+  for (final flowLabel in ['Transfer', 'Lend', 'Borrow', 'Repay']) {
+    testWidgets(
+      'FEAT16 D1: $flowLabel flow shows the admin-fee checkbox, and checking it reveals the amount field',
+      (tester) async {
+        await seedAccounts();
+        await pumpScreen(tester);
+        await switchTo(tester, flowLabel);
+
+        expect(find.byKey(const Key('admin-fee-checkbox')), findsOneWidget);
+        expect(find.byKey(const Key('admin-fee-field')), findsNothing);
+
+        await tester.tap(find.byKey(const Key('admin-fee-checkbox')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('admin-fee-field')), findsOneWidget);
+
+        await unmountAndFlushTimers(tester);
+      },
+    );
+  }
+
+  for (final flowLabel in ['Expense', 'Income']) {
+    testWidgets(
+      'FEAT16 D1: $flowLabel flow never shows the admin-fee checkbox',
+      (tester) async {
+        await seedAccounts();
+        await pumpScreen(tester);
+        await switchTo(tester, flowLabel);
+
+        expect(find.byKey(const Key('admin-fee-checkbox')), findsNothing);
+        expect(find.byKey(const Key('admin-fee-field')), findsNothing);
+
+        await unmountAndFlushTimers(tester);
+      },
+    );
+  }
+
+  testWidgets(
+    'FEAT16 D5: checking the admin-fee box and typing a fee, then saving, writes a second linked expense row',
+    (tester) async {
+      await seedAccounts();
+      await pumpScreen(tester);
+      await switchTo(tester, 'Transfer');
+
+      await tester.enterText(find.byType(TextField).first, '100000');
+
+      await tester.tap(find.byKey(const Key('admin-fee-checkbox')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('admin-fee-field')), '2500');
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      final rows = await database.select(database.transactions).get();
+      expect(rows, hasLength(2));
+      final fee = rows.firstWhere((row) => row.kind == TransactionKind.expense);
+      expect(fee.amount, 2500);
+      final categories = await database.select(database.categories).get();
+      expect(categories.single.name, 'Admin Fee');
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT16 D5: leaving the checkbox unchecked passes no fee even with stray text sitting in the hidden field',
+    (tester) async {
+      await seedAccounts();
+      await pumpScreen(tester);
+      await switchTo(tester, 'Transfer');
+
+      await tester.enterText(find.byType(TextField).first, '100000');
+
+      // Check, type a stray value, then uncheck again — the field itself
+      // stays populated but hidden, and unchecked means no fee (D5).
+      await tester.tap(find.byKey(const Key('admin-fee-checkbox')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('admin-fee-field')), '9999');
+      await tester.tap(find.byKey(const Key('admin-fee-checkbox')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('admin-fee-field')), findsNothing);
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      final rows = await database.select(database.transactions).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.kind, TransactionKind.transfer);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT16 D5: the admin-fee checkbox and field reset after save and after switching flows',
+    (tester) async {
+      await seedAccounts();
+      await pumpScreen(tester);
+      await switchTo(tester, 'Transfer');
+
+      await tester.tap(find.byKey(const Key('admin-fee-checkbox')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('admin-fee-field')), '2500');
+
+      await tester.enterText(find.byType(TextField).first, '100000');
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      // Back at the default Expense flow — no admin-fee affordance shows,
+      // and switching back to Transfer proves the checkbox reset too.
+      expect(find.byKey(const Key('admin-fee-checkbox')), findsNothing);
+      await switchTo(tester, 'Transfer');
+      final checkbox = tester.widget<Checkbox>(
+        find.byKey(const Key('admin-fee-checkbox')),
+      );
+      expect(checkbox.value, isFalse);
+      expect(find.byKey(const Key('admin-fee-field')), findsNothing);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT16 D5: checking the box then switching flows resets it on the new flow too',
+    (tester) async {
+      await seedAccounts();
+      await pumpScreen(tester);
+      await switchTo(tester, 'Transfer');
+
+      await tester.tap(find.byKey(const Key('admin-fee-checkbox')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('admin-fee-field')), '2500');
+
+      await switchTo(tester, 'Lend');
+
+      final checkbox = tester.widget<Checkbox>(
+        find.byKey(const Key('admin-fee-checkbox')),
+      );
+      expect(checkbox.value, isFalse);
+      expect(find.byKey(const Key('admin-fee-field')), findsNothing);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
   testWidgets(
     'FEAT11 D8: selecting a RECEIVABLE debt in the Repay flow shows no direction toggle',
     (tester) async {

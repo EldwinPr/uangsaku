@@ -122,6 +122,8 @@
   "createPersonCheckboxLabel": "Orang baru, saldo bisa berubah arah",
   "repayDirectionTheyPaidMe": "Dia membayar saya",
   "repayDirectionIPaidThem": "Saya membayar dia",
+  "adminFeeCheckboxLabel": "Tambahkan biaya admin",
+  "adminFeeAmountLabel": "Biaya admin",
   "recordedMessage": "Tercatat",
 
   "allTransactionsTitle": "Semua transaksi",

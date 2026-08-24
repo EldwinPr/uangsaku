@@ -441,6 +441,116 @@ void main() {
     expect(rows, isEmpty);
   });
 
+  test('FEAT16 D2/D4: insertWithAdminFee() writes the main row plus a linked "Admin Fee" expense row when feeAmount and fromAccountId are both non-null/non-zero', () async {
+    final ids = await seedAccounts();
+
+    await dao.insertWithAdminFee(
+      kind: TransactionKind.transfer,
+      amount: 100000,
+      occurredOn: day,
+      fromAccountId: ids['Cash'],
+      toAccountId: ids['Savings'],
+      feeAmount: 2500,
+    );
+
+    final rows = await database.select(database.transactions).get();
+    expect(rows, hasLength(2));
+
+    final main = rows.firstWhere((row) => row.kind == TransactionKind.transfer);
+    expect(main.amount, 100000);
+    expect(main.fromAccountId, ids['Cash']);
+    expect(main.toAccountId, ids['Savings']);
+
+    final fee = rows.firstWhere((row) => row.kind == TransactionKind.expense);
+    expect(fee.amount, 2500);
+    expect(fee.fromAccountId, ids['Cash']);
+    expect(fee.toAccountId, isNull);
+    expect(fee.occurredOn, day);
+
+    final categories = await database.select(database.categories).get();
+    expect(categories, hasLength(1));
+    expect(categories.single.name, 'Admin Fee');
+    expect(fee.categoryId, categories.single.categoryId);
+  });
+
+  test('FEAT16 D3: insertWithAdminFee() called twice reuses the same "Admin Fee" category — no duplicate row', () async {
+    final ids = await seedAccounts();
+
+    await dao.insertWithAdminFee(
+      kind: TransactionKind.transfer,
+      amount: 100000,
+      occurredOn: day,
+      fromAccountId: ids['Cash'],
+      toAccountId: ids['Savings'],
+      feeAmount: 2500,
+    );
+    await dao.insertWithAdminFee(
+      kind: TransactionKind.transfer,
+      amount: 50000,
+      occurredOn: day,
+      fromAccountId: ids['Cash'],
+      toAccountId: ids['Savings'],
+      feeAmount: 1000,
+    );
+
+    final categories = await database.select(database.categories).get();
+    expect(categories, hasLength(1));
+    expect(categories.single.name, 'Admin Fee');
+
+    final feeRows = (await database.select(database.transactions).get())
+        .where((row) => row.kind == TransactionKind.expense)
+        .toList();
+    expect(feeRows, hasLength(2));
+    expect(
+      feeRows.every((row) => row.categoryId == categories.single.categoryId),
+      isTrue,
+    );
+  });
+
+  test('FEAT16 D2: insertWithAdminFee() with a null or zero feeAmount writes only the main row', () async {
+    final ids = await seedAccounts();
+
+    await dao.insertWithAdminFee(
+      kind: TransactionKind.lend,
+      amount: 30000,
+      occurredOn: day,
+      fromAccountId: ids['Cash'],
+      toAccountId: ids['Budi'],
+    );
+    await dao.insertWithAdminFee(
+      kind: TransactionKind.borrow,
+      amount: 40000,
+      occurredOn: day,
+      fromAccountId: ids['Credit card'],
+      toAccountId: ids['Cash'],
+      feeAmount: 0,
+    );
+
+    final rows = await database.select(database.transactions).get();
+    expect(rows, hasLength(2));
+    expect(rows.map((row) => row.kind), [
+      TransactionKind.lend,
+      TransactionKind.borrow,
+    ]);
+    final categories = await database.select(database.categories).get();
+    expect(categories, isEmpty);
+  });
+
+  test('FEAT16 D2: insertWithAdminFee() with a nonzero feeAmount but a null fromAccountId also writes only the main row', () async {
+    await dao.insertWithAdminFee(
+      kind: TransactionKind.repayment,
+      amount: 5000,
+      occurredOn: day,
+      feeAmount: 500,
+    );
+
+    final rows = await database.select(database.transactions).get();
+    expect(rows, hasLength(1));
+    expect(rows.single.kind, TransactionKind.repayment);
+    final categories = await database.select(database.categories).get();
+    expect(categories, isEmpty);
+  });
+
   test('D5 / NFR-4: delete() proceeds unconditionally — even a row referencing now-absent tag ids deletes successfully', () async {
     // FK-direction proof for UC-09 D5: nothing references Transactions, so
     // a ledger row can never be blocked by what it points at — not even

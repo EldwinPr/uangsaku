@@ -72,6 +72,73 @@ class TransactionDao {
         );
   }
 
+  /// FEAT16 D2/D4: `insertWithAdminFee(...)` — wraps [insert] (the main
+  /// transaction, unchanged) and, only when `feeAmount != null && feeAmount
+  /// != 0 && fromAccountId != null`, a second `insert(kind: expense, amount:
+  /// feeAmount, fromAccountId: fromAccountId, categoryId: <get-or-created
+  /// "Admin Fee" id>, occurredOn: occurredOn)`, both inside one
+  /// `_db.transaction()` block so the fee never lands without its main
+  /// transaction (or vice versa). Scoped to Transfer/Lend/Borrow/Repay only
+  /// (plan D1) — the caller decides which kinds ever pass a non-null
+  /// [feeAmount]; this method itself refuses nothing and validates nothing
+  /// (NFR-4).
+  ///
+  /// If the resolved `fromAccountId` is null (an empty account pool), the
+  /// fee row is skipped rather than written with a null side — an admin fee
+  /// with no account to charge is not spending anywhere yet (plan D2).
+  ///
+  /// Returns `Future<void>`; nothing reaches the screen — both rows arrive
+  /// on the read path as [watchAll] re-emissions (`riverpod.md`, the
+  /// read/write asymmetry).
+  Future<void> insertWithAdminFee({
+    required TransactionKind kind,
+    required int amount,
+    required DateTime occurredOn,
+    int? fromAccountId,
+    int? toAccountId,
+    String? note,
+    int? feeAmount,
+  }) {
+    return _db.transaction(() async {
+      await insert(
+        kind: kind,
+        amount: amount,
+        occurredOn: occurredOn,
+        fromAccountId: fromAccountId,
+        toAccountId: toAccountId,
+        note: note,
+      );
+      if (feeAmount != null && feeAmount != 0 && fromAccountId != null) {
+        final categoryId = await _adminFeeCategoryId();
+        await insert(
+          kind: TransactionKind.expense,
+          amount: feeAmount,
+          occurredOn: occurredOn,
+          fromAccountId: fromAccountId,
+          categoryId: categoryId,
+        );
+      }
+    });
+  }
+
+  /// Get-or-create for the `"Admin Fee"` category (D3) — searched case-
+  /// insensitively in Dart against existing categories, the same shape
+  /// `AccountDao._ikhlaskanCategoryId()` (FEAT14) uses, not a SQL `LOWER()`
+  /// clause. A real, user-visible category name, never localized (D3) —
+  /// kept as the literal string in both locales.
+  Future<int> _adminFeeCategoryId() async {
+    const name = 'Admin Fee';
+    final existing = await _db.select(_db.categories).get();
+    for (final category in existing) {
+      if (category.name.toLowerCase() == name.toLowerCase()) {
+        return category.categoryId;
+      }
+    }
+    return _db
+        .into(_db.categories)
+        .insert(CategoriesCompanion.insert(name: name));
+  }
+
   /// The account picker (message 1 on `seq-uc06-move-money.drawio` et al.):
   /// every account with its group, watched. Ordered by insertion id so
   /// emissions are deterministic — the neutral ordering `watchBalances()`

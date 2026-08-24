@@ -372,6 +372,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get repayDirectionIPaidThem => 'I paid them';
 
   @override
+  String get adminFeeCheckboxLabel => 'Add admin fee';
+
+  @override
+  String get adminFeeAmountLabel => 'Admin fee';
+
+  @override
   String get recordedMessage => 'Recorded';
 
   @override

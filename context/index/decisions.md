@@ -1195,3 +1195,37 @@ asked for it directly mid-conversation about the checkbox/write-off requests
 important"); FEAT14 adds one `OutlinedButton.icon` to `AccountFormScreen`'s edit flow,
 no new screen or DAO method — purely a missing edge, same as FEAT02's own orphan list
 described it.
+
+## 2026-08-24 — Admin fee writes as a second linked expense row, not a split amount
+## (FEAT16)
+
+**Scoped to the four two-account flows, not Expense/Income.** The owner's request —
+*"for transfer or some transactions make sure there is admin fee toggle manual
+input"* — was ambiguous about "some transactions," so the scope was checked directly
+rather than guessed: Transfer, Lend, Borrow and Repay all move money between two
+accounts and can plausibly carry a real bank fee; Expense and Income only ever touch
+one account, so there is no second party for a transfer fee to exist between.
+
+**The fee is a real, independent expense row, not a subtracted field.** The main
+transaction's typed `amount` posts unchanged; when the toggle is checked and a
+nonzero fee is typed, `TransactionDao.insertWithAdminFee()` writes a *second*
+`TransactionKind.expense` row for the fee amount, charged against whichever account
+the main transaction already debits (Transfer's source, Lend's own wallet, Borrow's
+PAYABLE account, Repay's resolved `fromAccountId`), inside the same drift transaction.
+This was chosen over subtracting the fee from one side of the main row specifically
+so every existing query keeps working with zero changes: FR-8/FR-9's spending
+predicate (`to_account_id IS NULL`), UC-12's budget consumption, and UC-01's balance
+figures all already know how to count a real expense row — inventing a "fee" field on
+`Transactions` would have needed every one of those queries taught a new column to
+add in, where a second ordinary row needs nothing.
+
+**"Admin Fee" follows the same literal-category rule FEAT14 set for "Ikhlaskan."** Get-
+or-created, kept as plain data in both locales rather than routed through
+`AppLocalizations` — the same reasoning: a category name is data a user (or, here, the
+app on the user's behalf) assigns to a transaction, not UI chrome.
+
+**No fee row when there's no account to charge.** If the flow's resolved
+`fromAccountId` is null (an empty account pool), `insertWithAdminFee()` still writes
+the main transaction (matching UC-04's existing empty-pool handling, which already
+lets a save proceed with a null side rather than refusing) but silently skips the fee
+row — an admin fee charged against no account isn't a real expense anywhere yet.

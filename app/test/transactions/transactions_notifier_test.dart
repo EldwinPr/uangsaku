@@ -211,6 +211,40 @@ void main() {
     );
   });
 
+  test('FEAT16 D4: transfer() forwards feeAmount through to insertWithAdminFee(), writing a linked "Admin Fee" expense row', () async {
+    final ids = await seedAccounts();
+    await database
+        .into(database.accounts)
+        .insert(
+          AccountsCompanion.insert(
+            name: 'Savings',
+            group: AccountGroup.HOLDING,
+            openingAmount: 0,
+          ),
+        );
+    final savings = (await database.select(database.accounts).get())
+        .firstWhere((account) => account.name == 'Savings')
+        .accountId;
+
+    await container()
+        .read(transactionsProvider.notifier)
+        .transfer(
+          amount: 100000,
+          fromAccountId: ids['Cash'],
+          toAccountId: savings,
+          date: day,
+          feeAmount: 2500,
+        );
+
+    final rows = await database.select(database.transactions).get();
+    expect(rows, hasLength(2));
+    final fee = rows.firstWhere((row) => row.kind == TransactionKind.expense);
+    expect(fee.amount, 2500);
+    expect(fee.fromAccountId, ids['Cash']);
+    final categories = await database.select(database.categories).get();
+    expect(categories.single.name, 'Admin Fee');
+  });
+
   test('FR-18: edit() amends through UC04\'s path — kind stays fixed, the amended row arrives on the list stream', () async {
     final ids = await seedAccounts();
     final notifier = container().read(transactionsProvider.notifier);

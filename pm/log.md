@@ -14,8 +14,8 @@ before starting work.
 
 ## Current state — 2026-08-24
 
-**Phase.** **The planned backlog and all SIX of the owner's manual-testing feedback
-rounds are DONE.** The app compiles and its test suite is green (**218 tests**). Ten
+**Phase.** **The planned backlog and all SEVEN of the owner's manual-testing feedback
+rounds are DONE.** The app compiles and its test suite is green (**233 tests**). Ten
 screens/tabs built end to end — every one of them now reachable, including UC-03's
 adjust mode, which FEAT14 gave its first navigation entry point (an "Adjust balance"
 button on `AccountFormScreen`'s edit flow). `home` is `AppShell`: a five-tab bottom nav (Home, Accounts, Record as a colored
@@ -41,12 +41,16 @@ across Home's figure cards and picker descriptions (`group_style.dart`/
 debts, reached — alongside Settings — from every tab, with Categories staying scoped
 to Home and Transactions only; the debt-detail "settle" button now really writes off
 the remaining balance via a real `adjustment` transaction tagged with a literal
-"Ikhlaskan" category, rather than only flipping the `settled` flag (FEAT14 D1).
+"Ikhlaskan" category, rather than only flipping the `settled` flag (FEAT14 D1);
+Transfer/Lend/Borrow/Repay can each carry a manual admin fee, written as a second
+linked `expense` row tagged with a literal "Admin Fee" category rather than a field
+subtracted from the main transaction (FEAT16).
 
 **Active issue.** None. Nothing is queued. `FEAT03` through `FEAT06` (round one),
 `FEAT07`/`FEAT08` (round two), `FEAT09`/`FEAT10` (round three), `FEAT11` (round four),
-`FEAT12` (a same-day follow-up), and `FEAT13`/`FEAT14`/`FEAT15` (rounds five and six)
-— fourteen feedback issues total — all closed the same day, 2026-08-24, alongside
+`FEAT12` (a same-day follow-up), `FEAT13`/`FEAT14`/`FEAT15` (rounds five and six), and
+`FEAT16` (round seven) — fifteen feedback issues total — all closed the same day,
+2026-08-24, alongside
 the third schema change (`FEAT03`'s `Settings.locale`/`themeMode`/`seedColor`; every
 issue after that added no schema, including `FEAT11`'s new enum value — confirmed no
 migration was needed since `Accounts.group` carries no `CHECK` constraint). Both
@@ -1674,6 +1678,58 @@ was done personally rather than trusting the three individual "green" reports at
 face value. Worth using `isolation: "worktree"` for future same-session parallel
 `flutter-coder` dispatches into disjoint files, or accepting the noisier mid-flight
 signal and always re-verifying on the merged tree afterward as done here.
+
+**[TODO]** The same two small items flagged earlier remain open, pending the owner:
+(1) `RecordTransactionScreen`'s kind switch not clearing a typed-but-uncreated person
+name; (2) the leftover "Rina" test account in real app data.
+
+---
+
+## 2026-08-24 — FEAT16: seventh feedback round — manual admin-fee toggle on
+## Transfer/Lend/Borrow/Repay
+
+**[DECISION]** Owner's direct request: *"for transfer or some transactions make sure
+there is admin fee toggle manual input."* "Some transactions" was ambiguous enough to
+check directly rather than guess — one `AskUserQuestion` round settled scope
+(Transfer/Lend/Borrow/Repay, the four flows that move money between two accounts;
+Expense/Income have no second account for a fee to exist between), mechanics (a
+second, independent, linked `expense` transaction — not a field subtracted from the
+main row, so every existing spending/budget/balance query keeps working with zero
+changes), and the fee category (a new fixed, get-or-created `"Admin Fee"` category,
+kept as literal plain data in both locales — the same rule FEAT14's `"Ikhlaskan"`
+category already established, decisions.md 2026-08-24).
+
+**[STATUS]** New `TransactionDao.insertWithAdminFee()` wraps the existing `insert()`
+(the main transaction, entirely unchanged) plus, only when a nonzero fee is typed and
+the flow's resolved `fromAccountId` is non-null, a second `insert(kind: expense, ...)`
+row charged against that same account — both writes inside one `_db.transaction()`
+block so a fee can never land without its main transaction (or vice versa). A private
+`_adminFeeCategoryId()` helper does the get-or-create, mirroring
+`AccountDao._ikhlaskanCategoryId()` (FEAT14) exactly — in-memory case-insensitive
+scan, never a SQL `LOWER()`. `TransactionsNotifier.transfer()`/`lend()`/`borrow()`/
+`repay()` each gained one optional `feeAmount` parameter and now call
+`insertWithAdminFee()` instead of plain `insert()`; `recordExpense`/`recordIncome`/
+`edit`/`delete` are untouched. `RecordTransactionScreen` gained a persistent checkbox
++ manual amount field (reusing the existing `amountHintMinor` hint text), visible only
+for the four in-scope flows, resetting to unchecked/blank after every save and after
+every flow switch — the same convention every other per-flow field on this screen
+already follows. `class-transactions.drawio`'s `TransactionDao` box gained
+`insertWithAdminFee()` (edited in the main session before dispatch — `CategoryDao`'s
+box below it shifted down 20px to keep its gap, exported and visually verified before
+dispatch, no overlap).
+
+**[STATUS]** Planned, diagram-updated and tracker-entered in the main session, then
+dispatched to a single `flutter-coder` (one issue this time, not three — no parallel-
+dispatch risk to manage). Reviewed the returned diff line by line against the plan
+before trusting it (D2/D4's DAO method, the four notifier methods' new parameter, and
+the screen's new state/UI/reset logic all matched exactly), then re-ran all four
+verification commands personally: `dart run build_runner build
+--delete-conflicting-outputs` clean, `dart format --set-exit-if-changed .` — one file
+needed reformatting (fixed by the format run itself, not a logic change), `flutter
+analyze` — No issues found!, full `flutter test` — **233 tests green** (was 218).
+`git diff --stat app/drift_schemas/` empty — no schema change. `python audit.py` — 14
+passed / 0 warnings / 0 failures both before dispatch and after the plan/tracker
+status flip to DONE.
 
 **[TODO]** The same two small items flagged earlier remain open, pending the owner:
 (1) `RecordTransactionScreen`'s kind switch not clearing a typed-but-uncreated person
