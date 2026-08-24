@@ -271,6 +271,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noAccountsYetHint => 'No accounts yet';
 
   @override
+  String createOptionLabel(String name) {
+    return 'Create \'$name\'';
+  }
+
+  @override
   String get allTransactionsTitle => 'All transactions';
 
   @override

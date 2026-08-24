@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:uangsaku/l10n/app_localizations.dart';
 import 'package:uangsaku/src/accounts/accounts_table.dart';
 import 'package:uangsaku/src/database/app_database.dart';
+import 'package:uangsaku/src/transactions/category_dao.dart';
 import 'package:uangsaku/src/transactions/transaction_dao.dart';
 import 'package:uangsaku/src/transactions/transaction_list_screen.dart';
 import 'package:uangsaku/src/transactions/transactions_table.dart';
@@ -201,6 +202,95 @@ void main() {
 
       // The zero-amount row round-trips onto the tile.
       expect(find.text('Expense · 0'), findsOneWidget);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT05 D2: typing an existing category name and selecting it in the edit sheet sets the same id the dropdown would have',
+    (tester) async {
+      final categoryDao = CategoryDao(database);
+      await categoryDao.insert(name: 'Food');
+      await seedOneExpense();
+
+      await pumpScreen(tester);
+      await tester.tap(find.byTooltip('Amend transaction'));
+      await tester.pumpAndSettle();
+
+      final categoryField = find.byKey(const Key('edit-category-field'));
+      await tester.enterText(
+        find.descendant(of: categoryField, matching: find.byType(TextField)),
+        'Food',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'Food'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-save')));
+      await tester.pumpAndSettle();
+
+      final category = await database.select(database.categories).getSingle();
+      final row = await database.select(database.transactions).getSingle();
+      expect(row.categoryId, category.categoryId);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT05 D3: the edit sheet\'s subcategory suggestions are NOT narrowed by category — unlike RecordTransactionScreen, this is browsing (UC-09 D6)',
+    (tester) async {
+      final categoryDao = CategoryDao(database);
+      await categoryDao.insert(name: 'Food');
+      final food = await database.select(database.categories).getSingle();
+      await categoryDao.insert(categoryId: food.categoryId, name: 'Groceries');
+      await categoryDao.insert(name: 'Transport');
+      final transport = (await database.select(database.categories).get())
+          .firstWhere((c) => c.name == 'Transport');
+      await categoryDao.insert(categoryId: transport.categoryId, name: 'Fuel');
+      await seedOneExpense();
+
+      await pumpScreen(tester);
+      await tester.tap(find.byTooltip('Amend transaction'));
+      await tester.pumpAndSettle();
+
+      // No category is selected on this row (the seeded expense has none),
+      // yet both subcategories — from different categories — are
+      // suggestible: the pool stays the full flattened list for browsing.
+      final subcategoryField = find.byKey(const Key('edit-subcategory-field'));
+      await tester.enterText(
+        find.descendant(of: subcategoryField, matching: find.byType(TextField)),
+        '',
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Groceries'), findsOneWidget);
+      expect(find.text('Fuel'), findsOneWidget);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT05 D3: the create-new affordance is absent for the subcategory field when no category is selected',
+    (tester) async {
+      final categoryDao = CategoryDao(database);
+      await categoryDao.insert(name: 'Food');
+      await seedOneExpense();
+
+      await pumpScreen(tester);
+      await tester.tap(find.byTooltip('Amend transaction'));
+      await tester.pumpAndSettle();
+
+      // The row has no category set, so the subcategory field's create-new
+      // option is unavailable — absent, not a refusal (D3, NFR-4).
+      final subcategoryField = find.byKey(const Key('edit-subcategory-field'));
+      await tester.enterText(
+        find.descendant(of: subcategoryField, matching: find.byType(TextField)),
+        'Snacks',
+      );
+      await tester.pumpAndSettle();
+      expect(find.text("Create 'Snacks'"), findsNothing);
 
       await unmountAndFlushTimers(tester);
     },

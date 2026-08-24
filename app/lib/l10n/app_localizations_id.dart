@@ -271,6 +271,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get noAccountsYetHint => 'Belum ada akun';
 
   @override
+  String createOptionLabel(String name) {
+    return 'Buat \'$name\'';
+  }
+
+  @override
   String get allTransactionsTitle => 'Semua transaksi';
 
   @override

@@ -608,6 +608,12 @@ abstract class AppLocalizations {
   /// **'No accounts yet'**
   String get noAccountsYetHint;
 
+  /// No description provided for @createOptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Create \'{name}\''**
+  String createOptionLabel(String name);
+
   /// No description provided for @allTransactionsTitle.
   ///
   /// In en, this message translates to:

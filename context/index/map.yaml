@@ -291,6 +291,21 @@ code:
       - app/test/accounts/accounts_screen_test.dart
       - app/test/accounts/balance_sheet_screen_test.dart
 
+  # FEAT05-category-picker, DONE 2026-08-24. No UC - infrastructure. Third of four
+  # polish items from the owner's manual-testing feedback round: category/subcategory
+  # DropdownButtonFormFields become a private per-file _CategoryAutocompleteField
+  # (RawAutocomplete) in both RecordTransactionScreen and TransactionListScreen's edit
+  # sheet - not a tracked class, same shape as _FigureCard/_NavIconButton, so no class
+  # diagram change. UI ONLY: CategoryDao/CategoriesNotifier/the two tables untouched,
+  # reuses the existing categoriesProvider.notifier.add(). Typing an existing name
+  # (case-insensitive) selects it; typing a name matching nothing appends a "Create
+  # '{name}'" suggestion that writes via add() and resolves the field by matching the
+  # new name in the next categoryTreeProvider emission. The two screens' subcategory
+  # rules are deliberately NOT unified: RecordTransactionScreen stays narrowed to the
+  # selected category's children, TransactionListScreen's edit sheet keeps the full
+  # flattened list for browsing (UC-09 D6) - creating a NEW subcategory still needs a
+  # category selected in both. 146 tests green, no schema change.
+
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
 # each other in BOTH directions (balances need Transactions; the record screen needs

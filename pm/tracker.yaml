@@ -602,3 +602,33 @@ issues:
       140 tests green, no schema change. Every new label (navHome, navAccounts) goes
       through FEAT03's AppLocalizations.
 
+  - id: FEAT05-category-picker
+    slug: category-picker
+    title: Category/subcategory pickers become autocomplete-with-inline-create
+    status: DONE
+    plan: pm/issues/feat05-category-picker/plan.md
+    depends_on: [FEAT04-nav-redesign]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-24. No UC owns this - infrastructure. Fourth of four polish items
+      from the owner's manual-testing feedback round: RecordTransactionScreen's and
+      TransactionListScreen's edit-sheet category/subcategory dropdowns are now a
+      private per-file _CategoryAutocompleteField (RawAutocomplete) - not a tracked
+      class (same shape as _FigureCard/_NavIconButton), so no class diagram change was
+      needed. Pick existing (case-insensitive match), or type a name matching nothing
+      to see a "Create '{name}'" suggestion that writes via the already-existing
+      categoriesProvider.notifier.add() and resolves the field by matching the new
+      name in the next categoryTreeProvider emission. UI ONLY - Category/Subcategory
+      stay two separate drift tables (owner explicitly chose this scope over
+      collapsing them, 2026-08-24); CategoryDao/CategoriesNotifier untouched.
+      Preserves each screen's existing, DIFFERENT subcategory-narrowing rule rather
+      than unifying them (RecordTransactionScreen narrows by selected category;
+      TransactionListScreen's edit sheet shows all subcategories per UC-09 D6's "stays
+      visible even if parent cleared" rule) - creating a NEW subcategory still
+      requires a category selected in both, since Subcategory.categoryId is NOT NULL.
+      A real setState-during-build bug was caught and fixed during implementation
+      (deferred via addPostFrameCallback) - not a scope change, a framework-
+      correctness fix the tests surfaced. 146 tests green, no schema change. Third of
+      four items from the feedback round done; save-flow UX (auto-close/confirm on
+      save, icon change) plus account-name uniqueness remains.
+

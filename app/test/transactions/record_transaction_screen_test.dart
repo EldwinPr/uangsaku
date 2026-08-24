@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:uangsaku/l10n/app_localizations.dart';
 import 'package:uangsaku/src/accounts/accounts_table.dart';
 import 'package:uangsaku/src/database/app_database.dart';
+import 'package:uangsaku/src/transactions/category_dao.dart';
 import 'package:uangsaku/src/transactions/record_transaction_screen.dart';
 import 'package:uangsaku/src/transactions/transactions_table.dart';
 
@@ -128,6 +129,114 @@ void main() {
       expect(transfer.fromAccountId, isNotNull);
       expect(transfer.toAccountId, transfer.fromAccountId);
       expect(find.byType(AlertDialog), findsNothing);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT05 D2: typing an existing category name and selecting it sets the same id the dropdown would have',
+    (tester) async {
+      await seedAccounts();
+      final categoryDao = CategoryDao(database);
+      await categoryDao.insert(name: 'Food');
+      await pumpScreen(tester);
+
+      final categoryField = find.byKey(const Key('category-field'));
+      await tester.enterText(
+        find.descendant(of: categoryField, matching: find.byType(TextField)),
+        'Food',
+      );
+      await tester.pumpAndSettle();
+
+      // The suggestion list shows the existing category, no create-new
+      // entry (an exact case-insensitive match already exists).
+      expect(find.text("Create 'Food'"), findsNothing);
+      await tester.tap(find.widgetWithText(ListTile, 'Food'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).first, '15000');
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      final row = await database.select(database.transactions).getSingle();
+      final category = await database.select(database.categories).getSingle();
+      expect(row.categoryId, category.categoryId);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT05 D2: typing a new category name and creating it writes via categoriesProvider and the field resolves to the new row',
+    (tester) async {
+      await seedAccounts();
+      await pumpScreen(tester);
+
+      final categoryField = find.byKey(const Key('category-field'));
+      await tester.enterText(
+        find.descendant(of: categoryField, matching: find.byType(TextField)),
+        'Transport',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text("Create 'Transport'"), findsOneWidget);
+      await tester.tap(find.widgetWithText(ListTile, "Create 'Transport'"));
+      await tester.pumpAndSettle();
+
+      final category = await database.select(database.categories).getSingle();
+      expect(category.name, 'Transport');
+
+      await tester.enterText(find.byType(TextField).first, '5000');
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      final row = await database.select(database.transactions).getSingle();
+      expect(row.categoryId, category.categoryId);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT05 D3: subcategory suggestions stay narrowed to the selected category',
+    (tester) async {
+      await seedAccounts();
+      final categoryDao = CategoryDao(database);
+      await categoryDao.insert(name: 'Food');
+      final food = await database.select(database.categories).getSingle();
+      await categoryDao.insert(categoryId: food.categoryId, name: 'Groceries');
+      await categoryDao.insert(name: 'Transport');
+
+      await pumpScreen(tester);
+
+      // No category selected yet — the create-new affordance for the
+      // subcategory field is absent (D3), not a refusal.
+      final subcategoryField = find.byKey(const Key('subcategory-field'));
+      await tester.enterText(
+        find.descendant(of: subcategoryField, matching: find.byType(TextField)),
+        'Anything',
+      );
+      await tester.pumpAndSettle();
+      expect(find.text("Create 'Anything'"), findsNothing);
+      // Select 'Food' — its 'Groceries' subcategory becomes suggestible.
+      final categoryField = find.byKey(const Key('category-field'));
+      await tester.enterText(
+        find.descendant(of: categoryField, matching: find.byType(TextField)),
+        'Food',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'Food'));
+      await tester.pumpAndSettle();
+
+      // 'Groceries' (Food's child) is suggestible; 'Transport' has no
+      // children, so nothing outside Food's pool is offered.
+      await tester.enterText(
+        find.descendant(of: subcategoryField, matching: find.byType(TextField)),
+        'Gro',
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Groceries'), findsOneWidget);
 
       await unmountAndFlushTimers(tester);
     },

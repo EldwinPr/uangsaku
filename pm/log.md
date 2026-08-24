@@ -1129,3 +1129,39 @@ clean, no schema change.
 **[TODO]** Two items remain from the feedback round: category picker →
 autocomplete-with-inline-create, then save-flow UX (auto-close/confirm, icon change)
 plus account-name uniqueness.
+
+---
+
+## 2026-08-24 — FEAT05-category-picker closes; three of four feedback items done
+
+**[STATUS]** **`FEAT05-category-picker` is DONE** — the third of four items from the
+owner's manual-testing feedback round. `RecordTransactionScreen`'s and
+`TransactionListScreen`'s edit-sheet category/subcategory `DropdownButtonFormField`s are
+now a private per-file `_CategoryAutocompleteField` (`RawAutocomplete`): typing an
+existing name (case-insensitive) surfaces it as a suggestion; typing a name matching
+nothing appends a distinct "Create '{name}'" entry that writes via the already-existing
+`categoriesProvider.notifier.add()` and resolves the field to the new row by matching its
+name in the next `categoryTreeProvider` emission.
+
+UI only — `CategoryDao`/`CategoriesNotifier`/the two tables untouched, no class diagram
+change needed (`_CategoryAutocompleteField` is a private widget, not a tracked class,
+same shape as `_FigureCard`/`_NavIconButton`). Each screen's existing, deliberately
+*different* subcategory-narrowing rule was preserved rather than unified —
+`RecordTransactionScreen` still narrows to the selected category's children;
+`TransactionListScreen`'s edit sheet still shows the full flattened list for browsing
+(UC-09 D6). Creating a *new* subcategory still requires a category selected in both,
+since the schema makes `Subcategory.categoryId` `NOT NULL`.
+
+**[DISCOVERY]** A real framework bug was caught and fixed during implementation, not by
+review: the first version resolved a newly-created row's id by calling
+`widget.onSelected(...)` synchronously from `didUpdateWidget`, which is an illegal
+`setState`-during-build and crashed in widget tests. Fixed by deferring through
+`WidgetsBinding.instance.addPostFrameCallback`, guarded by `mounted`.
+
+**[STATUS]** 146 tests green, `flutter analyze` clean, no schema change, `audit.py`
+14/0/0.
+
+**[TODO]** One item remains from the feedback round: save-flow UX (auto-close/confirm on
+save so double-tapping doesn't create duplicates and the user gets feedback; the
+floppy-disk save icon replaced with something more recognizable) plus account-name
+uniqueness (case-insensitive, warn-but-still-allow-save).

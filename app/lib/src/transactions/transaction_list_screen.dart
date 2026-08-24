@@ -321,33 +321,39 @@ class _EditSheetState extends ConsumerState<_EditSheet> {
               value: _toAccountId,
               onChanged: (id) => setState(() => _toAccountId = id),
             ),
-          DropdownButtonFormField<int?>(
-            initialValue: _categoryId,
-            hint: Text(loc.noneHint),
-            decoration: InputDecoration(labelText: loc.categoryLabel),
-            items: [
-              DropdownMenuItem<int?>(value: null, child: Text(loc.noneHint)),
+          // FEAT05 D1/D2: autocomplete-with-inline-create. D3: unlike
+          // `RecordTransactionScreen`'s narrowed pool, this sheet's
+          // subcategory suggestions stay the full flattened list above (UC-09
+          // D6, "browsing" rule) — only the create-new affordance is gated on
+          // a category being selected.
+          _CategoryAutocompleteField(
+            key: const Key('edit-category-field'),
+            label: loc.categoryLabel,
+            options: [
               for (final category in categories)
-                DropdownMenuItem<int?>(
-                  value: category.categoryId,
-                  child: Text(category.name),
-                ),
+                (id: category.categoryId, name: category.name),
             ],
-            onChanged: (id) => setState(() => _categoryId = id),
+            selectedId: _categoryId,
+            onSelected: (id) => setState(() => _categoryId = id),
+            onCreate: (name) =>
+                ref.read(categoriesProvider.notifier).add(name: name),
+            createLabel: loc.createOptionLabel,
           ),
-          DropdownButtonFormField<int?>(
-            initialValue: _subcategoryId,
-            hint: Text(loc.noneHint),
-            decoration: InputDecoration(labelText: loc.subcategoryLabel),
-            items: [
-              DropdownMenuItem<int?>(value: null, child: Text(loc.noneHint)),
+          _CategoryAutocompleteField(
+            key: const Key('edit-subcategory-field'),
+            label: loc.subcategoryLabel,
+            options: [
               for (final subcategory in subcategories)
-                DropdownMenuItem<int?>(
-                  value: subcategory.subcategoryId,
-                  child: Text(subcategory.name),
-                ),
+                (id: subcategory.subcategoryId, name: subcategory.name),
             ],
-            onChanged: (id) => setState(() => _subcategoryId = id),
+            selectedId: _subcategoryId,
+            onSelected: (id) => setState(() => _subcategoryId = id),
+            onCreate: _categoryId == null
+                ? null
+                : (name) => ref
+                      .read(categoriesProvider.notifier)
+                      .add(categoryId: _categoryId, name: name),
+            createLabel: loc.createOptionLabel,
           ),
           DropdownButtonFormField<int?>(
             initialValue: _budgetGroupId,
@@ -401,6 +407,191 @@ class _EditSheetState extends ConsumerState<_EditSheet> {
           ),
       ],
       onChanged: onChanged,
+    );
+  }
+}
+
+/// FEAT05 D1/D2: the category/subcategory picker, autocomplete with an
+/// inline "create new" affordance replacing the dropdown. Typing a name that
+/// matches an existing row (case-insensitive) lets it be picked from the
+/// suggestion list, setting the id exactly as the dropdown did; typing a
+/// name that matches nothing appends a distinct create-new entry, which
+/// calls [onCreate] and then resolves the field to the row once it appears
+/// in the next [options] the parent passes down (matched by name — `add()`
+/// hands back no id, same read/write asymmetry every write in this app
+/// already has).
+///
+/// Private, per-file widget (same shape as `_FigureCard`/`_NavIconButton`):
+/// not a class either class diagram tracks. Duplicated from
+/// `record_transaction_screen.dart` rather than shared — plan D1 leaves that
+/// choice to the coder, and the two screens' narrowing rules differ (D3).
+class _CategoryAutocompleteField extends StatefulWidget {
+  const _CategoryAutocompleteField({
+    super.key,
+    required this.label,
+    required this.options,
+    required this.selectedId,
+    required this.onSelected,
+    required this.onCreate,
+    required this.createLabel,
+  });
+
+  final String label;
+  final List<({int id, String name})> options;
+  final int? selectedId;
+  final ValueChanged<int?> onSelected;
+
+  /// Null when creating is unavailable — a subcategory field with no parent
+  /// category selected yet (D3: the affordance is absent, not refused).
+  final void Function(String name)? onCreate;
+  final String Function(String name) createLabel;
+
+  @override
+  State<_CategoryAutocompleteField> createState() =>
+      _CategoryAutocompleteFieldState();
+}
+
+class _CategoryAutocompleteFieldState
+    extends State<_CategoryAutocompleteField> {
+  late final TextEditingController _controller;
+  late final FocusNode _focusNode;
+
+  /// Set right after firing [onCreate]; cleared once an option by this name
+  /// shows up in a later [_CategoryAutocompleteField.options] and the field
+  /// resolves to its id.
+  String? _pendingCreateName;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: _labelFor(widget.selectedId));
+    _focusNode = FocusNode();
+  }
+
+  String _labelFor(int? id) {
+    if (id == null) return '';
+    for (final option in widget.options) {
+      if (option.id == id) return option.name;
+    }
+    return '';
+  }
+
+  @override
+  void didUpdateWidget(covariant _CategoryAutocompleteField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedId != oldWidget.selectedId) {
+      _controller.text = _labelFor(widget.selectedId);
+    }
+    final pending = _pendingCreateName;
+    if (pending != null) {
+      for (final option in widget.options) {
+        if (option.name.toLowerCase() == pending.toLowerCase()) {
+          _pendingCreateName = null;
+          _controller.text = option.name;
+          // Deferred: this runs from didUpdateWidget, still inside a build
+          // phase — calling the setState-bound callback synchronously here
+          // is exactly the "setState during build" framework forbids.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              widget.onSelected(option.id);
+            }
+          });
+          break;
+        }
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RawAutocomplete<({int? id, String name, bool isCreateNew})>(
+      textEditingController: _controller,
+      focusNode: _focusNode,
+      optionsBuilder: (value) {
+        final query = value.text.trim();
+        final lowerQuery = query.toLowerCase();
+        final matches = <({int? id, String name, bool isCreateNew})>[
+          for (final option in widget.options)
+            if (option.name.toLowerCase().contains(lowerQuery))
+              (id: option.id, name: option.name, isCreateNew: false),
+        ];
+        final onCreate = widget.onCreate;
+        final exists = widget.options.any(
+          (option) => option.name.toLowerCase() == lowerQuery,
+        );
+        if (query.isNotEmpty && !exists && onCreate != null) {
+          matches.add((id: null, name: query, isCreateNew: true));
+        }
+        return matches;
+      },
+      displayStringForOption: (choice) => choice.name,
+      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+        return TextField(
+          controller: controller,
+          focusNode: focusNode,
+          decoration: InputDecoration(labelText: widget.label),
+          onChanged: (text) {
+            if (text.isEmpty) {
+              widget.onSelected(null);
+            }
+          },
+        );
+      },
+      onSelected: (choice) {
+        if (choice.isCreateNew) {
+          _pendingCreateName = choice.name;
+          _controller.text = choice.name;
+          widget.onCreate!(choice.name);
+        } else {
+          _controller.text = choice.name;
+          widget.onSelected(choice.id);
+        }
+        // Closes the suggestion overlay on selection, same as a dropdown's
+        // menu closing once an item is picked. Deferred a frame: unfocusing
+        // synchronously here races the overlay's own removal when selection
+        // also triggers a rebuild (the create-new path always does).
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _focusNode.unfocus();
+          }
+        });
+      },
+      optionsViewBuilder: (context, onSelected, options) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 4,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 200),
+              child: ListView(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                children: [
+                  for (final option in options)
+                    ListTile(
+                      leading: option.isCreateNew
+                          ? const Icon(Icons.add)
+                          : null,
+                      title: Text(
+                        option.isCreateNew
+                            ? widget.createLabel(option.name)
+                            : option.name,
+                      ),
+                      onTap: () => onSelected(option),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -98,6 +98,8 @@
   "subcategoryOptionalLabel": "Subcategory (optional)",
   "budgetGroupOptionalLabel": "Budget group (optional)",
   "noAccountsYetHint": "No accounts yet",
+  "createOptionLabel": "Create '{name}'",
+  "@createOptionLabel": {"placeholders": {"name": {"type": "String"}}},
 
   "allTransactionsTitle": "All transactions",
   "noTransactionsYet": "No transactions yet",

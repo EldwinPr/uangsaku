@@ -94,6 +94,7 @@
   "subcategoryOptionalLabel": "Subkategori (opsional)",
   "budgetGroupOptionalLabel": "Kelompok anggaran (opsional)",
   "noAccountsYetHint": "Belum ada akun",
+  "createOptionLabel": "Buat '{name}'",
 
   "allTransactionsTitle": "Semua transaksi",
   "noTransactionsYet": "Belum ada transaksi",
