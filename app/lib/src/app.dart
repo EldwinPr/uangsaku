@@ -125,8 +125,8 @@ class _AppShellState extends State<AppShell> {
       floatingActionButton: FloatingActionButton(
         heroTag: 'app-shell-record-fab',
         tooltip: loc.navRecord,
-        backgroundColor: colorScheme.tertiary,
-        foregroundColor: colorScheme.onTertiary,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         onPressed: () => _select(_recordIndex),
         child: const Icon(Icons.add),
       ),

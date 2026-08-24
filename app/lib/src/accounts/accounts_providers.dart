@@ -74,6 +74,18 @@ class AccountsNotifier extends Notifier<void> {
     await _dao.setSettled(accountId);
   }
 
+  /// FEAT14 D1: `writeOffDebt(accountId)` — "Ikhlaskan".
+  ///
+  /// Forwards to [AccountDao.writeOffDebt] and returns nothing to the
+  /// screen — the zeroed balance and the settled badge arrive on the read
+  /// path once [accountBalancesProvider] / [debtProgressProvider] re-emit
+  /// (`riverpod.md`, the read/write asymmetry). No arithmetic happens here —
+  /// the DAO derives the write-off amount itself, the same shape
+  /// [adjustAccount] already follows.
+  Future<void> writeOffDebt({required int accountId}) async {
+    await _dao.writeOffDebt(accountId);
+  }
+
   /// Message 9 on `seq-uc02b-edit-account.drawio`: `editAccount(accountId,
   /// name, group)`.
   ///

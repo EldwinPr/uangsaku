@@ -91,7 +91,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get markSettled => 'Tandai lunas';
+  String get writeOffDebtButton => 'Ikhlaskan';
 
   @override
   String get figurePaid => 'Sudah dibayar';
@@ -151,6 +151,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get deleteAccountButton => 'Hapus akun';
+
+  @override
+  String get adjustBalanceButton => 'Sesuaikan saldo';
 
   @override
   String get accountGroupDescriptionHolding =>
@@ -442,6 +445,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get okButton => 'OK';
+
+  @override
+  String get budgetAllocationChartTitle => 'Alokasi anggaran';
 
   @override
   String get balanceTrendChartTitle => 'Tren saldo (30 hari)';

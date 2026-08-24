@@ -14,31 +14,39 @@ before starting work.
 
 ## Current state — 2026-08-24
 
-**Phase.** **The planned backlog and all FOUR of the owner's manual-testing feedback
-rounds are DONE.** The app compiles and its test suite is green (**200 tests**). Ten
-screens/tabs built end to end, all reachable except one deliberately unrouted flow
-(UC-03's adjust mode, never asked for). `home` is `AppShell`: a five-tab bottom nav
-(Home, Accounts, Record as a colored circular docked FAB, Transactions, Budget) with
-every other screen reached contextually. Full EN/ID language toggle, light/dark/system
-theme and a theme-color choice live in `SettingsScreen`; category/subcategory AND
-Lend/Borrow/Repay person pickers are autocomplete-with-inline-create; every save
-action closes/clears and confirms instead of sitting silently re-tappable; `Home`
-carries three charts (balance trend, income vs expense, spending by category,
-`fl_chart`) below four now-colored figure cards; transaction rows are colored by
-kind; `RecordTransactionScreen` switches back to Home on a successful save;
-**account-name collisions hard-block** — the one deliberate, owner-cited exception to
-NFR-4's otherwise-zero-refusals rule (`docs/fr-nfr.md`, `decisions.md` 2026-08-24);
+**Phase.** **The planned backlog and all SIX of the owner's manual-testing feedback
+rounds are DONE.** The app compiles and its test suite is green (**218 tests**). Ten
+screens/tabs built end to end — every one of them now reachable, including UC-03's
+adjust mode, which FEAT14 gave its first navigation entry point (an "Adjust balance"
+button on `AccountFormScreen`'s edit flow). `home` is `AppShell`: a five-tab bottom nav (Home, Accounts, Record as a colored
+circular docked FAB — now `colorScheme.primary`, FEAT14 D4 — Transactions, Budget)
+with every other screen reached contextually. Full EN/ID language toggle,
+light/dark/system theme and a theme-color choice live in `SettingsScreen`;
+category/subcategory AND Lend/Borrow/Repay person pickers are autocomplete-with-
+inline-create — the person picker's checkbox is now a persistent widget above the
+field that gates creation entirely (FEAT13, superseding FEAT11 D7: unchecked = can't
+create at all, checked = always creates `PERSON`); every save action closes/clears
+and confirms instead of sitting silently re-tappable; `Home` carries three charts
+(balance trend, income vs expense, spending by category, `fl_chart`) below four
+now-colored figure cards; `Budget` now also carries a pie chart of budget allocation
+above its rows (FEAT15); transaction rows are colored by kind;
+`RecordTransactionScreen` switches back to Home on a successful save; **account-name
+collisions hard-block** — the one deliberate, owner-cited exception to NFR-4's
+otherwise-zero-refusals rule (`docs/fr-nfr.md`, `decisions.md` 2026-08-24);
 `AccountGroup` now has a fourth value, `PERSON`, whose direction (owed to me / owed by
 me) is decided fresh on every read from its balance's sign rather than fixed at
 creation; every `AccountGroup`/`TransactionKind` has one consistent color+icon, reused
 across Home's figure cards and picker descriptions (`group_style.dart`/
 `kind_style.dart`); a new in-app `HelpScreen` explains accounts/recording/budgets/
 debts, reached — alongside Settings — from every tab, with Categories staying scoped
-to Home and Transactions only.
+to Home and Transactions only; the debt-detail "settle" button now really writes off
+the remaining balance via a real `adjustment` transaction tagged with a literal
+"Ikhlaskan" category, rather than only flipping the `settled` flag (FEAT14 D1).
 
 **Active issue.** None. Nothing is queued. `FEAT03` through `FEAT06` (round one),
-`FEAT07`/`FEAT08` (round two), `FEAT09`/`FEAT10` (round three), and `FEAT11` (round
-four) — nine feedback issues total — all closed the same day, 2026-08-24, alongside
+`FEAT07`/`FEAT08` (round two), `FEAT09`/`FEAT10` (round three), `FEAT11` (round four),
+`FEAT12` (a same-day follow-up), and `FEAT13`/`FEAT14`/`FEAT15` (rounds five and six)
+— fourteen feedback issues total — all closed the same day, 2026-08-24, alongside
 the third schema change (`FEAT03`'s `Settings.locale`/`themeMode`/`seedColor`; every
 issue after that added no schema, including `FEAT11`'s new enum value — confirmed no
 migration was needed since `Accounts.group` carries no `CHECK` constraint). Both
@@ -1582,3 +1590,91 @@ empty — no schema change. `python audit.py` — 14 passed / 0 warnings / 0 fai
 typed-but-uncreated person name leaves the old text in the field instead of clearing
 it; (2) a "Rina" test account (created live while verifying FEAT11) is still sitting
 in the owner's actual app data, not cleaned up.
+
+---
+
+## 2026-08-24 — FEAT13/FEAT14/FEAT15: sixth feedback round — checkbox redesign, real
+## debt write-off, UC-03's adjust entry point, budget pie chart
+
+**[STATUS]** Three more owner requests from a live manual-testing conversation,
+planned and confirmed via one `AskUserQuestion` round, then built as three plans
+(`plan.md` each CONFIRMED) touching entirely disjoint files — dispatched to three
+`flutter-coder` agents **in parallel** (unlike FEAT09/FEAT10, which shared a file and
+had to be sequenced).
+
+**[DECISION] FEAT13 supersedes FEAT11 D7's checkbox design, not amends it.** The
+owner corrected the shipped `_PersonAccountField` after seeing it live: *"i think you
+misunderstand the checkbox thing, its outside of the the drop down right above the
+orang/utang if checked the column turns into orang if not it stays at kredit (not
+utang). if not checked cant create new account."* The checkbox moves from inside the
+`RawAutocomplete`'s suggestion overlay to a persistent `Row` above the field;
+unchecked now means creation is impossible (not merely defaulted to
+`RECEIVABLE`/`PAYABLE`); checked always writes `AccountGroup.PERSON` unconditionally
+in all three flows. `showCheckbox`/`defaultGroupWhenUnchecked` removed from the
+constructor — Repay's old no-checkbox special case disappears on its own, since
+"unchecked can't create" is already what Repay needed. `personDebtChoices()` and the
+post-creation resolution logic (`_pendingCreateName`/`didUpdateWidget`) untouched.
+15 new/replaced widget tests across Lend/Borrow/Repay. See `decisions.md` 2026-08-24.
+
+**[DECISION] FEAT14 bundles three small, independent owner requests.** (1) The debt
+"settle" button — *"tandai lunas doesn't do anything, for a joke, in indonesian the
+button says ikhlaskan and if that happens a new transaction for the category
+ikhlaskan"* — now actually writes off the balance: new `AccountDao.writeOffDebt()`
+reuses `insertAdjustment()`'s balance arithmetic (UC-03, untouched) inside one drift
+transaction, get-or-creates a `Categories` row literally named `"Ikhlaskan"` (in-
+memory case-insensitive match, mirroring `AccountFormScreen._nameCollides`, kept as
+plain data rather than localized — same rule a user-typed account name already
+follows), and sets `settled`/`settledAt` in the same write. `markSettled`/
+`setSettled` are unmodified — `setSettled` is message 5 on
+`seq-uc10-debt-progress.drawio` with its own passing test, kept even though
+`DebtDetailScreen`'s button no longer calls it. (2) `AccountFormScreen`'s edit flow
+gains an "Adjust balance" button — the first navigation entry point
+`AccountFormMode.adjust`/`insertAdjustment()` (UC-03) has ever had; FEAT02's
+navigation host deliberately left this unrouted (plan D3, not asked for at the time)
+until the owner asked directly mid-conversation: *"you also remind me for balance
+adjustment from the balance page, that is quite important."* (3) The docked Record
+FAB changes `colorScheme.tertiary` → `colorScheme.primary` (owner: *"the + button
+primary color circle"*). `class-accounts.drawio`'s `AccountDao` and
+`AccountsNotifier` boxes both gained `writeOffDebt()` — edited in the main session
+before dispatch, exported and visually verified (no overlap with the box below). See
+`decisions.md` 2026-08-24.
+
+**[DECISION] FEAT15 charts each budget group's `amount`, not `spent`.** Owner:
+*"pie chart for budget allocation, in budget page on top of the rows."* New private
+`_BudgetAllocationChart` on `BudgetOverviewScreen`, above the existing row `ListView`
+in the same scrollable surface, reads the exact `budgetConsumptionProvider` the rows
+already watch (no new DAO method, no new provider) and charts `amount` — "how the
+budget was divided" — since `spent` is already shown per-row below the chart and
+charting it too would just repeat the list in pie form. Reuses
+`_CategorySpendingCard`'s (FEAT07) `fl_chart` `PieChart` shape: color-cycling through
+the theme palette, degrade-on-zero to a `chartNoDataYet`-style message. The always-0
+"Others" row needs no special exclusion — it contributes an invisible zero-value
+slice on its own.
+
+**[STATUS]** After all three coders reported back, ran the four verification
+commands myself against the **merged** tree (not trusting any one agent's isolated
+report, since all three write into the same `app/` working tree with no worktree
+isolation): `dart run build_runner build --delete-conflicting-outputs` clean,
+`dart format --set-exit-if-changed .` — 0 changed, `flutter analyze` — No issues
+found!, full `flutter test` — **218 tests green** (was 200), including every FEAT13/
+14/15 test plus every pre-existing one. `git diff --stat app/drift_schemas/` empty —
+no schema change across all three issues. `python audit.py` — 14 passed / 0 warnings
+/ 0 failures both before dispatch (tracker/plan/diagram additions) and implicitly
+covered by the green test run after.
+
+**[DISCOVERY]** Two of the three coders independently flagged the same risk before
+completion: dispatching three `flutter-coder` agents in parallel into one shared
+working tree (no `isolation: "worktree"`) means each agent's own `dart format`/
+`flutter test` runs can observe the other two agents' in-progress, uncommitted edits
+mid-run — one agent's transient full-suite run showed an unrelated failure that
+belonged to another agent's not-yet-finished file. Neither agent's own scoped-file
+verification was affected, and the eventual full-tree run (once all three had
+actually finished) was clean, but this is why the merged-tree four-command run above
+was done personally rather than trusting the three individual "green" reports at
+face value. Worth using `isolation: "worktree"` for future same-session parallel
+`flutter-coder` dispatches into disjoint files, or accepting the noisier mid-flight
+signal and always re-verifying on the merged tree afterward as done here.
+
+**[TODO]** The same two small items flagged earlier remain open, pending the owner:
+(1) `RecordTransactionScreen`'s kind switch not clearing a typed-but-uncreated person
+name; (2) the leftover "Rina" test account in real app data.

@@ -11,12 +11,16 @@ import 'accounts_providers.dart';
 /// Messages 1, 2 and 7 on `seq-uc10-debt-progress.drawio`: watches
 /// [debtProgressProvider] keyed by the account id. It computes nothing
 /// itself (NFR-2 — both figures arrive already derived by query) and its
-/// single control, the settle button, is **always enabled** and fires
-/// `markSettled(accountId)` directly: no confirmation dialog that could end
-/// in "no", no arithmetic check, no disabled state (NFR-4's zero-refusal
-/// criterion; the sequence diagram's `opt` guard names a user action, not a
-/// predicate). The debt is never ticked by itself either — reaching
-/// `remaining == 0` sets nothing (`plan.md`, Out of scope).
+/// single control, the write-off button, is **always enabled** and fires
+/// `writeOffDebt(accountId)` directly (FEAT14 D1/D2 — "Ikhlaskan" actually
+/// zeroes the balance now, not only flips the settled flag): no
+/// confirmation dialog that could end in "no", no arithmetic check, no
+/// disabled state (NFR-4's zero-refusal criterion; the sequence diagram's
+/// `opt` guard names a user action, not a predicate). The debt is never
+/// ticked by itself either — reaching `remaining == 0` sets nothing
+/// (`plan.md`, Out of scope). `AccountsNotifier.markSettled` /
+/// `AccountDao.setSettled` remain a real UC-10 primitive (message 5 on this
+/// diagram) — this screen's own button just stops calling them (FEAT14 D2).
 ///
 /// After the tap, the write returns nothing to this screen; the next stream
 /// emission carries `settled: true` (message 7), which is what the settled
@@ -64,9 +68,9 @@ class DebtDetailScreen extends ConsumerWidget {
             key: const ValueKey('settle-button'),
             onPressed: () => ref
                 .read(accountsProvider.notifier)
-                .markSettled(accountId: accountId),
+                .writeOffDebt(accountId: accountId),
             icon: const Icon(Icons.check),
-            label: Text(loc.markSettled),
+            label: Text(loc.writeOffDebtButton),
           ),
         ],
       ),

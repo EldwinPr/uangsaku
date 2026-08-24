@@ -639,6 +639,91 @@ class AccountDao {
         .write(AccountsCompanion(name: Value(name), group: Value(group)));
   }
 
+  /// FEAT14 D1: `writeOffDebt(accountId)` — "Ikhlaskan": one transaction
+  /// driving the account's derived balance to exactly zero, tagged with a
+  /// literal `"Ikhlaskan"` category, plus the same settle flag [setSettled]
+  /// sets, folded into one drift transaction rather than a second call.
+  ///
+  /// (a) Computes the account's current derived balance with the exact same
+  /// `customSelect` arithmetic [insertAdjustment] already uses (unmodified
+  /// by this method — plan.md Out of scope). (b) Get-or-creates a
+  /// `Categories` row named literally `"Ikhlaskan"` — a real, user-visible
+  /// category name, never localized (plan.md D1), searched case-
+  /// insensitively against existing categories in Dart, the same in-memory-
+  /// compare shape `AccountFormScreen._nameCollides` already uses, not a SQL
+  /// `LOWER()` clause. (c) Inserts one `adjustment`-kind transaction for
+  /// `0 − currentBalance`, `toAccountId: accountId`, tagged with that
+  /// category's id. (d) Sets `settled: true`, `settledAt` stamped from the
+  /// injected clock — the same flag [setSettled] sets.
+  ///
+  /// Returns `Future<void>`; nothing reaches the screen — the zeroed balance
+  /// and the settled badge arrive on the read path once `watchBalances()` /
+  /// `watchDebtProgress()` re-emit (`riverpod.md`, the read/write
+  /// asymmetry). Unconditional — NFR-4: no guard refuses a write-off, and
+  /// calling it twice reuses the same `"Ikhlaskan"` category row rather than
+  /// creating a duplicate.
+  Future<void> writeOffDebt(int accountId) {
+    return _db.transaction(() async {
+      final row = await _db
+          .customSelect(
+            '''
+            SELECT
+              accounts.opening_amount
+                + COALESCE((SELECT SUM(t.amount) FROM transactions t
+                            WHERE t.to_account_id = accounts.account_id), 0)
+                - COALESCE((SELECT SUM(t.amount) FROM transactions t
+                            WHERE t.from_account_id = accounts.account_id), 0)
+                AS current_amount
+            FROM accounts
+            WHERE accounts.account_id = ?
+            ''',
+            variables: [Variable.withInt(accountId)],
+            readsFrom: {_db.accounts, _db.transactions},
+          )
+          .getSingle();
+      final currentBalance = row.read<int>('current_amount');
+
+      final categoryId = await _ikhlaskanCategoryId();
+
+      await _db
+          .into(_db.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              kind: TransactionKind.adjustment,
+              amount: 0 - currentBalance,
+              occurredOn: _clock.today(),
+              toAccountId: Value(accountId),
+              categoryId: Value(categoryId),
+            ),
+          );
+
+      await (_db.update(
+        _db.accounts,
+      )..where((row) => row.accountId.equals(accountId))).write(
+        AccountsCompanion(
+          settled: const Value(true),
+          settledAt: Value(_clock.today()),
+        ),
+      );
+    });
+  }
+
+  /// Get-or-create for the `"Ikhlaskan"` category (D1) — searched case-
+  /// insensitively in Dart, the same shape `AccountFormScreen._nameCollides`
+  /// uses, not a SQL `LOWER()` clause.
+  Future<int> _ikhlaskanCategoryId() async {
+    const name = 'Ikhlaskan';
+    final existing = await _db.select(_db.categories).get();
+    for (final category in existing) {
+      if (category.name.toLowerCase() == name.toLowerCase()) {
+        return category.categoryId;
+      }
+    }
+    return _db
+        .into(_db.categories)
+        .insert(CategoriesCompanion.insert(name: name));
+  }
+
   /// Message 16 on `seq-uc02b-edit-account.drawio`: `delete(accountId)` — a
   /// **soft** delete (UC02B plan D2, `context/index/decisions.md`
   /// 2026-08-23 Q3): `deleted = true`, `deleted_at` stamped from the

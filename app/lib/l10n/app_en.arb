@@ -31,7 +31,7 @@
 
   "debtDetailTitle": "Debt #{accountId}",
   "@debtDetailTitle": {"placeholders": {"accountId": {"type": "int"}}},
-  "markSettled": "Mark settled",
+  "writeOffDebtButton": "Write it off",
   "figurePaid": "Paid off",
   "figureRemaining": "Left to pay",
   "settledBadge": "Settled",
@@ -53,6 +53,7 @@
   "targetAmountLabel": "What it should actually be",
   "targetAmountHint": "Target amount (minus allowed)",
   "deleteAccountButton": "Delete account",
+  "adjustBalanceButton": "Adjust balance",
   "accountGroupDescriptionHolding": "Money you hold and can spend directly — a wallet, bank account, or e-wallet.",
   "accountGroupDescriptionReceivable": "Money someone else owes you.",
   "accountGroupDescriptionPayable": "Money you owe someone else.",
@@ -154,6 +155,7 @@
   "currencyRelabelDialogContent": "Existing amounts are re-labelled, not converted. The same recorded numbers will show with the new currency.",
   "okButton": "OK",
 
+  "budgetAllocationChartTitle": "Budget allocation",
   "balanceTrendChartTitle": "Balance trend (30 days)",
   "incomeExpenseChartTitle": "Income vs expense this month",
   "categorySpendingChartTitle": "Spending by category this month",

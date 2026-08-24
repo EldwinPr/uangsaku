@@ -818,3 +818,69 @@ issues:
       same session turned out to reflect a stale build once - caught by re-verifying,
       not assumed). 200 tests green (was 198), no schema change.
 
+  - id: FEAT13-person-picker-checkbox-redesign
+    slug: person-picker-checkbox-redesign
+    title: The Orang/Utang checkbox moves outside the dropdown and gates creation entirely
+    status: DONE
+    plan: pm/issues/feat13-person-picker-checkbox-redesign/plan.md
+    depends_on: [FEAT11-person-account-type]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-24. No UC owns this - infrastructure. Sixth round of the owner's
+      manual-testing feedback, correcting FEAT11 D7's shipped checkbox design after
+      seeing it live. _PersonAccountField's checkbox is now a persistent Row above the
+      field (was nested inside the autocomplete's suggestion overlay), and inline
+      creation is only possible at all when it is checked (always producing
+      AccountGroup.PERSON, unconditionally) - unchecked is select-only, existing
+      accounts stay pickable either way. Replaces FEAT11 D7's
+      showCheckbox/defaultGroupWhenUnchecked entirely; Repay now uses the identical
+      shape as Lend/Borrow, no more special-casing. 15 new/replaced widget tests
+      across all three flows (checkbox persistent before typing, no-create-when-
+      unchecked, always-PERSON-when-checked, existing accounts always selectable).
+      Touches only record_transaction_screen.dart. Built in parallel with FEAT14/15
+      (disjoint files); full merged-tree `flutter test` (218 tests) run once all three
+      landed, all green. No schema change. See decisions.md 2026-08-24.
+
+  - id: FEAT14-debt-writeoff-and-adjust-entry
+    slug: debt-writeoff-and-adjust-entry
+    title: "\"Ikhlaskan\" actually writes off the debt, the Record FAB turns primary, and UC-03's adjust flow finally gets an entry point"
+    status: DONE
+    plan: pm/issues/feat14-debt-writeoff-and-adjust-entry/plan.md
+    depends_on: [FEAT11-person-account-type, UC03-adjust-account]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-24. No UC owns this - infrastructure. Three small owner requests
+      from the same round bundled into one issue since each touches the accounts
+      module and is too small alone. New AccountDao.writeOffDebt() drives a debt's
+      balance to zero via one adjustment transaction (reusing insertAdjustment()'s
+      balance arithmetic, untouched), get-or-creating an in-memory case-insensitive-
+      matched "Ikhlaskan" category, and sets settled/settledAt in the same write -
+      DebtDetailScreen's settle button now calls it instead of only flipping the
+      flag; markSettled/setSettled are unmodified (UC-10's own diagrammed primitive,
+      message 5 on seq-uc10-debt-progress.drawio, still has its own test).
+      AccountFormScreen's edit flow gains an "Adjust balance" button, the first entry
+      point AccountFormMode.adjust has ever had. The docked Record FAB changes
+      colorScheme.tertiary -> colorScheme.primary. class-accounts.drawio's AccountDao
+      and AccountsNotifier boxes both gained writeOffDebt() (edited in the main
+      session before dispatch, render visually verified - no overlap). 218 merged-
+      tree tests green (was 200). No schema change. See decisions.md 2026-08-24.
+
+  - id: FEAT15-budget-pie-chart
+    slug: budget-pie-chart
+    title: A donut chart of budget allocation on top of the Budget page
+    status: DONE
+    plan: pm/issues/feat15-budget-pie-chart/plan.md
+    depends_on: [FEAT07-home-overview-charts, UC12-budget-consumption]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-24. No UC owns this - infrastructure. Owner's direct request from
+      the same feedback round: a pie chart of budget allocation on
+      BudgetOverviewScreen, above the existing rows. New private
+      _BudgetAllocationChart reads the same budgetConsumptionProvider the row list
+      already watches, charting each row's amount (not spent - already shown per-row
+      below), fl_chart's PieChart following _CategorySpendingCard's established
+      color-cycling and degrade-on-zero shape; the always-0 "Others" row needs no
+      special exclusion. No new DAO method, no new provider, no schema change.
+      Touches only budget_overview_screen.dart and ARB files. Full merged-tree
+      `flutter test` (218 tests) green once FEAT13/14/15 all landed.
+

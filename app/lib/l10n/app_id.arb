@@ -29,7 +29,7 @@
   "noAccountsYetPeriod": "Belum ada akun.",
 
   "debtDetailTitle": "Utang #{accountId}",
-  "markSettled": "Tandai lunas",
+  "writeOffDebtButton": "Ikhlaskan",
   "figurePaid": "Sudah dibayar",
   "figureRemaining": "Sisa yang harus dibayar",
   "settledBadge": "Lunas",
@@ -50,6 +50,7 @@
   "targetAmountLabel": "Yang seharusnya",
   "targetAmountHint": "Jumlah target (boleh minus)",
   "deleteAccountButton": "Hapus akun",
+  "adjustBalanceButton": "Sesuaikan saldo",
   "accountGroupDescriptionHolding": "Uang yang Anda pegang dan bisa langsung dibelanjakan — dompet, rekening bank, atau e-wallet.",
   "accountGroupDescriptionReceivable": "Uang yang menjadi piutang Anda kepada orang lain.",
   "accountGroupDescriptionPayable": "Uang yang menjadi utang Anda kepada orang lain.",
@@ -148,6 +149,7 @@
   "currencyRelabelDialogContent": "Jumlah yang sudah tercatat hanya diberi label ulang, bukan dikonversi. Angka yang sama akan tampil dengan mata uang yang baru.",
   "okButton": "OK",
 
+  "budgetAllocationChartTitle": "Alokasi anggaran",
   "balanceTrendChartTitle": "Tren saldo (30 hari)",
   "incomeExpenseChartTitle": "Pemasukan vs pengeluaran bulan ini",
   "categorySpendingChartTitle": "Pengeluaran per kategori bulan ini",

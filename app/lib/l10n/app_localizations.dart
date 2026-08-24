@@ -248,11 +248,11 @@ abstract class AppLocalizations {
   /// **'Debt #{accountId}'**
   String debtDetailTitle(int accountId);
 
-  /// No description provided for @markSettled.
+  /// No description provided for @writeOffDebtButton.
   ///
   /// In en, this message translates to:
-  /// **'Mark settled'**
-  String get markSettled;
+  /// **'Write it off'**
+  String get writeOffDebtButton;
 
   /// No description provided for @figurePaid.
   ///
@@ -367,6 +367,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete account'**
   String get deleteAccountButton;
+
+  /// No description provided for @adjustBalanceButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust balance'**
+  String get adjustBalanceButton;
 
   /// No description provided for @accountGroupDescriptionHolding.
   ///
@@ -913,6 +919,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'OK'**
   String get okButton;
+
+  /// No description provided for @budgetAllocationChartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget allocation'**
+  String get budgetAllocationChartTitle;
 
   /// No description provided for @balanceTrendChartTitle.
   ///

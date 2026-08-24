@@ -463,11 +463,9 @@ class _RecordTransactionScreenState
         ];
       case _Flow.lend:
       case _Flow.borrow:
-        // FEAT11 D7: autocomplete-with-inline-create, checkbox shown —
-        // unchecked creates the flow's contextual default group.
-        final defaultGroupWhenUnchecked = _flow == _Flow.lend
-            ? AccountGroup.RECEIVABLE
-            : AccountGroup.PAYABLE;
+        // FEAT13 D1-D3: autocomplete-with-inline-create, persistent checkbox
+        // above the field gating creation — unchecked can't create at all,
+        // checked always creates PERSON.
         return [
           _PersonAccountField(
             key: const Key('person-debt-field'),
@@ -478,19 +476,16 @@ class _RecordTransactionScreenState
             ],
             selectedId: _personDebtId,
             onSelected: (id) => setState(() => _personDebtId = id),
-            onCreate: (name, {required asPerson}) => unawaited(
+            onCreate: (name) => unawaited(
               ref
                   .read(accountsProvider.notifier)
                   .addAccount(
                     name: name,
-                    group: asPerson
-                        ? AccountGroup.PERSON
-                        : defaultGroupWhenUnchecked,
+                    group: AccountGroup.PERSON,
                     openingAmount: 0,
                   ),
             ),
             createLabel: loc.createOptionLabel,
-            showCheckbox: true,
             checkboxLabel: loc.createPersonCheckboxLabel,
           ),
           _accountDropdown(
@@ -512,9 +507,8 @@ class _RecordTransactionScreenState
           }
         }
         return [
-          // FEAT11 D7: same field, no checkbox — there is no sensible
-          // "normal" default here (you cannot repay a debt that was never
-          // established), so Repay's inline-create always writes PERSON.
+          // FEAT13 D4: Repay's field now matches Lend/Borrow exactly — same
+          // persistent checkbox gating creation, always writing PERSON.
           _PersonAccountField(
             key: const Key('person-debt-field'),
             label: loc.debtPersonLabel,
@@ -529,7 +523,7 @@ class _RecordTransactionScreenState
               // different picked debt account.
               _repayTheyPaidMeOverride = null;
             }),
-            onCreate: (name, {required asPerson}) => unawaited(
+            onCreate: (name) => unawaited(
               ref
                   .read(accountsProvider.notifier)
                   .addAccount(
@@ -539,7 +533,6 @@ class _RecordTransactionScreenState
                   ),
             ),
             createLabel: loc.createOptionLabel,
-            showCheckbox: false,
             checkboxLabel: loc.createPersonCheckboxLabel,
           ),
           // FEAT11 D8: only PERSON-group debts are ambiguous enough to need
@@ -873,7 +866,7 @@ class _CategoryAutocompleteFieldState
   }
 }
 
-/// FEAT11 D7: the Lend/Borrow/Repay person-picker, autocomplete with an
+/// FEAT13 D1-D4: the Lend/Borrow/Repay person-picker, autocomplete with an
 /// inline "create new" affordance replacing the dropdown — same shape as
 /// [_CategoryAutocompleteField] (FEAT05 D1/D2), duplicated rather than
 /// shared (different backing data — `Accounts`, not `Categories`/
@@ -881,13 +874,14 @@ class _CategoryAutocompleteFieldState
 /// screens).
 ///
 /// Typing an existing name (case-insensitive) selects it, identical to the
-/// category field. Typing a name matching nothing shows a "Create '{name}'"
-/// suggestion **plus, when [showCheckbox] is true, a checkbox**
-/// ([checkboxLabel]) — unchecked, creating writes an account in
-/// [defaultGroupWhenUnchecked]; checked, it writes `PERSON` regardless.
-/// When [showCheckbox] is false (the Repay flow — there is no sensible
-/// "normal" default there, you cannot repay a debt that was never
-/// established), creating always writes `PERSON`.
+/// category field, whether the checkbox below is checked or not (D2:
+/// checking it only **adds** the create option, it never hides or replaces
+/// the normal picker). A persistent checkbox ([checkboxLabel]) is rendered
+/// above the field (D1) — unchecked, no "Create '{name}'" suggestion is ever
+/// offered, regardless of what's typed (D2: creation is impossible at all);
+/// checked, typing a name matching nothing shows the create suggestion and
+/// creating it always writes `AccountGroup.PERSON`, unconditionally (D3).
+/// All three call sites (Lend/Borrow/Repay) use this identically (D4).
 ///
 /// Resolution after creation follows the exact `_pendingCreateName` /
 /// `didUpdateWidget` / `addPostFrameCallback` pattern
@@ -904,7 +898,6 @@ class _PersonAccountField extends StatefulWidget {
     required this.onSelected,
     required this.onCreate,
     required this.createLabel,
-    required this.showCheckbox,
     required this.checkboxLabel,
   });
 
@@ -913,14 +906,11 @@ class _PersonAccountField extends StatefulWidget {
   final int? selectedId;
   final ValueChanged<int?> onSelected;
 
-  /// [asPerson] is the checkbox's state at confirmation time — always
-  /// `true` when [showCheckbox] is `false` (D7: Repay's inline-create
-  /// always writes `PERSON`).
-  final void Function(String name, {required bool asPerson}) onCreate;
+  /// Only ever fired while the checkbox is checked (D2) — always creates
+  /// `AccountGroup.PERSON` (D3), so no per-flow group parameter is needed
+  /// anymore.
+  final ValueChanged<String> onCreate;
   final String Function(String name) createLabel;
-
-  /// `true` for Lend/Borrow, `false` for Repay (D7).
-  final bool showCheckbox;
   final String checkboxLabel;
 
   @override
@@ -931,10 +921,9 @@ class _PersonAccountFieldState extends State<_PersonAccountField> {
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
 
-  /// The checkbox's live value, held outside `setState` so ticking it
-  /// doesn't have to rebuild the whole field to update the overlay —
-  /// [ValueListenableBuilder] below listens to it directly.
-  final ValueNotifier<bool> _createAsPerson = ValueNotifier<bool>(false);
+  /// The persistent checkbox's live value (D1) — gates whether
+  /// [optionsBuilder] ever offers a "create new" entry (D2).
+  bool _checked = false;
 
   /// Set right after firing [_PersonAccountField.onCreate]; cleared once an
   /// option by this name shows up in a later [_PersonAccountField.options]
@@ -986,107 +975,113 @@ class _PersonAccountFieldState extends State<_PersonAccountField> {
   void dispose() {
     _controller.dispose();
     _focusNode.dispose();
-    _createAsPerson.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return RawAutocomplete<({int? id, String name, bool isCreateNew})>(
-      textEditingController: _controller,
-      focusNode: _focusNode,
-      optionsBuilder: (value) {
-        final query = value.text.trim();
-        final lowerQuery = query.toLowerCase();
-        final matches = <({int? id, String name, bool isCreateNew})>[
-          for (final option in widget.options)
-            if (option.name.toLowerCase().contains(lowerQuery))
-              (id: option.id, name: option.name, isCreateNew: false),
-        ];
-        final exists = widget.options.any(
-          (option) => option.name.toLowerCase() == lowerQuery,
-        );
-        if (query.isNotEmpty && !exists) {
-          matches.add((id: null, name: query, isCreateNew: true));
-        }
-        return matches;
-      },
-      displayStringForOption: (choice) => choice.name,
-      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-        return TextField(
-          controller: controller,
-          focusNode: focusNode,
-          decoration: InputDecoration(labelText: widget.label),
-          onChanged: (text) {
-            if (text.isEmpty) {
-              widget.onSelected(null);
-            }
-          },
-        );
-      },
-      onSelected: (choice) {
-        if (choice.isCreateNew) {
-          _pendingCreateName = choice.name;
-          _controller.text = choice.name;
-          final asPerson = !widget.showCheckbox || _createAsPerson.value;
-          widget.onCreate(choice.name, asPerson: asPerson);
-          _createAsPerson.value = false;
-        } else {
-          _controller.text = choice.name;
-          widget.onSelected(choice.id);
-        }
-        // Closes the suggestion overlay on selection, same as a dropdown's
-        // menu closing once an item is picked. Deferred a frame: unfocusing
-        // synchronously here races the overlay's own removal when selection
-        // also triggers a rebuild (the create-new path always does).
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            _focusNode.unfocus();
-          }
-        });
-      },
-      optionsViewBuilder: (context, onSelected, options) {
-        return Align(
-          alignment: Alignment.topLeft,
-          child: Material(
-            elevation: 4,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 250),
-              child: ListView(
-                padding: EdgeInsets.zero,
-                shrinkWrap: true,
-                children: [
-                  for (final option in options) ...[
-                    if (option.isCreateNew && widget.showCheckbox)
-                      ValueListenableBuilder<bool>(
-                        valueListenable: _createAsPerson,
-                        builder: (context, checked, _) => CheckboxListTile(
-                          key: const Key('create-as-person-checkbox'),
-                          value: checked,
-                          controlAffinity: ListTileControlAffinity.leading,
-                          title: Text(widget.checkboxLabel),
-                          onChanged: (value) =>
-                              _createAsPerson.value = value ?? false,
-                        ),
-                      ),
-                    ListTile(
-                      leading: option.isCreateNew
-                          ? const Icon(Icons.add)
-                          : null,
-                      title: Text(
-                        option.isCreateNew
-                            ? widget.createLabel(option.name)
-                            : option.name,
-                      ),
-                      onTap: () => onSelected(option),
-                    ),
-                  ],
-                ],
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // D1: persistent, always visible — not conditional on typed text and
+        // not nested inside the suggestion overlay.
+        Row(
+          children: [
+            Checkbox(
+              key: const Key('create-as-person-checkbox'),
+              value: _checked,
+              onChanged: (value) => setState(() => _checked = value ?? false),
             ),
-          ),
-        );
-      },
+            Text(widget.checkboxLabel),
+          ],
+        ),
+        RawAutocomplete<({int? id, String name, bool isCreateNew})>(
+          textEditingController: _controller,
+          focusNode: _focusNode,
+          optionsBuilder: (value) {
+            final query = value.text.trim();
+            final lowerQuery = query.toLowerCase();
+            final matches = <({int? id, String name, bool isCreateNew})>[
+              for (final option in widget.options)
+                if (option.name.toLowerCase().contains(lowerQuery))
+                  (id: option.id, name: option.name, isCreateNew: false),
+            ];
+            final exists = widget.options.any(
+              (option) => option.name.toLowerCase() == lowerQuery,
+            );
+            // D2: unchecked, no create entry is ever offered — pure
+            // select-only over existing accounts.
+            if (_checked && query.isNotEmpty && !exists) {
+              matches.add((id: null, name: query, isCreateNew: true));
+            }
+            return matches;
+          },
+          displayStringForOption: (choice) => choice.name,
+          fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+            return TextField(
+              controller: controller,
+              focusNode: focusNode,
+              decoration: InputDecoration(labelText: widget.label),
+              onChanged: (text) {
+                if (text.isEmpty) {
+                  widget.onSelected(null);
+                }
+              },
+            );
+          },
+          onSelected: (choice) {
+            if (choice.isCreateNew) {
+              _pendingCreateName = choice.name;
+              _controller.text = choice.name;
+              // D3: always PERSON — only reachable while checked (D2).
+              widget.onCreate(choice.name);
+            } else {
+              _controller.text = choice.name;
+              widget.onSelected(choice.id);
+            }
+            // Closes the suggestion overlay on selection, same as a
+            // dropdown's menu closing once an item is picked. Deferred a
+            // frame: unfocusing synchronously here races the overlay's own
+            // removal when selection also triggers a rebuild (the
+            // create-new path always does).
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _focusNode.unfocus();
+              }
+            });
+          },
+          optionsViewBuilder: (context, onSelected, options) {
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                elevation: 4,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 250),
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    children: [
+                      for (final option in options)
+                        ListTile(
+                          leading: option.isCreateNew
+                              ? const Icon(Icons.add)
+                              : null,
+                          title: Text(
+                            option.isCreateNew
+                                ? widget.createLabel(option.name)
+                                : option.name,
+                          ),
+                          onTap: () => onSelected(option),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }

@@ -426,6 +426,23 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
           icon: const Icon(Icons.delete),
           label: Text(loc.deleteAccountButton),
         ),
+        const SizedBox(height: 8),
+        // FEAT14 D3: the first real entry point AccountFormMode.adjust has
+        // ever had — insertAdjustment()/adjust mode already existed (UC-03)
+        // but were never reachable outside tests. Pure navigation, no new
+        // screen and no new DAO method.
+        OutlinedButton.icon(
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => AccountFormScreen(
+                mode: AccountFormMode.adjust,
+                accountId: widget.accountId,
+              ),
+            ),
+          ),
+          icon: const Icon(Icons.tune),
+          label: Text(loc.adjustBalanceButton),
+        ),
       ],
     );
   }

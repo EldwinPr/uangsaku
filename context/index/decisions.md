@@ -1156,3 +1156,42 @@ group (unchecked: the flow's contextual default, `RECEIVABLE` for Lend/`PAYABLE`
 Borrow; checked: `PERSON`). Repay shows no checkbox at all — there is no sensible
 "normal" default for inline-creating someone you're repaying before ever having lent
 to or borrowed from them, so that path always creates `PERSON`.
+
+## 2026-08-24 — Checkbox redesign supersedes FEAT11 D7; debt write-off; UC-03's adjust
+## flow gets a real entry point (FEAT13/FEAT14)
+
+**FEAT11 D7's checkbox design is superseded, not amended.** The owner saw the shipped
+`_PersonAccountField` live and corrected it: the checkbox was nested inside the
+`RawAutocomplete`'s suggestion overlay, invisible until typing a non-matching name,
+and unchecked still created an account (defaulting to `RECEIVABLE`/`PAYABLE` per
+flow). FEAT13 replaces this outright — the checkbox is now a persistent widget above
+the field, and **unchecked means creation is impossible, not merely defaulted**:
+*"if not checked cant create new account. create new account is only for orang
+meaning only checkbox."* Checked always writes `PERSON`, unconditionally, in all
+three flows — Repay's old no-checkbox special case disappears because the new
+unchecked behavior (can't create) is already what Repay needed. `personDebtChoices()`
+and the post-creation resolution logic are untouched; only what triggers a create and
+what group it writes changed.
+
+**"Ikhlaskan" is a literal, hardcoded category name, not localized text.** The debt
+settle button ("tandai lunas doesn't do anything ... in indonesian the button says
+ikhlaskan") now actually writes off the balance via `AccountDao.writeOffDebt()`, and
+the joke — the category name itself — is the owner's own word, kept as plain data in
+both locales (`en` label becomes the honest "Write it off", not a forced translation
+of the pun). This follows the same rule a user-typed account name already follows:
+user-visible *data* (a category, an account name) is never routed through
+`AppLocalizations`, only chrome (button labels, screen titles) is. `writeOffDebt`
+reuses `insertAdjustment()`'s balance arithmetic (UC-03) rather than duplicating it,
+and folds `setSettled()`'s flag-write into the same transaction rather than issuing a
+second call — `markSettled`/`setSettled` themselves are kept unmodified since
+`setSettled` is a diagrammed UC-10 primitive (message 5, `seq-uc10-debt-progress.drawio`)
+with its own test, not dead code to delete just because one caller stopped using it.
+
+**UC-03's adjust flow gets its first navigation entry point.** `AccountFormMode.adjust`
+and `insertAdjustment()` have existed since UC-03 (2026-08-23) but FEAT02's navigation
+host (plan D3) deliberately left them unrouted — not asked for at the time. The owner
+asked for it directly mid-conversation about the checkbox/write-off requests
+("you also remind me for balance adjustment from the balance page, that is quite
+important"); FEAT14 adds one `OutlinedButton.icon` to `AccountFormScreen`'s edit flow,
+no new screen or DAO method — purely a missing edge, same as FEAT02's own orphan list
+described it.

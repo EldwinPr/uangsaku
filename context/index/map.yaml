@@ -476,6 +476,70 @@ code:
       - app/test/accounts/accounts_screen_test.dart
       - app/test/app_shell_test.dart
 
+  # FEAT13-person-picker-checkbox-redesign, DONE 2026-08-24. No UC - infrastructure.
+  # Sixth round of the owner's manual-testing feedback, correcting FEAT11 D7's shipped
+  # checkbox after seeing it live. _PersonAccountField's checkbox is now a persistent
+  # Row above the RawAutocomplete (was nested inside optionsViewBuilder's suggestion
+  # overlay, only visible once typing). Unchecked = select-only, no create option ever
+  # added regardless of typed text; existing accounts of any group stay selectable
+  # either way. Checked = create always writes AccountGroup.PERSON, unconditionally -
+  # replaces FEAT11 D7's Lend-unchecked-RECEIVABLE/Borrow-unchecked-PAYABLE defaults
+  # entirely. showCheckbox/defaultGroupWhenUnchecked removed from the constructor;
+  # Repay now uses the identical shape as Lend/Borrow (FEAT11's no-checkbox special
+  # case is gone, since unchecked-can't-create already covers what Repay needed). No
+  # class diagram change - _PersonAccountField stays a private per-file widget, same
+  # bucket as FEAT05's _CategoryAutocompleteField. 15 new/replaced widget tests. No
+  # schema change.
+  FEAT13:
+    widget_changed: app/lib/src/transactions/record_transaction_screen.dart   # _PersonAccountField
+    tests:
+      - app/test/transactions/record_transaction_screen_test.dart
+
+  # FEAT14-debt-writeoff-and-adjust-entry, DONE 2026-08-24. No UC - infrastructure.
+  # Three small owner requests from the same feedback round, bundled since each is too
+  # small alone and all touch the accounts module. New AccountDao.writeOffDebt(int
+  # accountId): one drift transaction reusing insertAdjustment()'s balance arithmetic
+  # (UC-03, untouched) to drive a debt to exactly 0, get-or-creating a Categories row
+  # literally named "Ikhlaskan" (in-memory case-insensitive lookup, mirroring
+  # AccountFormScreen._nameCollides - not a SQL LOWER()), and setting settled/settledAt
+  # in the same write. AccountsNotifier.writeOffDebt() forwards to it.
+  # DebtDetailScreen's settle button now calls writeOffDebt instead of markSettled -
+  # markSettled/setSettled are UNCHANGED and still called nowhere else, kept because
+  # setSettled is message 5 on seq-uc10-debt-progress.drawio. AccountFormScreen's edit
+  # flow gained an "Adjust balance" button - the first navigation entry point
+  # AccountFormMode.adjust (UC-03) has ever had. The docked Record FAB
+  # (app.dart) changed colorScheme.tertiary -> colorScheme.primary. class-
+  # accounts.drawio's AccountDao and AccountsNotifier boxes both gained writeOffDebt()
+  # (edited in the main session before dispatch, render verified). No schema change -
+  # writes into existing columns only.
+  FEAT14:
+    dao_method_added: app/lib/src/accounts/account_dao.dart          # writeOffDebt()
+    provider_method_added: app/lib/src/accounts/accounts_providers.dart   # AccountsNotifier.writeOffDebt()
+    screens_changed:
+      - app/lib/src/accounts/debt_detail_screen.dart    # settle button now calls writeOffDebt
+      - app/lib/src/accounts/account_form_screen.dart   # + Adjust balance button -> AccountFormMode.adjust
+      - app/lib/src/app.dart                            # Record FAB color
+    tests:
+      - app/test/accounts/account_dao_test.dart
+      - app/test/accounts/debt_detail_screen_test.dart
+      - app/test/accounts/account_form_screen_test.dart
+      - app/test/app_shell_test.dart
+
+  # FEAT15-budget-pie-chart, DONE 2026-08-24. No UC - infrastructure. Owner's direct
+  # request from the same feedback round: a donut/pie chart of budget allocation on
+  # BudgetOverviewScreen, above the existing rows. New private _BudgetAllocationChart
+  # (not a tracked class, same bucket as FEAT07's chart Cards conceptually but built
+  # entirely from the row list's own widget tree - no new DAO method, no new provider)
+  # reads the exact budgetConsumptionProvider (UC-12) the row list already watches,
+  # charting each row's amount (not spent, which is already shown per-row below) via
+  # fl_chart's PieChart, reusing _CategorySpendingCard's (FEAT07) color-cycling and
+  # degrade-on-zero shape. The always-0 "Others" row needs no special exclusion - it
+  # just contributes an invisible slice. No schema change, no class diagram change.
+  FEAT15:
+    screen_changed: app/lib/src/budgeting/budget_overview_screen.dart   # + _BudgetAllocationChart
+    tests:
+      - app/test/budgeting/budget_overview_screen_test.dart
+
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
 # each other in BOTH directions (balances need Transactions; the record screen needs

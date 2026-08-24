@@ -145,6 +145,28 @@ void main() {
     },
   );
 
+  testWidgets(
+    'FEAT14 D4: the docked Record FAB reads colorScheme.primary/onPrimary, '
+    'not tertiary',
+    (tester) async {
+      await pumpShell(tester);
+
+      // `find.byTooltip` also matches the tooltip's own `RawTooltip` widget
+      // (same caveat `saveButton()` documents above) — filter by type and
+      // tooltip together to land on the `FloatingActionButton` itself.
+      final fabFinder = find.byWidgetPredicate(
+        (widget) =>
+            widget is FloatingActionButton && widget.tooltip == 'Record',
+      );
+      final fab = tester.widget<FloatingActionButton>(fabFinder);
+      final colorScheme = Theme.of(tester.element(fabFinder)).colorScheme;
+      expect(fab.backgroundColor, colorScheme.primary);
+      expect(fab.foregroundColor, colorScheme.onPrimary);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
   testWidgets('the docked FAB opens Record', (tester) async {
     await pumpShell(tester);
 

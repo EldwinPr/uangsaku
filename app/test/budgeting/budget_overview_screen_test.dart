@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -191,4 +192,49 @@ void main() {
 
     await unmountAndFlushTimers(tester);
   });
+
+  testWidgets(
+    'FEAT15 D2: the allocation donut renders above the group rows when a group has a nonzero amount',
+    (tester) async {
+      final groupId = await insertGroup('Groceries');
+      await insertPeriod(groupId, 1000000);
+
+      await pumpScreen(tester);
+
+      expect(find.byType(PieChart), findsOneWidget);
+      final chartPosition = tester.getTopLeft(find.byType(PieChart)).dy;
+      final firstTilePosition = tester
+          .getTopLeft(find.byType(ListTile).first)
+          .dy;
+      expect(chartPosition, lessThan(firstTilePosition));
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT15 D2: the allocation donut degrades to a message, not a chart, with an empty database (only the always-0 Others row)',
+    (tester) async {
+      await pumpScreen(tester);
+
+      expect(find.byType(PieChart), findsNothing);
+      expect(find.text('No data yet.'), findsOneWidget);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT15 D2: the allocation donut degrades to a message when every group amount is 0',
+    (tester) async {
+      await insertGroup('Groceries');
+
+      await pumpScreen(tester);
+
+      expect(find.byType(PieChart), findsNothing);
+      expect(find.text('No data yet.'), findsOneWidget);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
 }

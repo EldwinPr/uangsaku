@@ -562,6 +562,34 @@ void main() {
   );
 
   testWidgets(
+    'FEAT14 D3: the edit flow\'s "Adjust balance" button navigates to AccountFormScreen(mode: adjust) with the right accountId',
+    (tester) async {
+      final accountId = await database
+          .into(database.accounts)
+          .insert(
+            AccountsCompanion.insert(
+              name: 'Wallet',
+              group: AccountGroup.HOLDING,
+              openingAmount: 100000,
+            ),
+          );
+
+      await pumpEditScreen(tester, accountId);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Adjust balance'));
+      await tester.pumpAndSettle();
+
+      final screen = tester.widget<AccountFormScreen>(
+        find.byType(AccountFormScreen),
+      );
+      expect(screen.mode, AccountFormMode.adjust);
+      expect(screen.accountId, accountId);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
     'UC02B: editAccount reaches the database with the rename/group change entered, leaving opening_amount untouched',
     (tester) async {
       final accountId = await database

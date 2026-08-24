@@ -91,7 +91,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get markSettled => 'Mark settled';
+  String get writeOffDebtButton => 'Write it off';
 
   @override
   String get figurePaid => 'Paid off';
@@ -151,6 +151,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAccountButton => 'Delete account';
+
+  @override
+  String get adjustBalanceButton => 'Adjust balance';
 
   @override
   String get accountGroupDescriptionHolding =>
@@ -442,6 +445,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get okButton => 'OK';
+
+  @override
+  String get budgetAllocationChartTitle => 'Budget allocation';
 
   @override
   String get balanceTrendChartTitle => 'Balance trend (30 days)';

@@ -275,6 +275,81 @@ void main() {
     },
   );
 
+  test('FEAT14 D1: writeOffDebt() on a nonzero-balance account inserts one adjustment transaction driving the derived balance to exactly 0, tagged with a category literally named "Ikhlaskan", and sets settled: true', () async {
+    final clockedDao = AccountDao(
+      database,
+      clock: _FixedClock(DateTime(2026, 8, 24)),
+    );
+    final accountId = await clockedDao.insert(
+      companion('Budi', AccountGroup.RECEIVABLE, 500000),
+    );
+    // A prior movement, so the write-off must reflect the derived balance,
+    // not just openingAmount (same D3 shape insertAdjustment already pins).
+    await database
+        .into(database.transactions)
+        .insert(
+          TransactionsCompanion.insert(
+            kind: TransactionKind.repayment,
+            amount: 200000,
+            occurredOn: DateTime(2026, 8, 20),
+            fromAccountId: Value(accountId),
+          ),
+        );
+
+    await clockedDao.writeOffDebt(accountId);
+
+    final adjustmentRow = await (database.select(
+      database.transactions,
+    )..where((row) => row.kind.equals('adjustment'))).getSingle();
+    // Derived balance before write-off: 500000 - 200000 = 300000.
+    expect(adjustmentRow.amount, -300000);
+    expect(adjustmentRow.toAccountId, accountId);
+
+    final account = await (database.select(
+      database.accounts,
+    )..where((row) => row.accountId.equals(accountId))).getSingle();
+    final movement = await database
+        .customSelect(
+          '''
+          SELECT
+            COALESCE((SELECT SUM(amount) FROM transactions WHERE to_account_id = ?), 0)
+              - COALESCE((SELECT SUM(amount) FROM transactions WHERE from_account_id = ?), 0)
+              AS net
+          ''',
+          variables: [Variable.withInt(accountId), Variable.withInt(accountId)],
+        )
+        .getSingle();
+    final derived = account.openingAmount + (movement.data['net'] as int);
+    expect(derived, 0);
+
+    expect(account.settled, isTrue);
+    expect(account.settledAt, DateTime(2026, 8, 24));
+
+    final category =
+        await (database.select(
+              database.categories,
+            )..where((row) => row.categoryId.equals(adjustmentRow.categoryId!)))
+            .getSingle();
+    expect(category.name, 'Ikhlaskan');
+  });
+
+  test('FEAT14 D1: calling writeOffDebt() twice reuses the same "Ikhlaskan" category row rather than creating a duplicate', () async {
+    final accountId1 = await dao.insert(
+      companion('Budi', AccountGroup.RECEIVABLE, 100000),
+    );
+    final accountId2 = await dao.insert(
+      companion('Ani', AccountGroup.RECEIVABLE, 50000),
+    );
+
+    await dao.writeOffDebt(accountId1);
+    await dao.writeOffDebt(accountId2);
+
+    final categories = await (database.select(
+      database.categories,
+    )..where((row) => row.name.equals('Ikhlaskan'))).get();
+    expect(categories, hasLength(1));
+  });
+
   test('UC02B D4: after deleting an account with existing transactions, watchPosition()/watchBalances() no longer include it, but a direct query still resolves from_account_id/to_account_id to the (deleted) account', () async {
     final accountId = await dao.insert(
       companion('Wallet', AccountGroup.HOLDING, 100000),
