@@ -129,16 +129,17 @@ void main() {
         '-50000',
       );
       // No confirmation, no warning banner, no disabled control anywhere —
-      // this screen draws nothing that could be found disabled. The one
-      // `IconButton` that does exist is the FEAT02 app-bar action into
-      // `SetBudgetScreen`, always enabled, never a refusal.
+      // this screen draws nothing that could be found disabled. The
+      // `IconButton`s that do exist are the FEAT02 app-bar action into
+      // `SetBudgetScreen` plus FEAT10 D3's Settings/Help actions — every
+      // one always enabled, never a refusal.
       expect(find.byType(ElevatedButton), findsNothing);
       expect(find.byType(FilledButton), findsNothing);
-      expect(find.byType(IconButton), findsOneWidget);
-      expect(
-        tester.widget<IconButton>(find.byType(IconButton)).onPressed,
-        isNotNull,
-      );
+      for (final iconButton in tester.widgetList<IconButton>(
+        find.byType(IconButton),
+      )) {
+        expect(iconButton.onPressed, isNotNull);
+      }
 
       await unmountAndFlushTimers(tester);
     },

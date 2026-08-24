@@ -11,6 +11,7 @@
 
   "categoriesTooltip": "Kategori",
   "settingsTooltip": "Pengaturan",
+  "helpTooltip": "Bantuan",
   "addAccountTooltip": "Tambah akun",
   "debtDetailsTooltip": "Detail utang-piutang",
   "figuresLoadError": "Angka-angka gagal dimuat.",
@@ -21,6 +22,10 @@
   "figureOwedToMe": "Piutang saya",
   "figureOwedByMe": "Utang saya",
   "figureNet": "Bersih",
+  "figureSpendableTooltip": "Yang bisa Anda belanjakan sekarang, dari seluruh akun HOLDING.",
+  "figureOwedToMeTooltip": "Total yang menjadi piutang Anda, dari seluruh akun RECEIVABLE.",
+  "figureOwedByMeTooltip": "Total yang menjadi utang Anda, dari seluruh akun PAYABLE.",
+  "figureNetTooltip": "Yang bisa dibelanjakan ditambah piutang, dikurangi utang — posisi keuangan Anda secara keseluruhan.",
   "noAccountsYetPeriod": "Belum ada akun.",
 
   "debtDetailTitle": "Utang #{accountId}",
@@ -45,6 +50,9 @@
   "targetAmountLabel": "Yang seharusnya",
   "targetAmountHint": "Jumlah target (boleh minus)",
   "deleteAccountButton": "Hapus akun",
+  "accountGroupDescriptionHolding": "Uang yang Anda pegang dan bisa langsung dibelanjakan — dompet, rekening bank, atau e-wallet.",
+  "accountGroupDescriptionReceivable": "Uang yang menjadi piutang Anda kepada orang lain.",
+  "accountGroupDescriptionPayable": "Uang yang menjadi utang Anda kepada orang lain.",
   "duplicateAccountNameBlockedTitle": "Nama sudah dipakai",
   "duplicateAccountNameBlockedContent": "Akun lain sudah memakai nama ini. Pilih nama lain untuk menyimpan.",
 
@@ -82,6 +90,13 @@
   "kindRepay": "Bayar utang",
   "kindRepayment": "Pembayaran",
   "kindAdjustment": "Penyesuaian",
+  "kindDescriptionExpense": "Uang keluar dari salah satu akun Anda, dibelanjakan untuk sesuatu.",
+  "kindDescriptionIncome": "Uang masuk ke salah satu akun Anda.",
+  "kindDescriptionTransfer": "Uang berpindah antara dua akun milik Anda sendiri — bukan pengeluaran.",
+  "kindDescriptionLend": "Uang keluar dari salah satu akun Anda menjadi piutang kepada orang lain.",
+  "kindDescriptionBorrow": "Uang masuk ke salah satu akun Anda sebagai utang yang harus Anda bayar.",
+  "kindDescriptionRepay": "Melunasi utang-piutang — uang berpindah antara akun seseorang dan akun Anda sendiri.",
+  "adjustmentDescription": "Koreksi langsung terhadap saldo sebuah akun, bukan dengan mencatat transfer atau pengeluaran — dipakai untuk membetulkan kesalahan atau mengatur saldo awal.",
   "amountLabel": "Jumlah",
   "amountHintMinor": "Satuan terkecil, boleh minus",
   "noteOptionalLabel": "Catatan (opsional)",
@@ -128,8 +143,19 @@
   "balanceTrendChartTitle": "Tren saldo (30 hari)",
   "incomeExpenseChartTitle": "Pemasukan vs pengeluaran bulan ini",
   "categorySpendingChartTitle": "Pengeluaran per kategori bulan ini",
+  "balanceTrendChartTooltip": "Saldo bersih Anda selama 30 hari terakhir.",
+  "incomeExpenseChartTooltip": "Total pemasukan dibanding total pengeluaran yang tercatat bulan kalender ini.",
+  "categorySpendingChartTooltip": "Bagaimana pengeluaran bulan ini terbagi per kategori.",
   "incomeLegendLabel": "Pemasukan",
   "expenseLegendLabel": "Pengeluaran",
   "uncategorizedLabel": "Tanpa kategori",
-  "chartNoDataYet": "Belum ada data."
+  "chartNoDataYet": "Belum ada data.",
+
+  "helpScreenTitle": "Bantuan",
+  "helpSectionAccounts": "Apa itu akun",
+  "helpSectionRecording": "Mencatat pergerakan uang",
+  "helpSectionBudgets": "Anggaran",
+  "helpSectionDebts": "Utang-piutang",
+  "helpBudgetsDescription": "Kelompok anggaran adalah kategori pengeluaran dengan jumlah bulanan yang disisihkan untuknya. Pengeluaran yang dicatat tanpa kelompok masuk ke kelompok otomatis \"Lainnya\". Tidak ada yang terkunci di sini — anggaran bisa diubah di tengah bulan, dan kelebihan pengeluaran ditampilkan, bukan diblokir.",
+  "helpDebtsDescription": "Akun receivable adalah uang yang menjadi piutang Anda kepada orang lain; akun payable adalah uang yang menjadi utang Anda kepada orang lain. \"Sudah dibayar\" adalah jumlah pembayaran yang tercatat untuknya, dan \"sisa yang harus dibayar\" adalah saldonya saat ini. Mencentang lunas menandai utang-piutang itu selesai tanpa menghapus riwayatnya."
 }

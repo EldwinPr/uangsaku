@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/app_localizations.dart';
 import '../accounts/accounts_table.dart';
 import 'accounts_providers.dart';
+import 'group_style.dart';
 
 /// Which of this screen's three flows is showing — UC-02's create, UC-03's
 /// adjust, or UC02B's edit/delete (`class-accounts.drawio`: *UC-02, UC-02B,
@@ -243,6 +244,24 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     );
   }
 
+  /// FEAT09 D3/D5: plain, factual sentence for the currently selected
+  /// group, tinted with [accountGroupColor] so the color system and the
+  /// wording reinforce each other.
+  String _groupDescription(AppLocalizations loc, AccountGroup group) =>
+      switch (group) {
+        AccountGroup.HOLDING => loc.accountGroupDescriptionHolding,
+        AccountGroup.RECEIVABLE => loc.accountGroupDescriptionReceivable,
+        AccountGroup.PAYABLE => loc.accountGroupDescriptionPayable,
+      };
+
+  Widget _groupDescriptionText(AppLocalizations loc) {
+    return Text(
+      _groupDescription(loc, _group),
+      style: Theme.of(context).textTheme.bodySmall
+          ?.copyWith(color: accountGroupColor(context, _group)),
+    );
+  }
+
   String _title(AppLocalizations loc) {
     if (_isAdjustFlow) return loc.titleCorrectAccount;
     if (_isEditFlow) return loc.titleEditAccount;
@@ -274,6 +293,8 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
           onSelectionChanged: (chosen) =>
               setState(() => _group = chosen.single),
         ),
+        const SizedBox(height: 8),
+        _groupDescriptionText(loc),
         const SizedBox(height: 16),
         TextField(
           controller: _openingAmountController,
@@ -370,6 +391,8 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
           onSelectionChanged: (chosen) =>
               setState(() => _group = chosen.single),
         ),
+        const SizedBox(height: 8),
+        _groupDescriptionText(loc),
         const SizedBox(height: 16),
         // Message 14: delete, always enabled, no confirmation dialog
         // (D2/D5 — the diagram draws none, and NFR-4 forbids inventing one).

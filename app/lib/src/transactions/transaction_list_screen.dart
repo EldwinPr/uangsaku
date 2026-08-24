@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../database/app_database.dart';
+import '../settings/tab_app_bar_actions.dart';
+import 'kind_style.dart';
 import 'transactions_providers.dart';
 import 'transactions_table.dart';
 
@@ -25,6 +27,10 @@ import 'transactions_table.dart';
 ///
 /// Reached as the Transactions tab of `AppShell` (FEAT02 plan D1) — F8's
 /// answer.
+///
+/// **FEAT10 D3**: app-bar actions are Categories, Settings and Help
+/// (`tabAppBarActions(context, showCategories: true)`) — this tab had none
+/// before.
 class TransactionListScreen extends ConsumerWidget {
   const TransactionListScreen({super.key});
 
@@ -34,7 +40,10 @@ class TransactionListScreen extends ConsumerWidget {
     final listAsync = ref.watch(transactionListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(loc.allTransactionsTitle)),
+      appBar: AppBar(
+        title: Text(loc.allTransactionsTitle),
+        actions: tabAppBarActions(context, showCategories: true),
+      ),
       body: listAsync.when(
         data: (rows) => rows.isEmpty
             ? Center(child: Text(loc.noTransactionsYet))
@@ -91,14 +100,14 @@ class _TransactionTile extends ConsumerWidget {
   /// or "out" is not a fact about the row without picking a viewpoint
   /// account, which nothing on this screen has. `null` here means "use the
   /// theme's default", not "unstyled forever".
+  ///
+  /// FEAT09 D1: the income/expense colors themselves now come from the
+  /// shared [transactionKindColor] (`kind_style.dart`) rather than a
+  /// duplicated inline switch — same output as before, one definition.
   Color? _titleColor(BuildContext context, TransactionKind kind) {
-    final brightness = Theme.of(context).brightness;
     return switch (kind) {
-      TransactionKind.income =>
-        brightness == Brightness.dark
-            ? Colors.green.shade300
-            : Colors.green.shade700,
-      TransactionKind.expense => Theme.of(context).colorScheme.error,
+      TransactionKind.income ||
+      TransactionKind.expense => transactionKindColor(context, kind),
       _ => null,
     };
   }

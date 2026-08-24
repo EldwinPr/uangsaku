@@ -34,6 +34,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTooltip => 'Settings';
 
   @override
+  String get helpTooltip => 'Help';
+
+  @override
   String get addAccountTooltip => 'Add account';
 
   @override
@@ -62,6 +65,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get figureNet => 'Net';
+
+  @override
+  String get figureSpendableTooltip =>
+      'What you can spend right now, across every HOLDING account.';
+
+  @override
+  String get figureOwedToMeTooltip =>
+      'The total of what other people owe you, across every RECEIVABLE account.';
+
+  @override
+  String get figureOwedByMeTooltip =>
+      'The total of what you owe other people, across every PAYABLE account.';
+
+  @override
+  String get figureNetTooltip =>
+      'Spendable plus owed to you, minus what you owe — your overall position.';
 
   @override
   String get noAccountsYetPeriod => 'No accounts yet.';
@@ -132,6 +151,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAccountButton => 'Delete account';
+
+  @override
+  String get accountGroupDescriptionHolding =>
+      'Money you hold and can spend directly — a wallet, bank account, or e-wallet.';
+
+  @override
+  String get accountGroupDescriptionReceivable =>
+      'Money someone else owes you.';
+
+  @override
+  String get accountGroupDescriptionPayable => 'Money you owe someone else.';
 
   @override
   String get duplicateAccountNameBlockedTitle => 'Name already used';
@@ -234,6 +264,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get kindAdjustment => 'Adjustment';
+
+  @override
+  String get kindDescriptionExpense =>
+      'Money leaving one of your accounts, spent on something.';
+
+  @override
+  String get kindDescriptionIncome => 'Money entering one of your accounts.';
+
+  @override
+  String get kindDescriptionTransfer =>
+      'Money moving between two of your own accounts — not spending.';
+
+  @override
+  String get kindDescriptionLend =>
+      'Money leaving one of your accounts to become money someone owes you.';
+
+  @override
+  String get kindDescriptionBorrow =>
+      'Money entering one of your accounts as something you now owe.';
+
+  @override
+  String get kindDescriptionRepay =>
+      'Settling a debt — money moving between a person\'s account and one of your own.';
+
+  @override
+  String get adjustmentDescription =>
+      'A correction to an account\'s balance, made directly rather than by recording a transfer or expense — used to fix a mistake or set a starting balance.';
 
   @override
   String get amountLabel => 'Amount';
@@ -370,6 +427,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get categorySpendingChartTitle => 'Spending by category this month';
 
   @override
+  String get balanceTrendChartTooltip =>
+      'Your net balance across the last 30 days.';
+
+  @override
+  String get incomeExpenseChartTooltip =>
+      'Total income versus total expense recorded this calendar month.';
+
+  @override
+  String get categorySpendingChartTooltip =>
+      'How this month\'s spending splits across categories.';
+
+  @override
   String get incomeLegendLabel => 'Income';
 
   @override
@@ -380,4 +449,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chartNoDataYet => 'No data yet.';
+
+  @override
+  String get helpScreenTitle => 'Help';
+
+  @override
+  String get helpSectionAccounts => 'What is an account';
+
+  @override
+  String get helpSectionRecording => 'Recording money';
+
+  @override
+  String get helpSectionBudgets => 'Budgets';
+
+  @override
+  String get helpSectionDebts => 'Debts';
+
+  @override
+  String get helpBudgetsDescription =>
+      'A budget group is a spending category with a monthly amount set aside for it. Spending recorded with no group falls into an automatic \"Others\" bucket. Nothing here is locked — a budget can be changed mid-month, and overspending is shown, never blocked.';
+
+  @override
+  String get helpDebtsDescription =>
+      'A receivable account is money someone owes you; a payable account is money you owe someone else. \"Paid\" is the sum of repayments recorded against it, and \"remaining\" is its current balance. Ticking settle marks the debt closed without deleting its history.';
 }

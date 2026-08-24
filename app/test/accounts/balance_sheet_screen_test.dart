@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:uangsaku/l10n/app_localizations.dart';
 import 'package:uangsaku/src/accounts/accounts_table.dart';
 import 'package:uangsaku/src/accounts/balance_sheet_screen.dart';
+import 'package:uangsaku/src/accounts/group_style.dart';
 import 'package:uangsaku/src/database/app_database.dart';
 import 'package:uangsaku/src/transactions/transactions_table.dart';
 
@@ -99,6 +100,43 @@ void main() {
     await unmountAndFlushTimers(tester);
   });
 
+  testWidgets(
+    'FEAT09 D2: the spendable/owed-to-me/owed-by-me figure cards render their AccountGroup color on their icon',
+    (tester) async {
+      await pumpScreen(tester);
+
+      final context = tester.element(find.byKey(const ValueKey('figure-net')));
+      final holdingColor = accountGroupColor(context, AccountGroup.HOLDING);
+      final receivableColor = accountGroupColor(
+        context,
+        AccountGroup.RECEIVABLE,
+      );
+      final payableColor = accountGroupColor(context, AccountGroup.PAYABLE);
+
+      Color? iconColorAbove(String figureKey) {
+        // FEAT10 D2 added a second `Icon` per card (the info tooltip's
+        // trailing `Icons.info_outline`) — `.first` picks out the original
+        // group icon, which the card's `Row` still renders first.
+        final iconFinder = find
+            .descendant(
+              of: find.ancestor(
+                of: find.byKey(ValueKey(figureKey)),
+                matching: find.byType(Card),
+              ),
+              matching: find.byType(Icon),
+            )
+            .first;
+        return tester.widget<Icon>(iconFinder).color;
+      }
+
+      expect(iconColorAbove('figure-spendable'), holdingColor);
+      expect(iconColorAbove('figure-owed-to-me'), receivableColor);
+      expect(iconColorAbove('figure-owed-by-me'), payableColor);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
   testWidgets('NFR-2 / D4: an empty database renders four zero figures', (
     tester,
   ) async {
@@ -169,6 +207,49 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(PieChart), findsNothing);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT10 D2: each of the seven cards (four figures, three charts) carries a Tooltip with a non-empty message',
+    (tester) async {
+      await pumpScreen(tester);
+
+      // Distinct from the app-bar's own `IconButton` tooltips (Categories,
+      // Settings, Help — each an `Icon` other than `info_outline`) — these
+      // are specifically the seven info-icon `Tooltip`s D2 adds.
+      Iterable<Tooltip> infoTooltipsOnScreen() => tester
+          .widgetList<Tooltip>(find.byType(Tooltip))
+          .where(
+            (tooltip) =>
+                tooltip.child is Icon &&
+                (tooltip.child! as Icon).icon == Icons.info_outline,
+          );
+
+      // Snapshot at the initial scroll position, then again after
+      // scrolling down — the `ListView`'s `Sliver` only builds children
+      // near the viewport even for a plain (non-`.builder`) child list
+      // (same drag every other below-the-fold chart assertion in this
+      // file already needs) — union by message so a card built in both
+      // snapshots (e.g. the balance-trend chart) isn't double-counted.
+      final messagesSeenAtTop = infoTooltipsOnScreen()
+          .map((tooltip) => tooltip.message)
+          .toSet();
+
+      await tester.drag(find.byType(ListView), const Offset(0, -600));
+      await tester.pumpAndSettle();
+      final tooltipsAfterScroll = infoTooltipsOnScreen().toList();
+      final allMessages = {
+        ...messagesSeenAtTop,
+        ...tooltipsAfterScroll.map((tooltip) => tooltip.message),
+      };
+      expect(allMessages, hasLength(7));
+      for (final message in allMessages) {
+        expect(message, isNotNull);
+        expect(message, isNotEmpty);
+      }
 
       await unmountAndFlushTimers(tester);
     },

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../settings/tab_app_bar_actions.dart';
 import 'budget_dao.dart';
 import 'budgeting_providers.dart';
 import 'set_budget_screen.dart';
@@ -39,6 +40,7 @@ class BudgetOverviewScreen extends ConsumerWidget {
               MaterialPageRoute<void>(builder: (_) => const SetBudgetScreen()),
             ),
           ),
+          ...tabAppBarActions(context, showCategories: false),
         ],
       ),
       body: consumptionAsync.when(

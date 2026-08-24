@@ -149,3 +149,10 @@ bands (screen, provider, DAO, table); the file names above are those bands. A re
   watching a provider; a screen that computes a balance itself contradicts the diagram *and*
   NFR-2's one-source rule.
 - **No `print`.** `avoid_print` above; use `debugPrint` while developing and delete it.
+- **A new/changed ARB key needs `flutter gen-l10n`, not just `dart run build_runner
+  build`.** This project's `app/l10n.yaml` routes localization codegen through
+  `flutter gen-l10n`; `build_runner` regenerates drift/riverpod code but does not
+  regenerate `app_localizations*.dart` on its own. Skipping this step leaves
+  `flutter analyze` failing with `undefined_getter` on the new key even though the ARB
+  file itself is correct (discovered FEAT09, 2026-08-24). Run both after touching an
+  ARB file, `gen-l10n` before `analyze`.

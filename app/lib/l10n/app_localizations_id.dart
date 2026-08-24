@@ -34,6 +34,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsTooltip => 'Pengaturan';
 
   @override
+  String get helpTooltip => 'Bantuan';
+
+  @override
   String get addAccountTooltip => 'Tambah akun';
 
   @override
@@ -62,6 +65,22 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get figureNet => 'Bersih';
+
+  @override
+  String get figureSpendableTooltip =>
+      'Yang bisa Anda belanjakan sekarang, dari seluruh akun HOLDING.';
+
+  @override
+  String get figureOwedToMeTooltip =>
+      'Total yang menjadi piutang Anda, dari seluruh akun RECEIVABLE.';
+
+  @override
+  String get figureOwedByMeTooltip =>
+      'Total yang menjadi utang Anda, dari seluruh akun PAYABLE.';
+
+  @override
+  String get figureNetTooltip =>
+      'Yang bisa dibelanjakan ditambah piutang, dikurangi utang — posisi keuangan Anda secara keseluruhan.';
 
   @override
   String get noAccountsYetPeriod => 'Belum ada akun.';
@@ -132,6 +151,18 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get deleteAccountButton => 'Hapus akun';
+
+  @override
+  String get accountGroupDescriptionHolding =>
+      'Uang yang Anda pegang dan bisa langsung dibelanjakan — dompet, rekening bank, atau e-wallet.';
+
+  @override
+  String get accountGroupDescriptionReceivable =>
+      'Uang yang menjadi piutang Anda kepada orang lain.';
+
+  @override
+  String get accountGroupDescriptionPayable =>
+      'Uang yang menjadi utang Anda kepada orang lain.';
 
   @override
   String get duplicateAccountNameBlockedTitle => 'Nama sudah dipakai';
@@ -234,6 +265,33 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get kindAdjustment => 'Penyesuaian';
+
+  @override
+  String get kindDescriptionExpense =>
+      'Uang keluar dari salah satu akun Anda, dibelanjakan untuk sesuatu.';
+
+  @override
+  String get kindDescriptionIncome => 'Uang masuk ke salah satu akun Anda.';
+
+  @override
+  String get kindDescriptionTransfer =>
+      'Uang berpindah antara dua akun milik Anda sendiri — bukan pengeluaran.';
+
+  @override
+  String get kindDescriptionLend =>
+      'Uang keluar dari salah satu akun Anda menjadi piutang kepada orang lain.';
+
+  @override
+  String get kindDescriptionBorrow =>
+      'Uang masuk ke salah satu akun Anda sebagai utang yang harus Anda bayar.';
+
+  @override
+  String get kindDescriptionRepay =>
+      'Melunasi utang-piutang — uang berpindah antara akun seseorang dan akun Anda sendiri.';
+
+  @override
+  String get adjustmentDescription =>
+      'Koreksi langsung terhadap saldo sebuah akun, bukan dengan mencatat transfer atau pengeluaran — dipakai untuk membetulkan kesalahan atau mengatur saldo awal.';
 
   @override
   String get amountLabel => 'Jumlah';
@@ -370,6 +428,18 @@ class AppLocalizationsId extends AppLocalizations {
   String get categorySpendingChartTitle => 'Pengeluaran per kategori bulan ini';
 
   @override
+  String get balanceTrendChartTooltip =>
+      'Saldo bersih Anda selama 30 hari terakhir.';
+
+  @override
+  String get incomeExpenseChartTooltip =>
+      'Total pemasukan dibanding total pengeluaran yang tercatat bulan kalender ini.';
+
+  @override
+  String get categorySpendingChartTooltip =>
+      'Bagaimana pengeluaran bulan ini terbagi per kategori.';
+
+  @override
   String get incomeLegendLabel => 'Pemasukan';
 
   @override
@@ -380,4 +450,27 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get chartNoDataYet => 'Belum ada data.';
+
+  @override
+  String get helpScreenTitle => 'Bantuan';
+
+  @override
+  String get helpSectionAccounts => 'Apa itu akun';
+
+  @override
+  String get helpSectionRecording => 'Mencatat pergerakan uang';
+
+  @override
+  String get helpSectionBudgets => 'Anggaran';
+
+  @override
+  String get helpSectionDebts => 'Utang-piutang';
+
+  @override
+  String get helpBudgetsDescription =>
+      'Kelompok anggaran adalah kategori pengeluaran dengan jumlah bulanan yang disisihkan untuknya. Pengeluaran yang dicatat tanpa kelompok masuk ke kelompok otomatis \"Lainnya\". Tidak ada yang terkunci di sini — anggaran bisa diubah di tengah bulan, dan kelebihan pengeluaran ditampilkan, bukan diblokir.';
+
+  @override
+  String get helpDebtsDescription =>
+      'Akun receivable adalah uang yang menjadi piutang Anda kepada orang lain; akun payable adalah uang yang menjadi utang Anda kepada orang lain. \"Sudah dibayar\" adalah jumlah pembayaran yang tercatat untuknya, dan \"sisa yang harus dibayar\" adalah saldonya saat ini. Mencentang lunas menandai utang-piutang itu selesai tanpa menghapus riwayatnya.';
 }

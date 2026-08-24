@@ -6,7 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/app_localizations.dart';
 import '../accounts/accounts_table.dart';
 import '../database/app_database.dart';
+import '../settings/tab_app_bar_actions.dart';
+import 'kind_style.dart';
 import 'transactions_providers.dart';
+import 'transactions_table.dart';
 
 /// Which recording flow the form is in — one entry per writable kind, named
 /// for the notifier method the flow's save calls (messages 3 on
@@ -103,6 +106,28 @@ class _RecordTransactionScreenState
     _noteController.dispose();
     super.dispose();
   }
+
+  /// The stored [TransactionKind] this flow saves as (messages 3 on
+  /// `seq-uc04`..`seq-uc08`) — used only to look up FEAT09 D1's shared
+  /// [transactionKindColor], not to change what [_save] writes.
+  TransactionKind _kindOf(_Flow flow) => switch (flow) {
+    _Flow.expense => TransactionKind.expense,
+    _Flow.income => TransactionKind.income,
+    _Flow.transfer => TransactionKind.transfer,
+    _Flow.lend => TransactionKind.lend,
+    _Flow.borrow => TransactionKind.borrow,
+    _Flow.repay => TransactionKind.repayment,
+  };
+
+  /// FEAT09 D4/D5: plain, factual sentence for the currently selected kind.
+  String _flowDescription(AppLocalizations loc, _Flow flow) => switch (flow) {
+    _Flow.expense => loc.kindDescriptionExpense,
+    _Flow.income => loc.kindDescriptionIncome,
+    _Flow.transfer => loc.kindDescriptionTransfer,
+    _Flow.lend => loc.kindDescriptionLend,
+    _Flow.borrow => loc.kindDescriptionBorrow,
+    _Flow.repay => loc.kindDescriptionRepay,
+  };
 
   int? _firstIdOf(List<Account> pool) =>
       pool.isEmpty ? null : pool.first.accountId;
@@ -254,7 +279,10 @@ class _RecordTransactionScreenState
     final tree = treeAsync.value ?? const <Category, List<Subcategory>>{};
 
     return Scaffold(
-      appBar: AppBar(title: Text(loc.recordTransactionTitle)),
+      appBar: AppBar(
+        title: Text(loc.recordTransactionTitle),
+        actions: tabAppBarActions(context, showCategories: false),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         // Explicit tag (FEAT02 plan D1): `AppShell`'s `IndexedStack` keeps
         // every tab mounted at once, so this FAB and Accounts's FAB
@@ -294,6 +322,13 @@ class _RecordTransactionScreenState
                   setState(() => _flow = chosen);
                 }
               },
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _flowDescription(loc, _flow),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: transactionKindColor(context, _kindOf(_flow)),
+              ),
             ),
             const SizedBox(height: 16),
             TextField(

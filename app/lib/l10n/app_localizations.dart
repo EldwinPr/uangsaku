@@ -146,6 +146,12 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTooltip;
 
+  /// No description provided for @helpTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Help'**
+  String get helpTooltip;
+
   /// No description provided for @addAccountTooltip.
   ///
   /// In en, this message translates to:
@@ -205,6 +211,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Net'**
   String get figureNet;
+
+  /// No description provided for @figureSpendableTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'What you can spend right now, across every HOLDING account.'**
+  String get figureSpendableTooltip;
+
+  /// No description provided for @figureOwedToMeTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'The total of what other people owe you, across every RECEIVABLE account.'**
+  String get figureOwedToMeTooltip;
+
+  /// No description provided for @figureOwedByMeTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'The total of what you owe other people, across every PAYABLE account.'**
+  String get figureOwedByMeTooltip;
+
+  /// No description provided for @figureNetTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Spendable plus owed to you, minus what you owe — your overall position.'**
+  String get figureNetTooltip;
 
   /// No description provided for @noAccountsYetPeriod.
   ///
@@ -337,6 +367,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete account'**
   String get deleteAccountButton;
+
+  /// No description provided for @accountGroupDescriptionHolding.
+  ///
+  /// In en, this message translates to:
+  /// **'Money you hold and can spend directly — a wallet, bank account, or e-wallet.'**
+  String get accountGroupDescriptionHolding;
+
+  /// No description provided for @accountGroupDescriptionReceivable.
+  ///
+  /// In en, this message translates to:
+  /// **'Money someone else owes you.'**
+  String get accountGroupDescriptionReceivable;
+
+  /// No description provided for @accountGroupDescriptionPayable.
+  ///
+  /// In en, this message translates to:
+  /// **'Money you owe someone else.'**
+  String get accountGroupDescriptionPayable;
 
   /// No description provided for @duplicateAccountNameBlockedTitle.
   ///
@@ -535,6 +583,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Adjustment'**
   String get kindAdjustment;
+
+  /// No description provided for @kindDescriptionExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Money leaving one of your accounts, spent on something.'**
+  String get kindDescriptionExpense;
+
+  /// No description provided for @kindDescriptionIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Money entering one of your accounts.'**
+  String get kindDescriptionIncome;
+
+  /// No description provided for @kindDescriptionTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Money moving between two of your own accounts — not spending.'**
+  String get kindDescriptionTransfer;
+
+  /// No description provided for @kindDescriptionLend.
+  ///
+  /// In en, this message translates to:
+  /// **'Money leaving one of your accounts to become money someone owes you.'**
+  String get kindDescriptionLend;
+
+  /// No description provided for @kindDescriptionBorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Money entering one of your accounts as something you now owe.'**
+  String get kindDescriptionBorrow;
+
+  /// No description provided for @kindDescriptionRepay.
+  ///
+  /// In en, this message translates to:
+  /// **'Settling a debt — money moving between a person\'s account and one of your own.'**
+  String get kindDescriptionRepay;
+
+  /// No description provided for @adjustmentDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A correction to an account\'s balance, made directly rather than by recording a transfer or expense — used to fix a mistake or set a starting balance.'**
+  String get adjustmentDescription;
 
   /// No description provided for @amountLabel.
   ///
@@ -794,6 +884,24 @@ abstract class AppLocalizations {
   /// **'Spending by category this month'**
   String get categorySpendingChartTitle;
 
+  /// No description provided for @balanceTrendChartTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Your net balance across the last 30 days.'**
+  String get balanceTrendChartTooltip;
+
+  /// No description provided for @incomeExpenseChartTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Total income versus total expense recorded this calendar month.'**
+  String get incomeExpenseChartTooltip;
+
+  /// No description provided for @categorySpendingChartTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'How this month\'s spending splits across categories.'**
+  String get categorySpendingChartTooltip;
+
   /// No description provided for @incomeLegendLabel.
   ///
   /// In en, this message translates to:
@@ -817,6 +925,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No data yet.'**
   String get chartNoDataYet;
+
+  /// No description provided for @helpScreenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Help'**
+  String get helpScreenTitle;
+
+  /// No description provided for @helpSectionAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'What is an account'**
+  String get helpSectionAccounts;
+
+  /// No description provided for @helpSectionRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording money'**
+  String get helpSectionRecording;
+
+  /// No description provided for @helpSectionBudgets.
+  ///
+  /// In en, this message translates to:
+  /// **'Budgets'**
+  String get helpSectionBudgets;
+
+  /// No description provided for @helpSectionDebts.
+  ///
+  /// In en, this message translates to:
+  /// **'Debts'**
+  String get helpSectionDebts;
+
+  /// No description provided for @helpBudgetsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A budget group is a spending category with a monthly amount set aside for it. Spending recorded with no group falls into an automatic \"Others\" bucket. Nothing here is locked — a budget can be changed mid-month, and overspending is shown, never blocked.'**
+  String get helpBudgetsDescription;
+
+  /// No description provided for @helpDebtsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A receivable account is money someone owes you; a payable account is money you owe someone else. \"Paid\" is the sum of repayments recorded against it, and \"remaining\" is its current balance. Ticking settle marks the debt closed without deleting its history.'**
+  String get helpDebtsDescription;
 }
 
 class _AppLocalizationsDelegate

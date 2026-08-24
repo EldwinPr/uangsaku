@@ -287,4 +287,31 @@ void main() {
       await unmountAndFlushTimers(tester);
     },
   );
+
+  testWidgets(
+    'FEAT09 D4: the kind description swaps with the dropdown selection',
+    (tester) async {
+      await seedAccounts();
+      await pumpScreen(tester);
+
+      expect(
+        find.text('Money leaving one of your accounts, spent on something.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('kind-dropdown')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Transfer').last);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'Money moving between two of your own accounts — not spending.',
+        ),
+        findsOneWidget,
+      );
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../settings/tab_app_bar_actions.dart';
 import 'account_dao.dart';
 import 'account_form_screen.dart';
 import 'accounts_providers.dart';
@@ -26,7 +27,10 @@ class AccountsScreen extends ConsumerWidget {
     final balancesAsync = ref.watch(accountBalancesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(loc.accountsSectionTitle)),
+      appBar: AppBar(
+        title: Text(loc.accountsSectionTitle),
+        actions: tabAppBarActions(context, showCategories: false),
+      ),
       floatingActionButton: FloatingActionButton(
         // Explicit tag (FEAT02 plan D1, carried over by the FEAT04 split):
         // `AppShell`'s `IndexedStack` keeps every tab mounted at once, so

@@ -364,6 +364,48 @@ code:
   # (shared count with FEAT07 above - both landed in the same working tree), no schema
   # change. Closes the owner's second manual-testing feedback round.
 
+  # FEAT09-visual-identity-and-figures, DONE 2026-08-24. No UC - infrastructure. First
+  # of two items from the owner's THIRD manual-testing feedback round. New
+  # group_style.dart (accountGroupColor/accountGroupIcon per AccountGroup) and
+  # kind_style.dart (transactionKindColor per TransactionKind, generalizing the
+  # mapping FEAT08 shipped for income/expense to the other five kinds) - plain
+  # functions, not tracked classes, no diagram entry; TransactionListScreen's own
+  # color switch now delegates to the shared function rather than duplicating it.
+  # BalanceSheetScreen's four figures are a 2x2 GridView of colored/tinted cards
+  # (existing ValueKeys unchanged - no test regression); three map onto an
+  # AccountGroup's color/icon, net stays neutral (no AccountGroup counterpart).
+  # AccountFormScreen's group SegmentedButton and RecordTransactionScreen's kind
+  # dropdown each gained a description line below the selected value, tinted to
+  # match. AccountsScreen's per-account list explicitly stays ListTile rows - the
+  # owner ruled cards out there specifically. 172 tests green, no schema change.
+  FEAT09:
+    style_helpers_added:
+      - app/lib/src/accounts/group_style.dart
+      - app/lib/src/transactions/kind_style.dart
+    tests:
+      - app/test/accounts/group_style_test.dart
+      - app/test/transactions/kind_style_test.dart
+
+  # FEAT10-help-and-navigation, DONE 2026-08-24. No UC - infrastructure. Second of two
+  # items from the owner's THIRD manual-testing feedback round. New HelpScreen (static
+  # content, StatelessWidget, no provider reads) tracked on class-settings.drawio -
+  # four ExpansionTile sections, accounts and recording reusing FEAT09's picker-
+  # description ARB keys verbatim (never a second copy of the same wording), budgets
+  # and debts new prose. New tab_app_bar_actions.dart (not a tracked class - a plain
+  # function, same bucket as FEAT09's style helpers): Categories + Settings + Help,
+  # Categories only when showCategories is true. Wired into all five tabs: Home and
+  # Transactions get Categories+Settings+Help, Accounts and Record get Settings+Help
+  # only, Budget keeps its own "set budget" icon first then appends Settings+Help.
+  # Seven Tooltip-wrapped info icons added to BalanceSheetScreen's four figure cards
+  # and three chart cards (FEAT07/FEAT09's cards, untouched otherwise). Landed after
+  # FEAT09 in the same session, sequenced rather than parallel since both touch
+  # balance_sheet_screen.dart. 179 tests green, no schema change.
+  FEAT10:
+    screen:  app/lib/src/settings/help_screen.dart
+    shared_helper_added: app/lib/src/settings/tab_app_bar_actions.dart
+    tests:
+      - app/test/settings/help_screen_test.dart
+
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
 # each other in BOTH directions (balances need Transactions; the record screen needs

@@ -293,6 +293,53 @@ void main() {
   );
 
   testWidgets(
+    'FEAT09 D3: the group description swaps with the SegmentedButton selection on the create flow',
+    (tester) async {
+      await pumpScreen(tester);
+
+      expect(
+        find.text(
+          'Money you hold and can spend directly — a wallet, bank account, or e-wallet.',
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('RECEIVABLE'));
+      await tester.pump();
+
+      expect(find.text('Money someone else owes you.'), findsOneWidget);
+
+      await tester.tap(find.text('PAYABLE'));
+      await tester.pump();
+
+      expect(find.text('Money you owe someone else.'), findsOneWidget);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT09 D3: the group description also appears on the edit flow, matching the loaded account',
+    (tester) async {
+      final accountId = await database
+          .into(database.accounts)
+          .insert(
+            AccountsCompanion.insert(
+              name: 'Wallet',
+              group: AccountGroup.RECEIVABLE,
+              openingAmount: 0,
+            ),
+          );
+
+      await pumpEditScreen(tester, accountId);
+
+      expect(find.text('Money someone else owes you.'), findsOneWidget);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
     'FEAT06 D1/D2: the FAB reads Icons.check, and save pops the route it was pushed on (create mode)',
     (tester) async {
       await tester.pumpWidget(

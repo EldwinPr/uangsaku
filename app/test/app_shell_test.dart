@@ -11,6 +11,7 @@ import 'package:uangsaku/src/accounts/debt_detail_screen.dart';
 import 'package:uangsaku/src/app.dart';
 import 'package:uangsaku/src/budgeting/set_budget_screen.dart';
 import 'package:uangsaku/src/database/app_database.dart';
+import 'package:uangsaku/src/settings/help_screen.dart';
 import 'package:uangsaku/src/settings/settings_screen.dart';
 import 'package:uangsaku/src/settings/settings_table.dart';
 import 'package:uangsaku/src/transactions/category_manager_screen.dart';
@@ -235,7 +236,10 @@ void main() {
       await tester.tap(find.text('Accounts'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.info_outline));
+      // FEAT10 D2 put `Icons.info_outline` tooltip icons on Home's seven
+      // cards too (mounted underneath, `IndexedStack` keeps every tab
+      // alive) — `.hitTestable()` narrows to the one actually visible here.
+      await tester.tap(find.byIcon(Icons.info_outline).hitTestable());
       await tester.pumpAndSettle();
 
       final screen = tester.widget<DebtDetailScreen>(
@@ -248,7 +252,7 @@ void main() {
   );
 
   testWidgets(
-    'the two Home app-bar actions reach CategoryManagerScreen and SettingsScreen',
+    'the Home app-bar actions reach CategoryManagerScreen, SettingsScreen and HelpScreen',
     (tester) async {
       await pumpShell(tester);
 
@@ -262,6 +266,58 @@ void main() {
       await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
       expect(find.byType(SettingsScreen), findsOneWidget);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Help'));
+      await tester.pumpAndSettle();
+      expect(find.byType(HelpScreen), findsOneWidget);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT10 D3: Categories appears only on Home and Transactions; Settings '
+    'and Help appear on every tab',
+    (tester) async {
+      await pumpShell(tester);
+
+      // Home: all three.
+      expect(find.byTooltip('Categories').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('Settings').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('Help').hitTestable(), findsOneWidget);
+
+      // Accounts: Settings and Help only.
+      await tester.tap(find.text('Accounts'));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Categories').hitTestable(), findsNothing);
+      expect(find.byTooltip('Settings').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('Help').hitTestable(), findsOneWidget);
+
+      // Record: Settings and Help only.
+      await tester.tap(find.byTooltip('Record'));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Categories').hitTestable(), findsNothing);
+      expect(find.byTooltip('Settings').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('Help').hitTestable(), findsOneWidget);
+
+      // Transactions: all three.
+      await tester.tap(find.text('Transactions'));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Categories').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('Settings').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('Help').hitTestable(), findsOneWidget);
+
+      // Budget: Settings and Help alongside the pre-existing "Set budget"
+      // action; Categories stays absent.
+      await tester.tap(find.text('Budget'));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Categories').hitTestable(), findsNothing);
+      expect(find.byTooltip('Settings').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('Help').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('Set budget').hitTestable(), findsOneWidget);
 
       await unmountAndFlushTimers(tester);
     },

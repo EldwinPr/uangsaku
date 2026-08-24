@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../settings/settings_screen.dart';
-import '../transactions/category_manager_screen.dart';
+import '../settings/tab_app_bar_actions.dart';
 import 'account_dao.dart';
 import 'accounts_providers.dart';
+import 'accounts_table.dart';
+import 'group_style.dart';
 
 /// `BalanceSheetScreen` — the primary screen (FR-1), UC-01.
 ///
@@ -25,10 +26,6 @@ import 'accounts_providers.dart';
 /// Loading states show zeros / placeholders; an error shows a message rather
 /// than silently rendering zeros as if they were real figures.
 ///
-/// The currency app-bar action reaches [SettingsScreen] (FEAT03 D3) — was
-/// `CurrencyScreen` before this issue; the currency section inside it is
-/// unchanged.
-///
 /// **FEAT04 D1**: the per-account list (FAB, row tap, debt-details icon)
 /// moved to the new [AccountsScreen] (`accounts_screen.dart`) — this screen
 /// keeps only the four figures.
@@ -40,6 +37,15 @@ import 'accounts_providers.dart';
 /// rather than a blank or a crash on zero rows/zero total (D7). Display
 /// only, matching this screen's existing offers-nothing-to-refuse shape —
 /// NFR-4 still has nothing to bite on.
+///
+/// **FEAT10 D2**: each of the seven cards (four figures, three charts)
+/// carries a trailing `Tooltip`-wrapped info icon, one new ARB key per
+/// card — display only, no state, nothing to wire.
+///
+/// **FEAT10 D3**: the app-bar actions (Categories, Settings, Help) are now
+/// built by the shared `tabAppBarActions()`
+/// (`settings/tab_app_bar_actions.dart`) rather than three inline
+/// `IconButton`s — same three actions, same order, pure extraction.
 class BalanceSheetScreen extends ConsumerWidget {
   const BalanceSheetScreen({super.key});
 
@@ -60,32 +66,15 @@ class BalanceSheetScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(loc.balanceSheetTitle),
-        actions: [
-          IconButton(
-            tooltip: loc.categoriesTooltip,
-            icon: const Icon(Icons.category_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const CategoryManagerScreen(),
-              ),
-            ),
-          ),
-          IconButton(
-            tooltip: loc.settingsTooltip,
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
-            ),
-          ),
-        ],
+        actions: tabAppBarActions(context, showCategories: true),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          ...positionAsync.when(
-            data: (position) => _figures(loc, position),
-            loading: () => _figures(loc, _zero),
-            error: (_, _) => [Text(loc.figuresLoadError)],
+          positionAsync.when(
+            data: (position) => _figuresGrid(context, loc, position),
+            loading: () => _figuresGrid(context, loc, _zero),
+            error: (_, _) => Text(loc.figuresLoadError),
           ),
           const SizedBox(height: 8),
           const _BalanceTrendCard(),
@@ -98,31 +87,63 @@ class BalanceSheetScreen extends ConsumerWidget {
     );
   }
 
-  /// The four figures, each its own card — spendable is never merged with
-  /// owed-to-me; FR-1's "money sitting with Budi cannot buy lunch" is this
-  /// list not being one number.
-  List<Widget> _figures(AppLocalizations loc, FinancialPosition position) => [
-    _FigureCard(
-      figureKey: const ValueKey('figure-spendable'),
-      label: loc.figureSpendable,
-      minorUnits: position.spendable,
-    ),
-    _FigureCard(
-      figureKey: const ValueKey('figure-owed-to-me'),
-      label: loc.figureOwedToMe,
-      minorUnits: position.owedToMe,
-    ),
-    _FigureCard(
-      figureKey: const ValueKey('figure-owed-by-me'),
-      label: loc.figureOwedByMe,
-      minorUnits: position.owedByMe,
-    ),
-    _FigureCard(
-      figureKey: const ValueKey('figure-net'),
-      label: loc.figureNet,
-      minorUnits: position.net,
-    ),
-  ];
+  /// The four figures, a 2x2 grid of colored cards (FEAT09 D2) — spendable
+  /// is never merged with owed-to-me; FR-1's "money sitting with Budi
+  /// cannot buy lunch" is this grid not being one number. Three of the four
+  /// map straight onto an `AccountGroup` and borrow that group's color/icon
+  /// (`group_style.dart`); `net` has no group counterpart and keeps the
+  /// original neutral styling.
+  Widget _figuresGrid(
+    BuildContext context,
+    AppLocalizations loc,
+    FinancialPosition position,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 8,
+      childAspectRatio: 1.6,
+      children: [
+        _FigureCard(
+          figureKey: const ValueKey('figure-spendable'),
+          label: loc.figureSpendable,
+          minorUnits: position.spendable,
+          color: accountGroupColor(context, AccountGroup.HOLDING),
+          icon: accountGroupIcon(AccountGroup.HOLDING),
+          tooltip: loc.figureSpendableTooltip,
+        ),
+        _FigureCard(
+          figureKey: const ValueKey('figure-owed-to-me'),
+          label: loc.figureOwedToMe,
+          minorUnits: position.owedToMe,
+          color: accountGroupColor(context, AccountGroup.RECEIVABLE),
+          icon: accountGroupIcon(AccountGroup.RECEIVABLE),
+          tooltip: loc.figureOwedToMeTooltip,
+        ),
+        _FigureCard(
+          figureKey: const ValueKey('figure-owed-by-me'),
+          label: loc.figureOwedByMe,
+          minorUnits: position.owedByMe,
+          color: accountGroupColor(context, AccountGroup.PAYABLE),
+          icon: accountGroupIcon(AccountGroup.PAYABLE),
+          tooltip: loc.figureOwedByMeTooltip,
+        ),
+        _FigureCard(
+          figureKey: const ValueKey('figure-net'),
+          label: loc.figureNet,
+          minorUnits: position.net,
+          color: colorScheme.primary,
+          icon: Icons.account_balance,
+          tooltip: loc.figureNetTooltip,
+          // D2: net keeps the original neutral card styling, no tint.
+          tinted: false,
+        ),
+      ],
+    );
+  }
 }
 
 class _FigureCard extends StatelessWidget {
@@ -130,6 +151,10 @@ class _FigureCard extends StatelessWidget {
     this.figureKey,
     required this.label,
     required this.minorUnits,
+    required this.color,
+    required this.icon,
+    required this.tooltip,
+    this.tinted = true,
   });
 
   /// On the value [Text] itself, so tests assert the figure, not the card.
@@ -137,15 +162,49 @@ class _FigureCard extends StatelessWidget {
   final String label;
   final int minorUnits;
 
+  /// FEAT09 D1/D2: borrowed from `group_style.dart` for the three
+  /// group-backed figures, `colorScheme.primary` for `net`.
+  final Color color;
+  final IconData icon;
+
+  /// FEAT10 D2: one sentence, shown by a stock [Tooltip] on the trailing
+  /// info icon — long-press on mobile, hover on desktop/web.
+  final String tooltip;
+
+  /// A light tint (`color.withValues(alpha: 0.12)`), never a solid fill, so
+  /// text stays legible in both themes without a second contrast check
+  /// (D2). `false` for `net`, which has no `AccountGroup` counterpart.
+  final bool tinted;
+
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: ListTile(
-        title: Text(label),
-        trailing: Text(
-          '$minorUnits',
-          key: figureKey,
-          style: Theme.of(context).textTheme.titleLarge,
+      color: tinted ? color.withValues(alpha: 0.12) : null,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(icon, color: color),
+                Tooltip(
+                  message: tooltip,
+                  child: const Icon(Icons.info_outline, size: 16),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(label, style: Theme.of(context).textTheme.bodyMedium),
+            const SizedBox(height: 4),
+            Text(
+              '$minorUnits',
+              key: figureKey,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+          ],
         ),
       ),
     );
@@ -155,10 +214,18 @@ class _FigureCard extends StatelessWidget {
 /// Shared card chrome for the three FEAT07 charts (D6) — a title, then
 /// whatever the chart body is: the chart itself, a loading placeholder, an
 /// error message, or the empty-state message (D7).
+///
+/// FEAT10 D2: the title row also carries a trailing `Tooltip`-wrapped info
+/// icon, same shape as `_FigureCard`'s.
 class _ChartCard extends StatelessWidget {
-  const _ChartCard({required this.title, required this.child});
+  const _ChartCard({
+    required this.title,
+    required this.tooltip,
+    required this.child,
+  });
 
   final String title;
+  final String tooltip;
   final Widget child;
 
   @override
@@ -169,7 +236,16 @@ class _ChartCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                Tooltip(
+                  message: tooltip,
+                  child: const Icon(Icons.info_outline, size: 16),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             SizedBox(height: 180, child: child),
           ],
@@ -190,6 +266,7 @@ class _BalanceTrendCard extends ConsumerWidget {
 
     return _ChartCard(
       title: loc.balanceTrendChartTitle,
+      tooltip: loc.balanceTrendChartTooltip,
       child: trendAsync.when(
         data: (points) {
           if (points.isEmpty) {
@@ -233,6 +310,7 @@ class _IncomeExpenseCard extends ConsumerWidget {
 
     return _ChartCard(
       title: loc.incomeExpenseChartTitle,
+      tooltip: loc.incomeExpenseChartTooltip,
       child: summaryAsync.when(
         data: (summary) {
           if (summary.income == 0 && summary.expense == 0) {
@@ -308,6 +386,7 @@ class _CategorySpendingCard extends ConsumerWidget {
 
     return _ChartCard(
       title: loc.categorySpendingChartTitle,
+      tooltip: loc.categorySpendingChartTooltip,
       child: spendingAsync.when(
         data: (rows) {
           if (rows.isEmpty) {

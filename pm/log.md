@@ -14,29 +14,34 @@ before starting work.
 
 ## Current state — 2026-08-24
 
-**Phase.** **The planned backlog and BOTH of the owner's manual-testing feedback rounds
-are DONE.** The app compiles and its test suite is green (**165 tests**). Ten
+**Phase.** **The planned backlog and all THREE of the owner's manual-testing feedback
+rounds are DONE.** The app compiles and its test suite is green (**179 tests**). Ten
 screens/tabs built end to end, all reachable except one deliberately unrouted flow
 (UC-03's adjust mode, never asked for). `home` is `AppShell`: a five-tab bottom nav
 (Home, Accounts, Record as a colored circular docked FAB, Transactions, Budget) with
 every other screen reached contextually. Full EN/ID language toggle, light/dark/system
 theme and a theme-color choice live in `SettingsScreen`; category/subcategory pickers
 are autocomplete-with-inline-create; every save action closes/clears and confirms
-instead of sitting silently re-tappable; `Home` now carries three charts (balance
-trend, income vs expense, spending by category, `fl_chart`) below its four figures;
-transaction rows are colored by kind; `RecordTransactionScreen` switches back to Home
-on a successful save; **account-name collisions hard-block** — the one deliberate,
-owner-cited exception to NFR-4's otherwise-zero-refusals rule (`docs/fr-nfr.md`,
-`decisions.md` 2026-08-24).
+instead of sitting silently re-tappable; `Home` carries three charts (balance trend,
+income vs expense, spending by category, `fl_chart`) below four now-colored figure
+cards; transaction rows are colored by kind; `RecordTransactionScreen` switches back
+to Home on a successful save; **account-name collisions hard-block** — the one
+deliberate, owner-cited exception to NFR-4's otherwise-zero-refusals rule
+(`docs/fr-nfr.md`, `decisions.md` 2026-08-24); every `AccountGroup`/`TransactionKind`
+now has one consistent color+icon, reused across Home's figure cards and two picker
+descriptions (`group_style.dart`/`kind_style.dart`); a new in-app `HelpScreen` explains
+accounts/recording/budgets/debts, reached — alongside Settings — from every tab, with
+Categories staying scoped to Home and Transactions only.
 
-**Active issue.** None. Nothing is queued. `FEAT03` through `FEAT06` (round one) and
-`FEAT07`/`FEAT08` (round two) — six feedback issues total — all closed the same day,
-2026-08-24, alongside the third schema change (`FEAT03`'s `Settings.locale`/
-`themeMode`/`seedColor`; `FEAT07`/`FEAT08` added no schema). Both original tracked-
-backlog questions (Q3, Q4) were answered 2026-08-23; `UC03-adjust-account` and
-`UC02B-edit-account` closed the same day/next (`UC02B` being the first schema change).
-CI broke right after (a real `_slugdir` bug in `audit.py`) and was found and fixed the
-same day, confirmed green via the actual failing log, not local reproduction alone.
+**Active issue.** None. Nothing is queued. `FEAT03` through `FEAT06` (round one),
+`FEAT07`/`FEAT08` (round two), and `FEAT09`/`FEAT10` (round three) — eight feedback
+issues total — all closed the same day, 2026-08-24, alongside the third schema change
+(`FEAT03`'s `Settings.locale`/`themeMode`/`seedColor`; every issue after that added no
+schema). Both original tracked-backlog questions (Q3, Q4) were answered 2026-08-23;
+`UC03-adjust-account` and `UC02B-edit-account` closed the same day/next (`UC02B` being
+the first schema change). CI broke right after (a real `_slugdir` bug in `audit.py`)
+and was found and fixed the same day, confirmed green via the actual failing log, not
+local reproduction alone.
 
 **Pushed.** CI has run. The `app` job failed once on the scaffold and the guard was fixed
 rather than the commit reverted — see the entry below.
@@ -1285,3 +1290,63 @@ passed / 0 warnings / 0 failures.
 **[TODO]** Nothing queued. Both rounds of the owner's manual-testing feedback
 (`FEAT03`-`FEAT06`, then `FEAT07`-`FEAT08`) are DONE. The tracker has no runnable
 work.
+
+## 2026-08-24 — FEAT09-visual-identity-and-figures and FEAT10-help-and-navigation DONE
+
+**[STATUS]** The owner's THIRD round of manual-testing feedback ("more color and
+design" / a Home-screen card+color request / "add the description below it same as
+in transaction" in `AccountFormScreen` / "make a guide since this is kind of
+complex"), resolved via one `AskUserQuestion` round covering three ambiguities: guide
+format, how far the color/design pass should go, and which "cards" the owner meant
+(the four Home figures, not `AccountsScreen`'s list — explicitly ruled out). Split
+into two issues, planned in-session and both implemented by `flutter-coder`,
+dispatched **sequentially rather than in parallel** since both touch
+`balance_sheet_screen.dart` — FEAT10 was held until FEAT09's coder finished, to avoid
+two agents editing the same working-tree file at once.
+
+**[STATUS] FEAT09-visual-identity-and-figures.** New `group_style.dart`
+(`accountGroupColor`/`accountGroupIcon` per `AccountGroup`) and `kind_style.dart`
+(`transactionKindColor` per `TransactionKind`, generalizing the income/expense
+mapping `TransactionListScreen` already shipped in FEAT08 to the other five kinds) —
+plain functions, not tracked classes. `TransactionListScreen`'s own color switch now
+delegates to the shared function instead of duplicating it. `BalanceSheetScreen`'s
+four figures became a 2×2 `GridView` of colored/tinted cards — three map onto an
+`AccountGroup`'s color/icon, `net` stays neutral (no group counterpart); every
+existing `ValueKey` stayed on the amount `Text`, so no test regression.
+`AccountFormScreen`'s group `SegmentedButton` and `RecordTransactionScreen`'s kind
+dropdown both gained a description line below the selected value, tinted to match.
+`AccountsScreen`'s list stays `ListTile` rows, per the owner's explicit clarification.
+
+**[DISCOVERY]** `flutter gen-l10n` is a separate required step from `dart run
+build_runner build` whenever an ARB file changes — this project's `l10n.yaml` routes
+localization codegen through it, and `build_runner` alone leaves new keys undefined
+(`flutter analyze` fails `undefined_getter` even though the ARB is correct). FEAT09's
+coder found this the hard way; documented in
+`context/coding-conventions/dart-and-flutter.md` so it doesn't recur. It didn't —
+FEAT10's coder ran it correctly from the dispatch brief.
+
+**[STATUS] FEAT10-help-and-navigation.** New `HelpScreen` (`StatelessWidget`, zero
+database reads, tracked on `class-settings.drawio`) — four `ExpansionTile` sections;
+accounts and recording reuse FEAT09's picker-description ARB keys verbatim (so the
+in-app hint and the Help screen can never drift out of sync), budgets and debts get
+new one-paragraph prose. New `tab_app_bar_actions.dart` (not a tracked class):
+Categories (conditional) + Settings + Help, lifted out of `BalanceSheetScreen`'s
+previously-inline three `IconButton`s so five screens share one definition. Wired
+into all five tabs: Home and Transactions get Categories+Settings+Help, Accounts and
+Record get Settings+Help only, Budget keeps its own "set budget" icon first then
+appends Settings+Help. Seven `Tooltip`-wrapped info icons added to
+`BalanceSheetScreen`'s four figure cards and three chart cards, without touching any
+of FEAT07/FEAT09's layout, color, or figure/chart logic.
+
+**[STATUS]** Both issues, four commands green: `dart run build_runner build
+--delete-conflicting-outputs`, `flutter gen-l10n`, `dart format
+--set-exit-if-changed .`, `flutter analyze` (No issues found!), `flutter test` — 179
+tests, up from 165 (14 new: `group_style_test.dart`, `kind_style_test.dart`,
+`help_screen_test.dart`, plus coverage for the figure-card colors, picker
+descriptions, tooltips, and the per-tab app-bar action sets). No schema change on
+either issue (`git diff --stat app/drift_schemas/` empty). `python audit.py` — 14
+passed / 0 warnings / 0 failures.
+
+**[TODO]** Nothing queued. All three rounds of the owner's manual-testing feedback
+(`FEAT03`-`FEAT06`, `FEAT07`-`FEAT08`, `FEAT09`-`FEAT10`) are DONE. The tracker has no
+runnable work.

@@ -701,3 +701,48 @@ issues:
       count with FEAT07 - both landed in the same working tree), no schema change.
       Closes the owner's second manual-testing feedback round.
 
+  - id: FEAT09-visual-identity-and-figures
+    slug: visual-identity-and-figures
+    title: Per-type color/icon system, redesigned figure cards, descriptions under pickers
+    status: DONE
+    plan: pm/issues/feat09-visual-identity-and-figures/plan.md
+    depends_on: [FEAT08-transaction-ux-and-name-block]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-24. No UC owns this - infrastructure. First of two items from the
+      owner's THIRD manual-testing feedback round ("more color and design" / "for home
+      screen ... card ... add color" / "in create account after clicking which type,
+      add the description below it same as in transaction"). New group_style.dart
+      (AccountGroup color+icon) and kind_style.dart (TransactionKind color, generalizing
+      the mapping TransactionListScreen already shipped in FEAT08) - plain functions,
+      no diagram entry; TransactionListScreen's own color switch now calls the shared
+      function instead of duplicating it. BalanceSheetScreen's four figures are now a
+      2x2 GridView of colored/tinted cards (existing ValueKeys unchanged; net stays
+      neutral, no AccountGroup counterpart). AccountFormScreen's group picker and
+      RecordTransactionScreen's kind picker both gained a description line below the
+      selected value, tinted to match. AccountsScreen's list explicitly stays ListTile
+      rows - owner ruled that out. 172 tests green (was 165), no schema change.
+      Discovered `flutter gen-l10n` is a separate required step from `build_runner`
+      for ARB changes - documented in coding-conventions/dart-and-flutter.md.
+
+  - id: FEAT10-help-and-navigation
+    slug: help-and-navigation
+    title: In-app Help screen, inline hints on Home, app-bar actions reorganized
+    status: DONE
+    plan: pm/issues/feat10-help-and-navigation/plan.md
+    depends_on: [FEAT08-transaction-ux-and-name-block]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-24. No UC owns this - infrastructure. Second of two items from the
+      owner's third manual-testing feedback round ("make a guide since this is kind of
+      complex"). New HelpScreen (static content, tracked on class-settings.drawio, four
+      ExpansionTile sections - accounts/recording reuse FEAT09's picker-description ARB
+      keys verbatim, budgets/debts get new prose) reached from every tab. New shared
+      tabAppBarActions() helper (not a tracked class) puts Settings+Help on all five
+      tabs and Categories on Home+Transactions only (previously Categories/Settings
+      existed only on Home; BudgetOverviewScreen keeps its own "set budget" icon first,
+      then appends the shared three). Seven Tooltip-based inline hints on
+      BalanceSheetScreen's figure/chart cards. Landed after FEAT09 (both touch
+      balance_sheet_screen.dart - sequenced, not parallel, to avoid a working-tree
+      collision). 179 tests green (was 172), no schema change.
+
