@@ -66,6 +66,33 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// 2026-08-24 overflow audit: the exact conditions that caused the
+  /// figure-card overflow the owner reported — a longer `id`-locale label
+  /// (this app's seeded default, FEAT03 D1) plus a larger accessibility
+  /// text scale — wrapped around the same screen.
+  Future<void> pumpScreenStressed(WidgetTester tester) async {
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+        child: ProviderScope(
+          overrides: [appDatabaseProvider.overrideWithValue(database)],
+          child: const MaterialApp(
+            locale: Locale('id'),
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: BalanceSheetScreen(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
   // drift's `watch()` cancellation schedules a zero-duration `Timer`
   // (`StreamQueryStore.markAsClosed`) that only fires on a later pump; the
   // test body flushes it before returning (`testing.md`, verified UC13).
@@ -275,6 +302,42 @@ void main() {
         expect(message, isNotNull);
         expect(message, isNotEmpty);
       }
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    '2026-08-24 overflow audit: no card overflows under id labels, large '
+    'amounts and a large accessibility text scale',
+    (tester) async {
+      // Large opening amounts so the formatted figures are long strings
+      // too (`money_format.dart`'s grouping adds length, not just the
+      // label) — both axes of the original overflow bug stressed at once.
+      final wallet = await insertAccount(
+        'Wallet',
+        AccountGroup.HOLDING,
+        123456789,
+      );
+      await insertAccount('Budi', AccountGroup.RECEIVABLE, 987654321);
+      await insertAccount('Kartu kredit', AccountGroup.PAYABLE, -12345678);
+      await database
+          .into(database.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              kind: TransactionKind.expense,
+              amount: 5000,
+              occurredOn: DateTime.now(),
+              fromAccountId: Value(wallet),
+            ),
+          );
+
+      await pumpScreenStressed(tester);
+      expect(tester.takeException(), isNull);
+
+      await tester.drag(find.byType(ListView), const Offset(0, -600));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
 
       await unmountAndFlushTimers(tester);
     },

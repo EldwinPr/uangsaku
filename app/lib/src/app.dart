@@ -135,41 +135,62 @@ class _AppShellState extends State<AppShell> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                _NavIconButton(
-                  icon: Icons.home_outlined,
-                  selectedIcon: Icons.home,
-                  label: loc.navHome,
-                  selected: _index == 0,
-                  onTap: () => _select(0),
-                ),
-                _NavIconButton(
-                  icon: Icons.account_balance_wallet_outlined,
-                  selectedIcon: Icons.account_balance_wallet,
-                  label: loc.navAccounts,
-                  selected: _index == 1,
-                  onTap: () => _select(1),
-                ),
-              ],
+            // Each side `Expanded` and each button `Flexible` (owner
+            // feedback 2026-08-24, applied here as a precaution: the same
+            // fixed-vs-content overflow class as `BalanceSheetScreen`'s
+            // figure cards) — `id`'s labels ("Transaksi", "Anggaran") or a
+            // larger accessibility font size shrink each button instead of
+            // pushing the bar wider than the screen; `_NavIconButton`'s
+            // label truncates with an ellipsis rather than throwing a hard
+            // `RenderFlex` overflow.
+            Expanded(
+              child: Row(
+                children: [
+                  Flexible(
+                    child: _NavIconButton(
+                      icon: Icons.home_outlined,
+                      selectedIcon: Icons.home,
+                      label: loc.navHome,
+                      selected: _index == 0,
+                      onTap: () => _select(0),
+                    ),
+                  ),
+                  Flexible(
+                    child: _NavIconButton(
+                      icon: Icons.account_balance_wallet_outlined,
+                      selectedIcon: Icons.account_balance_wallet,
+                      label: loc.navAccounts,
+                      selected: _index == 1,
+                      onTap: () => _select(1),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            Row(
-              children: [
-                _NavIconButton(
-                  icon: Icons.receipt_long_outlined,
-                  selectedIcon: Icons.receipt_long,
-                  label: loc.navTransactions,
-                  selected: _index == 3,
-                  onTap: () => _select(3),
-                ),
-                _NavIconButton(
-                  icon: Icons.pie_chart_outline,
-                  selectedIcon: Icons.pie_chart,
-                  label: loc.navBudget,
-                  selected: _index == 4,
-                  onTap: () => _select(4),
-                ),
-              ],
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Flexible(
+                    child: _NavIconButton(
+                      icon: Icons.receipt_long_outlined,
+                      selectedIcon: Icons.receipt_long,
+                      label: loc.navTransactions,
+                      selected: _index == 3,
+                      onTap: () => _select(3),
+                    ),
+                  ),
+                  Flexible(
+                    child: _NavIconButton(
+                      icon: Icons.pie_chart_outline,
+                      selectedIcon: Icons.pie_chart,
+                      label: loc.navBudget,
+                      selected: _index == 4,
+                      onTap: () => _select(4),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -183,6 +204,12 @@ class _AppShellState extends State<AppShell> {
 /// the selected/unselected tinting `NavigationBar` gave for free. Always
 /// tappable, including while already selected (NFR-4) — selection changes
 /// `_index`, it never disables an `onTap`.
+///
+/// **Its label truncates with an ellipsis rather than overflowing**
+/// (2026-08-24 audit, same overflow class as `BalanceSheetScreen`'s figure
+/// cards): `AppShell` wraps each button in `Flexible` inside an `Expanded`
+/// half of the bar, so `id`'s longer labels or a larger accessibility font
+/// size shrink the button instead of pushing the bar past the screen width.
 class _NavIconButton extends StatelessWidget {
   const _NavIconButton({
     required this.icon,
@@ -212,7 +239,13 @@ class _NavIconButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(selected ? selectedIcon : icon, color: color, size: 22),
-            Text(label, style: TextStyle(color: color, fontSize: 10)),
+            Text(
+              label,
+              style: TextStyle(color: color, fontSize: 10),
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),

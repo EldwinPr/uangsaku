@@ -19,6 +19,19 @@ decimal separators ("i forgot also add . and ,") — added `money_format.dart`
 fraction digits) applied to the four figure cards only, not swept across the rest of
 the app. See `pm/log.md`'s 2026-08-24 entry for the full account.
 
+**Follow-up audit, 2026-08-24, same day:** the owner asked to check other screens for
+the same overflow class. Grepped the whole app for `GridView`/`childAspectRatio` (none
+elsewhere) and every `Row(` with a `Text` sibling not wrapped in `Expanded`/`Flexible`.
+Found and fixed two more real instances of the same root cause (a fixed-size container
+next to locale-length-dependent text, no give): `AppShell`'s bottom nav bar (`id`'s
+"Transaksi"/"Anggaran" or a larger accessibility font could overflow the
+`BottomAppBar` horizontally — each side wrapped in `Expanded`, each button in
+`Flexible`, the label now ellipsizes instead of throwing) and `_ChartCard`'s title row
+(the chart titles are long sentences — wrapped in `Expanded` with `maxLines: 1` +
+ellipsis). Two new regression tests stress both fixes at once: `id` locale plus a 2x
+`TextScaler`, asserting `tester.takeException()` is null. See `pm/log.md`'s 2026-08-24
+entry for the full account.
+
 **Depends on:** `FEAT08-transaction-ux-and-name-block` — DONE.
 
 ## Decisions

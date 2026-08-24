@@ -15,7 +15,7 @@ before starting work.
 ## Current state — 2026-08-24
 
 **Phase.** **The planned backlog and all THREE of the owner's manual-testing feedback
-rounds are DONE.** The app compiles and its test suite is green (**183 tests**). Ten
+rounds are DONE.** The app compiles and its test suite is green (**185 tests**). Ten
 screens/tabs built end to end, all reachable except one deliberately unrouted flow
 (UC-03's adjust mode, never asked for). `home` is `AppShell`: a five-tab bottom nav
 (Home, Accounts, Record as a colored circular docked FAB, Transactions, Budget) with
@@ -1381,5 +1381,43 @@ still show raw ints, unchanged, a decision to revisit only if asked.
 combination with literal expected strings, not just round-tripped through the same
 function the widget calls). `git diff --stat app/drift_schemas/` empty — no schema
 change. `python audit.py` — 14 passed / 0 warnings / 0 failures.
+
+**[TODO]** Nothing queued.
+
+## 2026-08-24 — Overflow audit: bottom nav and chart-card titles hardened the same way
+
+**[STATUS]** The owner asked to check other screens for the same overflow class after
+the figure-card fix. Systematically grepped the app for `GridView`/`childAspectRatio`
+(none elsewhere — that pattern was unique to the figure cards) and every `Row(` with a
+`Text` sibling not wrapped in `Expanded`/`Flexible` (the actual mechanism: a `Row`'s
+main axis is bounded, and a `Text` sibling with no give throws a hard `RenderFlex`
+overflow once its content is wider than what's left — the same root cause as the fixed
+`childAspectRatio` capping height regardless of content, just the other axis).
+
+Found and fixed two more real instances: **`AppShell`'s bottom nav bar** (`app.dart`)
+— four `_NavIconButton`s in two un-`Expanded` `Row`s; `id`'s longer labels
+("Transaksi", "Anggaran") or a larger accessibility text scale could overflow the
+`BottomAppBar` horizontally. Each side is now `Expanded`, each button `Flexible`, and
+the label `Text` gained `maxLines: 1` + `TextOverflow.ellipsis` — it shrinks and
+truncates instead of throwing. **`_ChartCard`'s title row**
+(`balance_sheet_screen.dart`) — the three chart titles are full sentences ("Income vs
+expense this month" / "Pemasukan vs pengeluaran bulan ini") sitting next to a
+fixed-size info icon in a `spaceBetween` `Row` with no `Expanded`; wrapped the title in
+`Expanded` with the same `maxLines: 1` + ellipsis treatment.
+
+Everything else with a `Row` (`ListTile` trailing rows in `AccountsScreen`,
+`SetBudgetScreen`, `CategoryManagerScreen`, `TransactionListScreen`) carries only
+icons or a short fixed-format number with `mainAxisSize: MainAxisSize.min` — no
+locale-length-dependent text, so no risk of the same kind.
+
+**[STATUS]** Two new regression tests, both stressing the exact conditions that caused
+the original bug at once (`id` locale + a 2x `TextScaler`), asserting
+`tester.takeException()` is null rather than just eyeballing the layout: one on
+`AppShell` (bottom nav), one on `BalanceSheetScreen` (all seven cards, plus large
+seeded amounts so the formatted figures are long strings too). Four commands green:
+`dart run build_runner build --delete-conflicting-outputs`, `dart format
+--set-exit-if-changed .`, `flutter analyze` (No issues found!), `flutter test` — 185
+tests, up from 183. `git diff --stat app/drift_schemas/` empty — no schema change.
+`python audit.py` — 14 passed / 0 warnings / 0 failures.
 
 **[TODO]** Nothing queued.

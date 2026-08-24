@@ -286,9 +286,22 @@ class _ChartCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                // `Expanded` + ellipsis (2026-08-24 audit, same overflow
+                // class as `BalanceSheetScreen`'s figure cards): the chart
+                // titles ("Income vs expense this month" / "Pemasukan vs
+                // pengeluaran bulan ini") are long enough that a larger
+                // accessibility font size can push past the card's width
+                // without this — the title truncates instead of throwing a
+                // hard `RenderFlex` overflow.
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
                 Tooltip(
                   message: tooltip,
                   child: const Icon(Icons.info_outline, size: 16),

@@ -393,6 +393,13 @@ code:
       - app/test/transactions/kind_style_test.dart
       - app/test/accounts/money_format_test.dart
 
+  # Overflow audit, same day: two more instances of the same root cause found and
+  # fixed by request - AppShell's bottom nav Row (app.dart, no Expanded/Flexible
+  # around _NavIconButton, id labels/large text scale could overflow horizontally)
+  # and _ChartCard's title row (a long chart-title sentence next to a fixed-size
+  # info icon, no Expanded). Two regression tests stress id locale + a 2x TextScaler
+  # together and assert no RenderFlex exception. 185 tests green (was 183).
+
   # FEAT10-help-and-navigation, DONE 2026-08-24. No UC - infrastructure. Second of two
   # items from the owner's THIRD manual-testing feedback round. New HelpScreen (static
   # content, StatelessWidget, no provider reads) tracked on class-settings.drawio -

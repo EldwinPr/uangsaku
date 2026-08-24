@@ -400,4 +400,35 @@ void main() {
       await unmountAndFlushTimers(tester);
     },
   );
+
+  testWidgets(
+    '2026-08-24 overflow audit: the bottom nav does not overflow under id '
+    'labels and a large accessibility text scale',
+    (tester) async {
+      // The exact conditions that caused BalanceSheetScreen's figure-card
+      // overflow (owner feedback, same day): a longer `id`-locale label
+      // combined with a larger system font size. `id` is this app's
+      // seeded default (`FEAT03 D1`) — undo the `setUp` override to it.
+      await database
+          .update(database.settings)
+          .write(const SettingsCompanion(locale: Value(AppLanguage.id)));
+
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+          child: ProviderScope(
+            overrides: [appDatabaseProvider.overrideWithValue(database)],
+            child: const App(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // A `RenderFlex` overflow throws during layout, caught here rather
+      // than left to paint as the debug yellow/black stripes.
+      expect(tester.takeException(), isNull);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
 }

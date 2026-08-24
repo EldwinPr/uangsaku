@@ -726,7 +726,13 @@ issues:
       replaced with two IntrinsicHeight rows of two Expanded cards (content-sized,
       cannot overflow); added money_format.dart for the missing thousands/decimal
       separators the owner also flagged, applied to the four figure cards only.
-      183 tests green (was 165), no schema change.
+      183 tests green (was 165), no schema change. FOLLOW-UP AUDIT same day (owner
+      asked to check other screens for the same overflow class): found and fixed
+      two more instances - AppShell's bottom nav Row (no Expanded/Flexible around
+      each _NavIconButton) and _ChartCard's title row (a long title sentence next
+      to a fixed-size info icon, no Expanded) - both hardened the same way, plus
+      two regression tests stressing id locale + a 2x TextScaler together.
+      185 tests green (was 183), no schema change.
       Discovered `flutter gen-l10n` is a separate required step from `build_runner`
       for ARB changes - documented in coding-conventions/dart-and-flutter.md.
 
