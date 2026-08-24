@@ -79,7 +79,7 @@ void main() {
       // Index 0 (Home / BalanceSheetScreen) is the initial destination.
       expect(find.text('uangsaku'), findsOneWidget);
 
-      await tester.tap(find.text('Accounts'));
+      await tester.tap(find.text('Balance'));
       await tester.pumpAndSettle();
       expect(find.byType(AccountsScreen).hitTestable(), findsOneWidget);
 
@@ -180,7 +180,7 @@ void main() {
   ) async {
     await pumpShell(tester);
 
-    await tester.tap(find.text('Accounts'));
+    await tester.tap(find.text('Balance'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Add account'));
@@ -206,7 +206,7 @@ void main() {
 
       await pumpShell(tester);
 
-      await tester.tap(find.text('Accounts'));
+      await tester.tap(find.text('Balance'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Wallet'));
@@ -233,7 +233,7 @@ void main() {
 
       await pumpShell(tester);
 
-      await tester.tap(find.text('Accounts'));
+      await tester.tap(find.text('Balance'));
       await tester.pumpAndSettle();
 
       // FEAT10 D2 put `Icons.info_outline` tooltip icons on Home's seven
@@ -290,7 +290,7 @@ void main() {
       expect(find.byTooltip('Help').hitTestable(), findsOneWidget);
 
       // Accounts: Settings and Help only.
-      await tester.tap(find.text('Accounts'));
+      await tester.tap(find.text('Balance'));
       await tester.pumpAndSettle();
       expect(find.byTooltip('Categories').hitTestable(), findsNothing);
       expect(find.byTooltip('Settings').hitTestable(), findsOneWidget);

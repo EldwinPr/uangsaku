@@ -458,6 +458,24 @@ code:
   # even the shortest label). Verified live on a running emulator, not just by
   # reading the diff. 198 tests green (was 197).
 
+  # FEAT12-accounts-split-and-nav-rename, DONE 2026-08-24. No UC - infrastructure.
+  # Fifth round of the owner's manual-testing feedback. navAccounts (bottom nav)
+  # renamed "Akun"/"Accounts" -> "Saldo"/"Balance"; accountsSectionTitle (the page's
+  # own AppBar title) unchanged. AccountsScreen's flat list splits into two
+  # ExpansionTile sections (new private _AccountSection widget, not tracked) by
+  # PERSON vs not - "Akun" reuses accountsSectionTitle, "Person"/"Orang" reuses
+  # FEAT11's accountGroupLabelPerson, both default-expanded, both always render even
+  # empty, each header showing a plain sum (formatMinorUnits) of its own section -
+  # display-only, never touches AccountDao.watchPosition() or BalanceSheetScreen's
+  # four figures. Verified LIVE with a clean flutter run rebuild (a hot reload
+  # earlier in this session turned out stale once - re-verified rather than assumed).
+  # 200 tests green (was 198), no schema change.
+  FEAT12:
+    screen_restructured: app/lib/src/accounts/accounts_screen.dart
+    tests:
+      - app/test/accounts/accounts_screen_test.dart
+      - app/test/app_shell_test.dart
+
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
 # each other in BOTH directions (balances need Transactions; the record screen needs

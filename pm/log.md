@@ -15,7 +15,7 @@ before starting work.
 ## Current state — 2026-08-24
 
 **Phase.** **The planned backlog and all FOUR of the owner's manual-testing feedback
-rounds are DONE.** The app compiles and its test suite is green (**198 tests**). Ten
+rounds are DONE.** The app compiles and its test suite is green (**200 tests**). Ten
 screens/tabs built end to end, all reachable except one deliberately unrouted flow
 (UC-03's adjust mode, never asked for). `home` is `AppShell`: a five-tab bottom nav
 (Home, Accounts, Record as a colored circular docked FAB, Transactions, Budget) with
@@ -1531,3 +1531,54 @@ answer: switching transaction kind in `RecordTransactionScreen` without confirmi
 typed-but-uncreated person name leaves the old text in the field instead of clearing
 it (observed while testing live, e.g. typing "Rina" then switching flows and typing
 "Andi" produced "RinaAndi"). Small, real, but out of scope for this fix until asked.
+
+## 2026-08-24 — FEAT12: Accounts nav renamed to Balance/Saldo, page split into collapsible sections with sums
+
+**[STATUS]** Fifth round of the owner's manual-testing feedback, same day:
+*"in nav change akun to ballance or saldo, in this page split akun and person, both
+collapsable with sum next to it."* Implemented directly (small, contained,
+verified live before this record was written) rather than planned first — same
+pragmatic shape as the two post-close fixes earlier today — with a `plan.md` written
+retroactively so the paper trail still exists.
+
+**[STATUS]** `navAccounts` (the bottom-nav label) changed from `"Akun"`/`"Accounts"`
+to `"Saldo"`/`"Balance"`. The page's own `AppBar` title (`accountsSectionTitle`,
+`"Akun"`/`"Accounts"`) is untouched — deliberately: it's now literally accurate again
+since one of the page's two new sections is named exactly that.
+
+`AccountsScreen`'s flat account list is now two collapsible `ExpansionTile` sections,
+split by whether an account's group is `PERSON`: `"Akun"`/`"Accounts"` for
+`HOLDING`/`RECEIVABLE`/`PAYABLE` (reusing `accountsSectionTitle` rather than a second
+key with the same word), `"Person"`/`"Orang"` for `PERSON` (reusing FEAT11's
+`accountGroupLabelPerson`). Both default-expanded — the split must not hide anything
+the flat list already showed — and both always render even with zero accounts,
+matching every other screen's "show zero, don't hide the section" convention. Each
+header shows a plain sum of its own section's balances (`formatMinorUnits`, FEAT09's
+formatter) next to the title — a display convenience for this list only, folding what
+`accountBalancesProvider` already derived; it does not touch
+`AccountDao.watchPosition()`'s SQL and changes nothing about which of
+`BalanceSheetScreen`'s four figures any account counts toward (FEAT11 D2's
+sign-based `PERSON` bucketing there is completely untouched).
+
+**[DISCOVERY]** Verifying this live surfaced a real gotcha with the emulator
+workflow itself, not the app: after a `flutter run` session's process was killed
+(force-stopped while chasing an unrelated tap-coordinate issue), relaunching the app
+via `adb shell monkey`/`am start` brought back the **last installed APK**, not the
+latest source — silently showing the pre-change flat list even though the source on
+disk was already correct. A hot reload only patches an already-running Dart VM; once
+that process is gone, only a fresh `flutter run` rebuild reflects new source. Caught
+by re-verifying with a clean rebuild rather than trusting the first (stale) screenshot.
+
+**[STATUS]** Four commands green: `dart run build_runner build
+--delete-conflicting-outputs`, `flutter gen-l10n`, `dart format
+--set-exit-if-changed .`, `flutter analyze` (No issues found!), `flutter test` — 200
+tests, up from 198 (existing `accounts_screen_test.dart`/`app_shell_test.dart`
+assertions updated for the renamed nav label and restructured empty-state; two new
+tests for the section split and its sums). `git diff --stat app/drift_schemas/`
+empty — no schema change. `python audit.py` — 14 passed / 0 warnings / 0 failures.
+
+**[TODO]** Two small items from earlier today remain open, pending the owner:
+(1) switching transaction kind in `RecordTransactionScreen` without confirming a
+typed-but-uncreated person name leaves the old text in the field instead of clearing
+it; (2) a "Rina" test account (created live while verifying FEAT11) is still sitting
+in the owner's actual app data, not cleaned up.

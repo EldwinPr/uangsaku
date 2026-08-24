@@ -84,11 +84,14 @@ void main() {
   });
 
   testWidgets(
-    'NFR-2 / D4: an empty database renders an empty-list placeholder',
+    '2026-08-24: an empty database renders both sections with their own '
+    'empty-list placeholder',
     (tester) async {
       await pumpScreen(tester);
 
-      expect(find.byKey(const ValueKey('no-accounts')), findsOneWidget);
+      // One per section (Accounts, Person) — the split shows zero rather
+      // than hiding an empty section.
+      expect(find.text('No accounts yet.'), findsNWidgets(2));
 
       await unmountAndFlushTimers(tester);
     },
@@ -108,4 +111,47 @@ void main() {
       await unmountAndFlushTimers(tester);
     },
   );
+
+  testWidgets(
+    '2026-08-24: the list splits into an Accounts section and a Person '
+    'section, each with its own balance sum next to the header',
+    (tester) async {
+      await insertAccount('Wallet', AccountGroup.HOLDING, 100000);
+      await insertAccount('Card', AccountGroup.PAYABLE, -20000);
+      await insertAccount('Sam', AccountGroup.PERSON, 30000);
+      await insertAccount('Ivy', AccountGroup.PERSON, -5000);
+
+      await pumpScreen(tester);
+
+      // Both section headers render, each showing its own accounts only.
+      expect(find.byKey(const ValueKey('accounts-section')), findsOneWidget);
+      expect(find.byKey(const ValueKey('person-section')), findsOneWidget);
+      expect(find.text('Wallet'), findsOneWidget);
+      expect(find.text('Card'), findsOneWidget);
+      expect(find.text('Sam'), findsOneWidget);
+      expect(find.text('Ivy'), findsOneWidget);
+
+      // Accounts section: 100000 + -20000 = 80000. Person section:
+      // 30000 + -5000 = 25000. Plain sums of what accountBalancesProvider
+      // already derived — not a fifth FR-1 figure.
+      expect(find.text('80,000'), findsOneWidget);
+      expect(find.text('25,000'), findsOneWidget);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets('2026-08-24: a PERSON account never contributes to the Accounts '
+      "section's sum, and a HOLDING/PAYABLE account never contributes to "
+      "Person's", (tester) async {
+    await insertAccount('Wallet', AccountGroup.HOLDING, 100000);
+    await insertAccount('Sam', AccountGroup.PERSON, 30000);
+
+    await pumpScreen(tester);
+
+    expect(find.text('100,000'), findsOneWidget);
+    expect(find.text('30,000'), findsOneWidget);
+
+    await unmountAndFlushTimers(tester);
+  });
 }

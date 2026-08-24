@@ -16,7 +16,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navHome => 'Home';
 
   @override
-  String get navAccounts => 'Accounts';
+  String get navAccounts => 'Balance';
 
   @override
   String get navRecord => 'Record';

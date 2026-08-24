@@ -792,3 +792,29 @@ issues:
       labels plus showSelectedIcon: false, verified live on a running emulator.
       198 tests green (was 197).
 
+  - id: FEAT12-accounts-split-and-nav-rename
+    slug: accounts-split-and-nav-rename
+    title: Rename the Accounts nav tab to Balance/Saldo; split the page into collapsible Akun/Person sections with sums
+    status: DONE
+    plan: pm/issues/feat12-accounts-split-and-nav-rename/plan.md
+    depends_on: [FEAT11-person-account-type]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-24. No UC owns this - infrastructure. Fifth round of the owner's
+      manual-testing feedback. The bottom-nav label for the Accounts tab changes from
+      "Akun"/"Accounts" to "Saldo"/"Balance" (navAccounts) - the page's own AppBar
+      title stays "Akun"/"Accounts" (accountsSectionTitle), unchanged and now literally
+      accurate again since one of its two sections is named that. AccountsScreen's flat
+      list splits into two ExpansionTile sections (a new private _AccountSection
+      widget, not a tracked class) by whether an account's group is PERSON: "Akun" for
+      HOLDING/RECEIVABLE/PAYABLE, "Person"/"Orang" for PERSON (reusing
+      accountGroupLabelPerson, FEAT11's label) - both default-expanded, both always
+      render even empty. Each header shows a plain sum of its own section's balances
+      (formatMinorUnits, FEAT09's formatter) next to it - a display convenience for
+      this list only, computed by folding what accountBalancesProvider already
+      derived; does not touch AccountDao.watchPosition() or change which of
+      BalanceSheetScreen's four figures any account counts toward. Verified LIVE on a
+      running emulator with a clean flutter run rebuild (a hot reload earlier in the
+      same session turned out to reflect a stale build once - caught by re-verifying,
+      not assumed). 200 tests green (was 198), no schema change.
+

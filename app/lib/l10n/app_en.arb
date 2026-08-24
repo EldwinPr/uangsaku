@@ -5,7 +5,7 @@
   "@balanceSheetTitle": {"description": "Balance sheet app-bar title (brand name, not translated in id either)."},
 
   "navHome": "Home",
-  "navAccounts": "Accounts",
+  "navAccounts": "Balance",
   "navRecord": "Record",
   "navTransactions": "Transactions",
   "navBudget": "Budget",

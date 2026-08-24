@@ -113,7 +113,7 @@ abstract class AppLocalizations {
   /// No description provided for @navAccounts.
   ///
   /// In en, this message translates to:
-  /// **'Accounts'**
+  /// **'Balance'**
   String get navAccounts;
 
   /// No description provided for @navRecord.
