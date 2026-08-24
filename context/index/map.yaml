@@ -240,7 +240,7 @@ code:
   FEAT02:
     entrypoint: app/lib/src/app.dart # App + AppShell
     screens:
-      - app/lib/src/accounts/balance_sheet_screen.dart   # + contextual entry points
+      - app/lib/src/accounts/balance_sheet_screen.dart   # contextual entry points landed here, moved to AccountsScreen by FEAT04
       - app/lib/src/budgeting/budget_overview_screen.dart # + SetBudgetScreen link
     tests:
       - app/test/app_shell_test.dart
@@ -270,6 +270,26 @@ code:
       - app/test/settings/settings_screen_test.dart
       - app/test/app_shell_test.dart
       - app/test/drift/app_database/migration_test.dart
+
+  # FEAT04-nav-redesign, DONE 2026-08-24. No UC - infrastructure. Third of four polish
+  # items from the owner's manual-testing feedback round: five-tab bottom nav.
+  # AccountsScreen is new (class-accounts.drawio gained the box before this landed -
+  # the coder correctly halted rather than invent an undocumented class), split out of
+  # BalanceSheetScreen verbatim (FAB, row-tap-to-edit, debt-details icon); the
+  # accountBalancesProvider edge moved with it. BalanceSheetScreen keeps only the four
+  # figures. AppShell restructured: Record is a colored circular FAB
+  # (FloatingActionButtonLocation.centerDocked, colorScheme.tertiary) docked into a
+  # BottomAppBar/CircularNotchedRectangle instead of a NavigationBar destination; the
+  # other four tabs are hand-rolled _NavIconButtons (NavigationBar gives no notch
+  # support). Every new label (navHome, navAccounts) goes through FEAT03's
+  # AppLocalizations. 140 tests green, no schema change.
+  FEAT04:
+    entrypoint: app/lib/src/app.dart                          # AppShell restructured to 5 tabs + docked FAB
+    screen:     app/lib/src/accounts/accounts_screen.dart      # AccountsScreen (new, split from BalanceSheetScreen)
+    tests:
+      - app/test/app_shell_test.dart
+      - app/test/accounts/accounts_screen_test.dart
+      - app/test/accounts/balance_sheet_screen_test.dart
 
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on

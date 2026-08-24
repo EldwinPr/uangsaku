@@ -5,16 +5,12 @@ import '../../l10n/app_localizations.dart';
 import '../settings/settings_screen.dart';
 import '../transactions/category_manager_screen.dart';
 import 'account_dao.dart';
-import 'account_form_screen.dart';
 import 'accounts_providers.dart';
-import 'accounts_table.dart';
-import 'debt_detail_screen.dart';
 
 /// `BalanceSheetScreen` — the primary screen (FR-1), UC-01.
 ///
 /// Messages 1, 7 and 13 on `seq-uc01-balance-sheet.drawio`: watches
-/// [financialPositionProvider] for the four figures and
-/// [accountBalancesProvider] for the per-account list. It writes nothing,
+/// [financialPositionProvider] for the four figures. It writes nothing,
 /// computes nothing itself (NFR-2 — every figure arrives already derived by
 /// query) and offers no action that could be refused, so NFR-4's zero-
 /// refusal criterion has nothing to bite on: there is not a single control
@@ -31,6 +27,10 @@ import 'debt_detail_screen.dart';
 /// The currency app-bar action reaches [SettingsScreen] (FEAT03 D3) — was
 /// `CurrencyScreen` before this issue; the currency section inside it is
 /// unchanged.
+///
+/// **FEAT04 D1**: the per-account list (FAB, row tap, debt-details icon)
+/// moved to the new [AccountsScreen] (`accounts_screen.dart`) — this screen
+/// keeps only the four figures.
 class BalanceSheetScreen extends ConsumerWidget {
   const BalanceSheetScreen({super.key});
 
@@ -47,7 +47,6 @@ class BalanceSheetScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final loc = AppLocalizations.of(context)!;
     final positionAsync = ref.watch(financialPositionProvider);
-    final balancesAsync = ref.watch(accountBalancesProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -71,19 +70,6 @@ class BalanceSheetScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        // Explicit tag (FEAT02 plan D1): `AppShell`'s `IndexedStack` keeps
-        // every tab mounted at once, so this FAB and Record's FAB coexist
-        // in the same subtree — the implicit default tag they'd otherwise
-        // share collides (Flutter's Hero identity requirement), not a
-        // business-logic change.
-        heroTag: 'balance-sheet-fab',
-        tooltip: loc.addAccountTooltip,
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const AccountFormScreen()),
-        ),
-        child: const Icon(Icons.add),
-      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -91,16 +77,6 @@ class BalanceSheetScreen extends ConsumerWidget {
             data: (position) => _figures(loc, position),
             loading: () => _figures(loc, _zero),
             error: (_, _) => [Text(loc.figuresLoadError)],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            loc.accountsSectionTitle,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          ...balancesAsync.when(
-            data: (balances) => _accountRows(context, loc, balances),
-            loading: () => [Text(loc.accountsLoading)],
-            error: (_, _) => [Text(loc.accountsLoadError)],
           ),
         ],
       ),
@@ -131,51 +107,6 @@ class BalanceSheetScreen extends ConsumerWidget {
       label: loc.figureNet,
       minorUnits: position.net,
     ),
-  ];
-
-  /// Row tap opens [AccountFormScreen] in edit mode (FEAT02 plan D3 — never
-  /// adjust mode; UC-03's adjust flow has no entry point in this shell). A
-  /// trailing icon on `RECEIVABLE`/`PAYABLE` rows opens [DebtDetailScreen]
-  /// (FEAT02 plan D1) — the screen is meaningless for `HOLDING` accounts.
-  List<Widget> _accountRows(
-    BuildContext context,
-    AppLocalizations loc,
-    List<AccountBalance> balances,
-  ) => [
-    if (balances.isEmpty)
-      Text(loc.noAccountsYetPeriod, key: const ValueKey('no-accounts'))
-    else
-      for (final entry in balances)
-        ListTile(
-          title: Text(entry.account.name),
-          subtitle: Text(entry.account.group.name),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => AccountFormScreen(
-                mode: AccountFormMode.edit,
-                accountId: entry.account.accountId,
-              ),
-            ),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('${entry.balance}'),
-              if (entry.account.group == AccountGroup.RECEIVABLE ||
-                  entry.account.group == AccountGroup.PAYABLE)
-                IconButton(
-                  tooltip: loc.debtDetailsTooltip,
-                  icon: const Icon(Icons.info_outline),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) =>
-                          DebtDetailScreen(accountId: entry.account.accountId),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
   ];
 }
 

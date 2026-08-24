@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uangsaku/src/accounts/account_form_screen.dart';
+import 'package:uangsaku/src/accounts/accounts_screen.dart';
 import 'package:uangsaku/src/accounts/accounts_table.dart';
+import 'package:uangsaku/src/accounts/balance_sheet_screen.dart';
 import 'package:uangsaku/src/accounts/debt_detail_screen.dart';
 import 'package:uangsaku/src/app.dart';
 import 'package:uangsaku/src/budgeting/set_budget_screen.dart';
@@ -13,9 +15,11 @@ import 'package:uangsaku/src/settings/settings_screen.dart';
 import 'package:uangsaku/src/settings/settings_table.dart';
 import 'package:uangsaku/src/transactions/category_manager_screen.dart';
 
-/// FEAT02's test (plan, Definition of done): every primary destination
-/// renders, and every contextual entry point plan D1 lists is reachable
-/// from the shell it wires them into.
+/// FEAT02's test (plan, Definition of done), restructured by FEAT04: every
+/// primary destination renders, and every contextual entry point plan D1
+/// lists is reachable from the shell it wires them into. FEAT04 splits the
+/// account list into its own `AccountsScreen` tab and replaces Record's
+/// `NavigationBar` destination with a docked FAB.
 void main() {
   late AppDatabase database;
 
@@ -67,14 +71,21 @@ void main() {
   }
 
   testWidgets(
-    'each of the four bottom destinations renders its screen when selected',
+    'each of the five destinations renders its screen when selected',
     (tester) async {
       await pumpShell(tester);
 
-      // Index 0 (Balance Sheet) is the initial destination.
+      // Index 0 (Home / BalanceSheetScreen) is the initial destination.
       expect(find.text('uangsaku'), findsOneWidget);
 
-      await tester.tap(find.text('Record'));
+      await tester.tap(find.text('Accounts'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AccountsScreen).hitTestable(), findsOneWidget);
+
+      // Record has no bottom-bar label — it is the docked FAB (FEAT04 D3).
+      // `AccountsScreen`'s own "Add account" FAB is also mounted
+      // (`IndexedStack` keeps every tab alive), so the tooltip disambiguates.
+      await tester.tap(find.byTooltip('Record'));
       await tester.pumpAndSettle();
       expect(find.text('Record money movement').hitTestable(), findsOneWidget);
 
@@ -86,11 +97,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Budget this month').hitTestable(), findsOneWidget);
 
-      // Switching back to Balance Sheet keeps the earlier tabs' state alive
+      // Switching back to Home keeps the earlier tabs' state alive
       // underneath (`IndexedStack`, never rebuilt from scratch) — every
       // screen stays mounted throughout, so this only re-shows it rather
       // than re-triggering its loading state.
-      await tester.tap(find.text('Balance Sheet'));
+      await tester.tap(find.text('Home'));
       await tester.pumpAndSettle();
       expect(find.text('uangsaku').hitTestable(), findsOneWidget);
 
@@ -98,26 +109,58 @@ void main() {
     },
   );
 
+  testWidgets('the docked FAB opens Record', (tester) async {
+    await pumpShell(tester);
+
+    await tester.tap(find.byTooltip('Record'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Record money movement').hitTestable(), findsOneWidget);
+
+    await unmountAndFlushTimers(tester);
+  });
+
   testWidgets(
-    'the Balance Sheet FAB reaches AccountFormScreen in create mode',
+    'BalanceSheetScreen no longer renders the account list (FEAT04 D1)',
     (tester) async {
+      await insertAccount('Wallet', AccountGroup.HOLDING, 100000);
+
       await pumpShell(tester);
 
-      await tester.tap(find.byType(FloatingActionButton));
-      await tester.pumpAndSettle();
-
-      final screen = tester.widget<AccountFormScreen>(
-        find.byType(AccountFormScreen),
-      );
-      expect(screen.mode, AccountFormMode.create);
-      expect(screen.accountId, isNull);
+      // Home is the initial destination — BalanceSheetScreen. AccountsScreen
+      // is mounted underneath (`IndexedStack` keeps every tab alive) but
+      // not painted/hit-testable, so `hitTestable()` distinguishes "moved
+      // to another tab" from "gone" (`IndexedStack` offstages, doesn't
+      // unmount, inactive children).
+      expect(find.byType(BalanceSheetScreen).hitTestable(), findsOneWidget);
+      expect(find.text('Wallet').hitTestable(), findsNothing);
 
       await unmountAndFlushTimers(tester);
     },
   );
 
+  testWidgets('the Accounts FAB reaches AccountFormScreen in create mode', (
+    tester,
+  ) async {
+    await pumpShell(tester);
+
+    await tester.tap(find.text('Accounts'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Add account'));
+    await tester.pumpAndSettle();
+
+    final screen = tester.widget<AccountFormScreen>(
+      find.byType(AccountFormScreen),
+    );
+    expect(screen.mode, AccountFormMode.create);
+    expect(screen.accountId, isNull);
+
+    await unmountAndFlushTimers(tester);
+  });
+
   testWidgets(
-    'tapping an account row reaches AccountFormScreen in edit mode with the right accountId',
+    'tapping an account row on AccountsScreen reaches AccountFormScreen in edit mode with the right accountId',
     (tester) async {
       final accountId = await insertAccount(
         'Wallet',
@@ -126,6 +169,9 @@ void main() {
       );
 
       await pumpShell(tester);
+
+      await tester.tap(find.text('Accounts'));
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text('Wallet'));
       await tester.pumpAndSettle();
@@ -140,30 +186,34 @@ void main() {
     },
   );
 
-  testWidgets('tapping a debt row\'s icon reaches DebtDetailScreen', (
-    tester,
-  ) async {
-    final accountId = await insertAccount(
-      'Budi',
-      AccountGroup.RECEIVABLE,
-      50000,
-    );
+  testWidgets(
+    "tapping a debt row's icon on AccountsScreen reaches DebtDetailScreen",
+    (tester) async {
+      final accountId = await insertAccount(
+        'Budi',
+        AccountGroup.RECEIVABLE,
+        50000,
+      );
 
-    await pumpShell(tester);
+      await pumpShell(tester);
 
-    await tester.tap(find.byIcon(Icons.info_outline));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Accounts'));
+      await tester.pumpAndSettle();
 
-    final screen = tester.widget<DebtDetailScreen>(
-      find.byType(DebtDetailScreen),
-    );
-    expect(screen.accountId, accountId);
+      await tester.tap(find.byIcon(Icons.info_outline));
+      await tester.pumpAndSettle();
 
-    await unmountAndFlushTimers(tester);
-  });
+      final screen = tester.widget<DebtDetailScreen>(
+        find.byType(DebtDetailScreen),
+      );
+      expect(screen.accountId, accountId);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
 
   testWidgets(
-    'the two Balance Sheet app-bar actions reach CategoryManagerScreen and SettingsScreen',
+    'the two Home app-bar actions reach CategoryManagerScreen and SettingsScreen',
     (tester) async {
       await pumpShell(tester);
 
@@ -211,7 +261,7 @@ void main() {
       expect(find.text('All transactions').hitTestable(), findsOneWidget);
 
       // Switch to Indonesian from Settings.
-      await tester.tap(find.text('Balance Sheet'));
+      await tester.tap(find.text('Home'));
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();

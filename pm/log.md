@@ -1094,3 +1094,38 @@ strings this issue already translated, so doing them after was deliberate): nav 
 quick-action), category picker → autocomplete-with-inline-create, save-flow UX
 (auto-close/confirm on save, floppy-disk icon replaced) plus account-name uniqueness
 (warn, don't block).
+
+---
+
+## 2026-08-24 — FEAT04-nav-redesign closes; the coder's own halt caught a real gap
+
+**[STATUS]** **`FEAT04-nav-redesign` is DONE** — the second of four items from the
+owner's manual-testing feedback round. Five tabs replace four: Home (renamed from
+Balance Sheet), a new **Accounts** tab, Record, Transactions, Budget. Record is a
+colored circular `FloatingActionButton` (`FloatingActionButtonLocation.centerDocked`,
+`colorScheme.tertiary`) docked into a `BottomAppBar`/`CircularNotchedRectangle`, not a
+normal nav destination — the other four are hand-rolled `_NavIconButton`s, since
+`BottomAppBar` gives no selected/unselected tinting the way `NavigationBar` did for
+free.
+
+**[DISCOVERY]** `flutter-coder`'s first pass halted correctly rather than inventing a
+class: the plan directed splitting `BalanceSheetScreen`'s account list into a new
+`AccountsScreen`, but no class diagram named it, and — unlike `AppShell`, which FEAT02's
+plan explicitly exempted as a framework shell — `AccountsScreen` is a real domain screen
+with the same shape as the three boxes already on `class-accounts.drawio`. Fixed in the
+main session (`04ba8b0`): `AccountsScreen` added to the Screen band, the
+`accountBalancesProvider` edge moved from `BalanceSheetScreen` to it. Two real render
+defects caught on the first export and fixed before committing — a stray edge routed
+through two unrelated boxes, and two notes pushed into the newly-extended band's dashed
+border by the taller layout. Resumed the same agent afterward rather than re-briefing
+from scratch, since it already had full context on everything except the diagram gap.
+
+**[STATUS]** `AccountsScreen` carries the account list, FAB, row-tap-to-edit and the
+debt-details icon verbatim from `BalanceSheetScreen`, which now renders only the four
+top-level figures. Every new/changed label goes through `AppLocalizations`
+(`navHome`/`navAccounts` added to both ARB files). 140 tests green, `flutter analyze`
+clean, no schema change.
+
+**[TODO]** Two items remain from the feedback round: category picker →
+autocomplete-with-inline-create, then save-flow UX (auto-close/confirm, icon change)
+plus account-name uniqueness.

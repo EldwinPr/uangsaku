@@ -27,7 +27,7 @@ import 'accounts_providers.dart';
 /// scope). The header shows no account name: no drawn message fetches one,
 /// so it would be an undrawn read; noted as a known gap in the plan.
 ///
-/// Reached from the Balance Sheet tab's `RECEIVABLE`/`PAYABLE` rows, via
+/// Reached from the Accounts tab's `RECEIVABLE`/`PAYABLE` rows, via
 /// their trailing icon (FEAT02 plan D1) — F8's answer.
 class DebtDetailScreen extends ConsumerWidget {
   const DebtDetailScreen({super.key, required this.accountId});

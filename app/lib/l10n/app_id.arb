@@ -3,7 +3,8 @@
 
   "balanceSheetTitle": "uangsaku",
 
-  "navBalanceSheet": "Neraca",
+  "navHome": "Beranda",
+  "navAccounts": "Akun",
   "navRecord": "Catat",
   "navTransactions": "Transaksi",
   "navBudget": "Anggaran",

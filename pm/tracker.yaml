@@ -575,3 +575,30 @@ issues:
       the rest (nav redesign, category autocomplete, save UX, account-name uniqueness)
       queue behind it since they touch strings this issue translated.
 
+  - id: FEAT04-nav-redesign
+    slug: nav-redesign
+    title: Five-tab bottom nav; Record as a colored circular quick action
+    status: DONE
+    plan: pm/issues/feat04-nav-redesign/plan.md
+    depends_on: [FEAT03-settings-and-i18n]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-24. No UC owns this - infrastructure. Second of four polish items
+      from the owner's manual-testing feedback round: 5 tabs (Home - renamed from
+      Balance Sheet -, Accounts - new, split out of BalanceSheetScreen -, Record,
+      Transactions, Budget), with Record as a colored circular FAB
+      (FloatingActionButtonLocation.centerDocked, colorScheme.tertiary) docked into a
+      BottomAppBar/CircularNotchedRectangle rather than a normal nav destination - the
+      other four tabs are hand-rolled _NavIconButtons since BottomAppBar gives no
+      selected/unselected tinting for free the way NavigationBar did.
+      flutter-coder correctly halted its first pass rather than inventing
+      AccountsScreen: class-accounts.drawio had no box for it. Fixed in the main
+      session (commit 04ba8b0) - AccountsScreen added to the Screen band, the
+      accountBalancesProvider edge moved to it, two real render defects caught and
+      fixed (a stray edge crossing two other boxes, two notes pushed into the
+      extended band's border) - before re-dispatching the same agent to finish.
+      AccountsScreen carries the account list, FAB, row-tap-to-edit and debt icon
+      verbatim from BalanceSheetScreen, which now keeps only the four figures.
+      140 tests green, no schema change. Every new label (navHome, navAccounts) goes
+      through FEAT03's AppLocalizations.
+

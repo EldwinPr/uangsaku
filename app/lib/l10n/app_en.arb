@@ -4,7 +4,8 @@
   "balanceSheetTitle": "uangsaku",
   "@balanceSheetTitle": {"description": "Balance sheet app-bar title (brand name, not translated in id either)."},
 
-  "navBalanceSheet": "Balance Sheet",
+  "navHome": "Home",
+  "navAccounts": "Accounts",
   "navRecord": "Record",
   "navTransactions": "Transactions",
   "navBudget": "Budget",

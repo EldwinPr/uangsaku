@@ -149,7 +149,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
       appBar: AppBar(title: Text(_title(loc))),
       floatingActionButton: FloatingActionButton.extended(
         // Explicit tag (FEAT02 plan D1): reached with `AppShell`'s
-        // `IndexedStack` still mounted underneath, whose Balance Sheet tab
+        // `IndexedStack` still mounted underneath, whose Accounts tab
         // has its own FAB — the shared default tag would otherwise collide
         // (Flutter's Hero identity requirement), not a business-logic
         // change.

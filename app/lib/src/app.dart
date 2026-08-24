@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/app_localizations.dart';
+import 'accounts/accounts_screen.dart';
 import 'accounts/balance_sheet_screen.dart';
 import 'budgeting/budget_overview_screen.dart';
 import 'settings/settings_providers.dart';
@@ -73,16 +74,22 @@ class App extends ConsumerWidget {
   }
 }
 
-/// The navigation host FEAT02 adds (plan D1): a Material 3 `NavigationBar`
-/// with four primary destinations — Balance Sheet, Record, Transactions,
-/// Budget — each its own persistent subtree via `IndexedStack` so switching
-/// tabs never rebuilds a tab's provider subscriptions from scratch (a tab's
+/// The navigation host FEAT02 adds (plan D1), restructured by FEAT04 D1–D3:
+/// five primary destinations — Home, Accounts, Record, Transactions, Budget
+/// — each its own persistent subtree via `IndexedStack` so switching tabs
+/// never rebuilds a tab's provider subscriptions from scratch (a tab's
 /// loading state does not re-trigger just from switching back to it).
+///
+/// Record (index 2) is no longer a `NavigationBar` destination: it is a
+/// colored circular `FloatingActionButton` docked in a `BottomAppBar` notch
+/// (FEAT04 D3) — tapping it sets `_index` the same way tapping any other
+/// destination does, so it is one more way into the same `IndexedStack`
+/// slot, not a separate mechanism.
 ///
 /// The contextual entry points plan D1 lists (create/edit account, debt
 /// detail, category manager, currency, set budget) are wired inside
-/// `BalanceSheetScreen` and `BudgetOverviewScreen` themselves (D2) — this
-/// shell only owns which of the four primary screens is visible.
+/// `AccountsScreen` and `BudgetOverviewScreen` themselves (D2) — this shell
+/// only owns which of the five primary screens is visible.
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
 
@@ -91,48 +98,122 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
+  static const int _recordIndex = 2;
+
   int _index = 0;
+
+  void _select(int index) => setState(() => _index = index);
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final destinations = [
-      NavigationDestination(
-        icon: const Icon(Icons.account_balance_wallet_outlined),
-        selectedIcon: const Icon(Icons.account_balance_wallet),
-        label: loc.navBalanceSheet,
-      ),
-      NavigationDestination(
-        icon: const Icon(Icons.add_circle_outline),
-        selectedIcon: const Icon(Icons.add_circle),
-        label: loc.navRecord,
-      ),
-      NavigationDestination(
-        icon: const Icon(Icons.receipt_long_outlined),
-        selectedIcon: const Icon(Icons.receipt_long),
-        label: loc.navTransactions,
-      ),
-      NavigationDestination(
-        icon: const Icon(Icons.pie_chart_outline),
-        selectedIcon: const Icon(Icons.pie_chart),
-        label: loc.navBudget,
-      ),
-    ];
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       body: IndexedStack(
         index: _index,
         children: const [
           BalanceSheetScreen(),
+          AccountsScreen(),
           RecordTransactionScreen(),
           TransactionListScreen(),
           BudgetOverviewScreen(),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (index) => setState(() => _index = index),
-        destinations: destinations,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'app-shell-record-fab',
+        tooltip: loc.navRecord,
+        backgroundColor: colorScheme.tertiary,
+        foregroundColor: colorScheme.onTertiary,
+        onPressed: () => _select(_recordIndex),
+        child: const Icon(Icons.add),
+      ),
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                _NavIconButton(
+                  icon: Icons.home_outlined,
+                  selectedIcon: Icons.home,
+                  label: loc.navHome,
+                  selected: _index == 0,
+                  onTap: () => _select(0),
+                ),
+                _NavIconButton(
+                  icon: Icons.account_balance_wallet_outlined,
+                  selectedIcon: Icons.account_balance_wallet,
+                  label: loc.navAccounts,
+                  selected: _index == 1,
+                  onTap: () => _select(1),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                _NavIconButton(
+                  icon: Icons.receipt_long_outlined,
+                  selectedIcon: Icons.receipt_long,
+                  label: loc.navTransactions,
+                  selected: _index == 3,
+                  onTap: () => _select(3),
+                ),
+                _NavIconButton(
+                  icon: Icons.pie_chart_outline,
+                  selectedIcon: Icons.pie_chart,
+                  label: loc.navBudget,
+                  selected: _index == 4,
+                  onTap: () => _select(4),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One `BottomAppBar` destination — the hand-rolled equivalent of a
+/// `NavigationDestination` (FEAT04 D3), since `BottomAppBar` does not supply
+/// the selected/unselected tinting `NavigationBar` gave for free. Always
+/// tappable, including while already selected (NFR-4) — selection changes
+/// `_index`, it never disables an `onTap`.
+class _NavIconButton extends StatelessWidget {
+  const _NavIconButton({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(selected ? selectedIcon : icon, color: color, size: 22),
+            Text(label, style: TextStyle(color: color, fontSize: 10)),
+          ],
+        ),
       ),
     );
   }

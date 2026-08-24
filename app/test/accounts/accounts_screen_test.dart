@@ -4,19 +4,14 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uangsaku/l10n/app_localizations.dart';
+import 'package:uangsaku/src/accounts/accounts_screen.dart';
 import 'package:uangsaku/src/accounts/accounts_table.dart';
-import 'package:uangsaku/src/accounts/balance_sheet_screen.dart';
 import 'package:uangsaku/src/database/app_database.dart';
 
-/// UC-01's screen test (plan, Definition of done — *Widget, FR-1*): the
-/// primary screen renders the four figures distinctly. Sequence-diagram
-/// messages 1/7/13 exercised through real provider watches over a real
-/// in-memory database.
-///
-/// **FEAT04 D1**: the per-account list assertions this file used to carry
-/// moved to `test/accounts/accounts_screen_test.dart` alongside the
-/// `AccountsScreen` split — `BalanceSheetScreen` no longer renders that
-/// list, so this file only ever asserts the four figures now.
+/// `AccountsScreen`'s own screen test (FEAT04 D1): the per-account list
+/// assertions that used to live in `balance_sheet_screen_test.dart` before
+/// the split — same widgets, same behavior, ported verbatim onto the new
+/// screen rather than dropped.
 void main() {
   late AppDatabase database;
 
@@ -53,7 +48,7 @@ void main() {
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: AppLocalizations.supportedLocales,
-          home: BalanceSheetScreen(),
+          home: AccountsScreen(),
         ),
       ),
     );
@@ -68,10 +63,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   }
 
-  String figureText(WidgetTester tester, String key) =>
-      tester.widget<Text>(find.byKey(ValueKey(key))).data!;
-
-  testWidgets('FR-1: the primary screen renders the four figures distinctly', (
+  testWidgets('FR-2: the account list renders one row per place money lives', (
     tester,
   ) async {
     // Seeded with plain inserts, never by consuming the watch streams
@@ -82,30 +74,23 @@ void main() {
 
     await pumpScreen(tester);
 
-    // Four distinct figures — spendable is not merged with owed-to-me.
-    expect(figureText(tester, 'figure-spendable'), '100000');
-    expect(figureText(tester, 'figure-owed-to-me'), '50000');
-    expect(figureText(tester, 'figure-owed-by-me'), '0');
-    expect(figureText(tester, 'figure-net'), '150000');
-
-    // FEAT04 D1: the account list moved to AccountsScreen — none of its
-    // rows render here anymore.
-    expect(find.text('Wallet'), findsNothing);
-    expect(find.text('Budi'), findsNothing);
+    expect(find.text('Wallet'), findsOneWidget);
+    expect(find.text('Budi'), findsOneWidget);
+    expect(find.text('HOLDING'), findsOneWidget);
+    expect(find.text('RECEIVABLE'), findsOneWidget);
+    expect(find.text('50000'), findsOneWidget);
 
     await unmountAndFlushTimers(tester);
   });
 
-  testWidgets('NFR-2 / D4: an empty database renders four zero figures', (
-    tester,
-  ) async {
-    await pumpScreen(tester);
+  testWidgets(
+    'NFR-2 / D4: an empty database renders an empty-list placeholder',
+    (tester) async {
+      await pumpScreen(tester);
 
-    expect(figureText(tester, 'figure-spendable'), '0');
-    expect(figureText(tester, 'figure-owed-to-me'), '0');
-    expect(figureText(tester, 'figure-owed-by-me'), '0');
-    expect(figureText(tester, 'figure-net'), '0');
+      expect(find.byKey(const ValueKey('no-accounts')), findsOneWidget);
 
-    await unmountAndFlushTimers(tester);
-  });
+      await unmountAndFlushTimers(tester);
+    },
+  );
 }

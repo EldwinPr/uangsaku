@@ -13,7 +13,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get balanceSheetTitle => 'uangsaku';
 
   @override
-  String get navBalanceSheet => 'Balance Sheet';
+  String get navHome => 'Home';
+
+  @override
+  String get navAccounts => 'Accounts';
 
   @override
   String get navRecord => 'Record';

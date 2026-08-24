@@ -13,7 +13,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get balanceSheetTitle => 'uangsaku';
 
   @override
-  String get navBalanceSheet => 'Neraca';
+  String get navHome => 'Beranda';
+
+  @override
+  String get navAccounts => 'Akun';
 
   @override
   String get navRecord => 'Catat';

@@ -104,11 +104,17 @@ abstract class AppLocalizations {
   /// **'uangsaku'**
   String get balanceSheetTitle;
 
-  /// No description provided for @navBalanceSheet.
+  /// No description provided for @navHome.
   ///
   /// In en, this message translates to:
-  /// **'Balance Sheet'**
-  String get navBalanceSheet;
+  /// **'Home'**
+  String get navHome;
+
+  /// No description provided for @navAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get navAccounts;
 
   /// No description provided for @navRecord.
   ///
