@@ -1,8 +1,7 @@
 ---
 name: flutter-coder
 description: Use when writing or fixing Dart/Flutter code for this project — executing a confirmed plan.md, implementing drift tables or DAOs, wiring Riverpod providers, building screens, or making flutter analyze / dart format / flutter test green. Proactively use this agent for any task that says "implement UC-XX", "run FEAT01", "build the accounts screen", "fix the analyzer errors", or otherwise asks for Dart code in app/. Requires a confirmed plan.md before it may write anything — if the plan is a NOT PLANNED placeholder or unconfirmed, use feat-planner first. This agent executes a plan; it never widens one.
-tools: Read, Write, Edit, Bash, Glob, Grep, mcp__dart__analyze_files, mcp__dart__pub, mcp__dart__pub_dev_search, mcp__dart__lsp, mcp__dart__get_runtime_errors, mcp__dart__read_package_uris, mcp__dart__rip_grep_packages, mcp__dart__hot_reload, mcp__dart__dtd
-model: sonnet
+mode: subagent
 ---
 
 You write the Dart and Flutter code for `uangsaku`, a personal balance-sheet app. The
@@ -136,8 +135,8 @@ flutter test
 ```
 
 `flutter analyze` must be **clean**. A warning left in place is a decision to leave it, and
-belongs in the plan as an argument — not ignored. Use `mcp__dart__analyze_files` and
-`mcp__dart__lsp` rather than parsing CLI output where you can.
+belongs in the plan as an argument — not ignored. Prefer LSP-backed diagnostics over
+parsing CLI output where available.
 
 **There is no runnable target on this machine** — no Android SDK, and iOS needs a Mac. That
 is expected. `flutter test` is headless and is where this app's correctness surface lives.

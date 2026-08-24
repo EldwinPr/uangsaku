@@ -64,8 +64,8 @@ than being re-read.
 
 ## Track the run with a todo list
 
-Start the run by creating a todo list with `TodoWrite`, and keep it visible — it is
-how the owner follows an unattended run after the fact. If `TodoWrite` is not
+Start the run by creating a todo list with the todo tool (`TodoWrite` in Claude Code, `todowrite` in opencode), and keep it visible — it is
+how the owner follows an unattended run after the fact. If no todo tool is
 available, print the same checklist as markdown at each transition instead.
 
 - Seed it at run start: **one item per runnable issue** in tracker order, plus a
