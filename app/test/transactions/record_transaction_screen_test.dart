@@ -41,19 +41,19 @@ void main() {
         );
   }
 
-  Future<void> pumpScreen(WidgetTester tester) async {
+  Future<void> pumpScreen(WidgetTester tester, {VoidCallback? onSaved}) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [appDatabaseProvider.overrideWithValue(database)],
-        child: const MaterialApp(
-          localizationsDelegates: [
+        child: MaterialApp(
+          localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: AppLocalizations.supportedLocales,
-          home: RecordTransactionScreen(),
+          home: RecordTransactionScreen(onSaved: onSaved ?? () {}),
         ),
       ),
     );
@@ -163,6 +163,22 @@ void main() {
       await unmountAndFlushTimers(tester);
     },
   );
+
+  testWidgets('FEAT08 D2: a successful save calls onSaved exactly once', (
+    tester,
+  ) async {
+    await seedAccounts();
+    var calls = 0;
+    await pumpScreen(tester, onSaved: () => calls++);
+
+    await tester.enterText(find.byType(TextField).first, '15000');
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    expect(calls, 1);
+
+    await unmountAndFlushTimers(tester);
+  });
 
   testWidgets(
     'FEAT05 D2: typing an existing category name and selecting it sets the same id the dropdown would have',

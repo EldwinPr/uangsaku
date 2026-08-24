@@ -661,3 +661,43 @@ issues:
       Closes the owner's manual-testing feedback round - all four items (FEAT03
       through FEAT06) DONE.
 
+  - id: FEAT07-home-overview-charts
+    slug: home-overview-charts
+    title: Three charts on Home - balance trend, income vs expense, spending by category
+    status: DONE
+    plan: pm/issues/feat07-home-overview-charts/plan.md
+    depends_on: [FEAT06-save-ux-and-uniqueness]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-24. No UC owns this - infrastructure. First of two items from the
+      owner's second manual-testing feedback round ("a chart would be helpful" / "the
+      app still looks empty"). New fl_chart dependency. Three new AccountDao query
+      methods (watchBalanceTrend/watchIncomeExpense/watchCategorySpending) reaching
+      Transactions/Categories directly per ISSUE-005 D1's licensed direction, no
+      cross-module provider reads; three new query-result classes and three new
+      providers, all tracked on class-accounts.drawio. BalanceSheetScreen (Home) keeps
+      its four figures and gains three chart Cards below them (line/bar/donut), each
+      degrading to an empty-state message rather than a blank or a crash on zero rows
+      or zero total. 165 tests green (was 151), no schema change.
+
+  - id: FEAT08-transaction-ux-and-name-block
+    slug: transaction-ux-and-name-block
+    title: Green/red transaction rows, Record closes to Home, account names hard-block
+    status: DONE
+    plan: pm/issues/feat08-transaction-ux-and-name-block/plan.md
+    depends_on: [FEAT06-save-ux-and-uniqueness]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-24. No UC owns this - infrastructure. Second of two items from the
+      owner's second manual-testing feedback round. Transaction list rows color by kind
+      (income green, expense colorScheme.error, other five kinds unstyled - direction
+      is ambiguous for two-sided kinds). RecordTransactionScreen gains a required
+      onSaved callback that AppShell wires to switch back to the Home tab after a
+      successful save, replacing FEAT06's stay-and-clear behaviour. Account-name
+      collision becomes a real, argued exception to NFR-4 (owner's explicit 2026-08-24
+      ruling, "Hard block for real") - AccountFormScreen's create/edit flows refuse to
+      write and stay open when the typed name collides; docs/fr-nfr.md's NFR-4 fit
+      criterion and decisions.md both carry the exception. 165 tests green (shared
+      count with FEAT07 - both landed in the same working tree), no schema change.
+      Closes the owner's second manual-testing feedback round.
+

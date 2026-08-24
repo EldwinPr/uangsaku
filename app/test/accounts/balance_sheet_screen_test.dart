@@ -1,4 +1,6 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import 'package:uangsaku/l10n/app_localizations.dart';
 import 'package:uangsaku/src/accounts/accounts_table.dart';
 import 'package:uangsaku/src/accounts/balance_sheet_screen.dart';
 import 'package:uangsaku/src/database/app_database.dart';
+import 'package:uangsaku/src/transactions/transactions_table.dart';
 
 /// UC-01's screen test (plan, Definition of done — *Widget, FR-1*): the
 /// primary screen renders the four figures distinctly. Sequence-diagram
@@ -108,4 +111,66 @@ void main() {
 
     await unmountAndFlushTimers(tester);
   });
+
+  testWidgets(
+    'FEAT07 D3/D6: the balance-trend line chart renders given seeded data',
+    (tester) async {
+      await insertAccount('Wallet', AccountGroup.HOLDING, 100000);
+
+      await pumpScreen(tester);
+
+      expect(find.byType(LineChart), findsOneWidget);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT07 D4/D7: the income-vs-expense chart degrades to a message, not a blank chart, on an empty database',
+    (tester) async {
+      await pumpScreen(tester);
+
+      expect(find.byType(BarChart), findsNothing);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT07 D5/D6: the category-spending donut renders given a seeded expense',
+    (tester) async {
+      final wallet = await insertAccount('Wallet', AccountGroup.HOLDING, 0);
+      await database
+          .into(database.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              kind: TransactionKind.expense,
+              amount: 5000,
+              occurredOn: DateTime.now(),
+              fromAccountId: Value(wallet),
+            ),
+          );
+
+      await pumpScreen(tester);
+      await tester.drag(find.byType(ListView), const Offset(0, -600));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PieChart), findsOneWidget);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT07 D5/D7: the category-spending donut degrades to a message, not a blank chart, with no spending this month',
+    (tester) async {
+      await pumpScreen(tester);
+      await tester.drag(find.byType(ListView), const Offset(0, -600));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PieChart), findsNothing);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
 }

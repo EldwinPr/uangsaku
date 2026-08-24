@@ -1090,3 +1090,25 @@ toAccountId: theAccount, amount: signedDiff)`, `fromAccountId` always `null`. No
 DAO method changes shape — `TransactionDao.insert()` already accepts a signed `int`
 (nothing in its signature or body assumes non-negative). `docs/enums.md`'s adjustment row
 should be tightened from the hedge to this resolved rule.
+
+## 2026-08-24 — Account-name collision hard-blocks; the one counted NFR-4 exception (FEAT08 D3/D4)
+
+`FEAT08-transaction-ux-and-name-block` plan D3 replaces FEAT06 D3's warn-and-proceed
+duplicate-account-name notice with a real refusal: `AccountFormScreen`'s create and edit
+saves do not call `accountsProvider.notifier`'s write and do not pop when the typed name
+case-insensitively collides with another non-deleted account's name (`_nameCollides()`,
+unchanged from FEAT06). The screen stays open with the name still typed in.
+
+**Why this is allowed to be a refusal at all**, when NFR-4's fit criterion
+(`docs/fr-nfr.md`) is otherwise zero: asked directly whether duplicate account names
+should warn-and-proceed or hard-block, the owner answered *"Hard block for real"*
+(2026-08-24). `docs/fr-nfr.md`'s NFR-4 section now names this as the sole counted
+exception, mirroring how the old FR-16 budget lock was once "the one" sanctioned
+exception before its removal took the count to zero on 2026-08-20 — the count returns to
+one, scoped to this single field only.
+
+**Scope, restated so it is not generalized by accident:** this is `Account.name`
+uniqueness only. No other field on any screen (category names, budget group names,
+transaction contents, anything else) gains a refusal from this decision — every other
+screen's zero-refusals discipline (delete, save-with-empty-fields, same-account transfer,
+etc.) is untouched.

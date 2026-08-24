@@ -134,11 +134,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get deleteAccountButton => 'Hapus akun';
 
   @override
-  String get duplicateAccountNameTitle => 'Nama sudah dipakai';
+  String get duplicateAccountNameBlockedTitle => 'Nama sudah dipakai';
 
   @override
-  String get duplicateAccountNameDialogContent =>
-      'Akun lain sudah memakai nama ini. Tetap akan disimpan.';
+  String get duplicateAccountNameBlockedContent =>
+      'Akun lain sudah memakai nama ini. Pilih nama lain untuk menyimpan.';
 
   @override
   String get budgetOverviewTitle => 'Anggaran bulan ini';
@@ -359,4 +359,25 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get okButton => 'OK';
+
+  @override
+  String get balanceTrendChartTitle => 'Tren saldo (30 hari)';
+
+  @override
+  String get incomeExpenseChartTitle => 'Pemasukan vs pengeluaran bulan ini';
+
+  @override
+  String get categorySpendingChartTitle => 'Pengeluaran per kategori bulan ini';
+
+  @override
+  String get incomeLegendLabel => 'Pemasukan';
+
+  @override
+  String get expenseLegendLabel => 'Pengeluaran';
+
+  @override
+  String get uncategorizedLabel => 'Tanpa kategori';
+
+  @override
+  String get chartNoDataYet => 'Belum ada data.';
 }

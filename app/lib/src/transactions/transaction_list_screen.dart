@@ -86,6 +86,23 @@ class _TransactionTile extends ConsumerWidget {
     };
   }
 
+  /// FEAT08 D1: income/expense are colored, the other five kinds stay the
+  /// default text color — each of those touches two sides at once, so "in"
+  /// or "out" is not a fact about the row without picking a viewpoint
+  /// account, which nothing on this screen has. `null` here means "use the
+  /// theme's default", not "unstyled forever".
+  Color? _titleColor(BuildContext context, TransactionKind kind) {
+    final brightness = Theme.of(context).brightness;
+    return switch (kind) {
+      TransactionKind.income =>
+        brightness == Brightness.dark
+            ? Colors.green.shade300
+            : Colors.green.shade700,
+      TransactionKind.expense => Theme.of(context).colorScheme.error,
+      _ => null,
+    };
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final loc = AppLocalizations.of(context)!;
@@ -95,6 +112,7 @@ class _TransactionTile extends ConsumerWidget {
       onTap: () => _EditSheet.show(context, row: row),
       title: Text(
         '${_kindLabel(loc, transaction.kind)} · ${transaction.amount}',
+        style: TextStyle(color: _titleColor(context, transaction.kind)),
       ),
       subtitle: Text(
         '$_dateText · ${_sidesText(loc)}'

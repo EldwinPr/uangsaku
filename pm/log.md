@@ -14,21 +14,26 @@ before starting work.
 
 ## Current state — 2026-08-24
 
-**Phase.** **The planned backlog and the owner's entire manual-testing feedback round are
-both DONE.** The app compiles and its test suite is green (**151 tests**). Ten
+**Phase.** **The planned backlog and BOTH of the owner's manual-testing feedback rounds
+are DONE.** The app compiles and its test suite is green (**165 tests**). Ten
 screens/tabs built end to end, all reachable except one deliberately unrouted flow
 (UC-03's adjust mode, never asked for). `home` is `AppShell`: a five-tab bottom nav
 (Home, Accounts, Record as a colored circular docked FAB, Transactions, Budget) with
 every other screen reached contextually. Full EN/ID language toggle, light/dark/system
-theme and a theme-color choice live in `SettingsScreen` (was `CurrencyScreen`); category/
-subcategory pickers are autocomplete-with-inline-create; every save action closes/clears
-and confirms instead of sitting silently re-tappable; account names warn (never block) on
-a case-insensitive collision.
+theme and a theme-color choice live in `SettingsScreen`; category/subcategory pickers
+are autocomplete-with-inline-create; every save action closes/clears and confirms
+instead of sitting silently re-tappable; `Home` now carries three charts (balance
+trend, income vs expense, spending by category, `fl_chart`) below its four figures;
+transaction rows are colored by kind; `RecordTransactionScreen` switches back to Home
+on a successful save; **account-name collisions hard-block** — the one deliberate,
+owner-cited exception to NFR-4's otherwise-zero-refusals rule (`docs/fr-nfr.md`,
+`decisions.md` 2026-08-24).
 
-**Active issue.** None. Nothing is queued. `FEAT03` through `FEAT06` — the entire
-feedback round — closed across four same-day issues, the third schema change
-(`FEAT03`'s `Settings.locale`/`themeMode`/`seedColor`) among them. Both original
-questions (Q3, Q4) were answered 2026-08-23; `UC03-adjust-account` and
+**Active issue.** None. Nothing is queued. `FEAT03` through `FEAT06` (round one) and
+`FEAT07`/`FEAT08` (round two) — six feedback issues total — all closed the same day,
+2026-08-24, alongside the third schema change (`FEAT03`'s `Settings.locale`/
+`themeMode`/`seedColor`; `FEAT07`/`FEAT08` added no schema). Both original tracked-
+backlog questions (Q3, Q4) were answered 2026-08-23; `UC03-adjust-account` and
 `UC02B-edit-account` closed the same day/next (`UC02B` being the first schema change).
 CI broke right after (a real `_slugdir` bug in `audit.py`) and was found and fixed the
 same day, confirmed green via the actual failing log, not local reproduction alone.
@@ -1201,3 +1206,82 @@ untouched. 151 tests green, `flutter analyze` clean, no schema change, `audit.py
 
 **[TODO]** Nothing queued. `FEAT03` through `FEAT06` — the entire manual-testing feedback
 round — are all DONE. The tracker has no runnable work.
+
+## 2026-08-24 — FEAT07-home-overview-charts and FEAT08-transaction-ux-and-name-block DONE
+
+**[STATUS]** The owner's SECOND round of manual-testing feedback (five points, one
+`AskUserQuestion` round to resolve two ambiguities/one direct conflict with a standing
+NFR before planning): a chart, `RecordTransactionScreen` genuinely closing on save,
+in/out transaction colors, a hard block on duplicate account names, and "the app still
+looks empty." Split into two same-day issues, both planned in-session (no
+`feat-planner` dispatch, per the owner's 2026-08-22 directive) and both implemented by
+`flutter-coder`.
+
+**[STATUS] FEAT07-home-overview-charts.** New `fl_chart` dependency. Three new
+`AccountDao` query methods — `watchBalanceTrend()` (a `WITH RECURSIVE` day-series CTE,
+30 days, each point the running net position as of that day, mirroring
+`watchPosition()`'s sides-based expression), `watchIncomeExpense()` and
+`watchCategorySpending()` (both this-calendar-month, mirroring `BudgetDao`'s in-month
+convention; category spending `LEFT JOIN`s `Categories` so a `category_id IS NULL`
+expense groups into its own "Uncategorized" bucket instead of being dropped) — all
+owned by `AccountDao` per ISSUE-005 D1's already-licensed direction (a DAO may reach
+another module's table directly by SQL join; this extends that to `Categories` too, no
+cross-module provider reads introduced). Three new query-result classes and three new
+`StreamProvider`s, all added to `class-accounts.drawio` (visually verified via PNG
+export) before the coder was dispatched. `BalanceSheetScreen` keeps its four figures
+and gains three chart `Card`s below them, each degrading to a `chartNoDataYet` message
+rather than a blank/crash on zero rows or zero total.
+
+**[DISCOVERY]** The `flutter-coder` dispatch for FEAT07 hit its own session/usage
+limit mid-task (`task-notification status="failed"`, *"You've hit your session
+limit"*) after finishing `AccountDao`'s three new methods and query-result classes
+correctly, but before adding the providers or touching the screen. Rather than
+re-dispatch, the orchestrator (this session) verified the DAO work was complete and
+correct (pure addition, 224 insertions, 0 deletions, matched every plan decision) and
+finished the remaining providers/screen/tests itself. **Lesson for `active.json`**: a
+"failed" task notification does not mean nothing was done — `git status`/diff for
+partial work before assuming a redo is needed.
+
+**[DISCOVERY]** Writing the FEAT07 screen tests surfaced that a plain
+`ListView(children: [...])` in a widget test does not eagerly build off-screen
+children — Sliver realization only builds what's near the viewport, so the third
+chart card (below the fold on the default test surface) silently never built and its
+`PieChart`/message assertions failed with "found 0 widgets" for a reason that had
+nothing to do with the chart logic itself. Fixed by scrolling (`tester.drag` on the
+`ListView` + `pumpAndSettle`) before asserting on it. Added to `pm/active.json`'s
+carried-forward notes.
+
+**[DISCOVERY]** A duplicate set of ARB chart keys was created independently by two
+different actors — the FEAT07 coder (before it hit its session limit) added one set
+near the end of `app_en.arb`/`app_id.arb`, and the orchestrator, unaware, added a
+second differently-worded set near the top while finishing the same issue. `flutter
+gen-l10n` failed loudly on the duplicate keys rather than silently picking one,
+which is what surfaced it. Resolved by keeping the coder's block and adding only the
+two genuinely-missing keys (`incomeLegendLabel`/`expenseLegendLabel`) to it.
+
+**[STATUS] FEAT08-transaction-ux-and-name-block.** `TransactionListScreen`'s
+`_TransactionTile` colors its title by kind (income green, expense
+`colorScheme.error`, the other five kinds unstyled — each touches two sides at once,
+so "in"/"out" isn't a fact about the row without a viewpoint account).
+`RecordTransactionScreen` gained a required `onSaved` callback fired right after a
+successful save; `AppShell` wires it to switch its `IndexedStack` back to Home,
+replacing FEAT06's stay-and-clear. **Account-name collision is now a real refusal —
+the sole counted exception to NFR-4.** Asked directly whether a duplicate account name
+should warn-and-proceed or hard-block, the owner answered *"Hard block for real."*
+`AccountFormScreen`'s create/edit saves no longer write or pop on a case-insensitive
+collision; `docs/fr-nfr.md`'s NFR-4 fit criterion and `context/index/decisions.md`
+both now name this as the one sanctioned exception, mirroring how the old FR-16 budget
+lock was once "the one" before its 2026-08-20 removal took the count to zero. Every
+other screen's zero-refusals discipline is untouched.
+
+**[STATUS]** Both issues, four commands green: `dart run build_runner build
+--delete-conflicting-outputs`, `dart format --set-exit-if-changed .`, `flutter
+analyze` (No issues found!), `flutter test` — 165 tests, up from 151 (14 new: 6 DAO
+tests for the three chart queries, 4 new `BalanceSheetScreen` chart-rendering tests,
+plus coverage for the row-color/`onSaved`/hard-block changes). No schema change on
+either issue (`git diff --stat app/drift_schemas/` empty). `python audit.py` — 14
+passed / 0 warnings / 0 failures.
+
+**[TODO]** Nothing queued. Both rounds of the owner's manual-testing feedback
+(`FEAT03`-`FEAT06`, then `FEAT07`-`FEAT08`) are DONE. The tracker has no runnable
+work.

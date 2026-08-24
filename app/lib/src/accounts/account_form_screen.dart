@@ -42,14 +42,19 @@ enum AccountFormMode { create, adjust, edit }
 /// `diff` (UC-03 plan D3). `opening_amount` never appears in edit mode
 /// (UC02B plan D3) — correcting it stays adjust mode's job.
 ///
-/// **Nothing on this screen is disabled and nothing is refused** (D7,
-/// NFR-4's zero-refusals fit criterion): every save and the delete control
-/// are enabled even with every field empty — an empty amount saves as 0 and
-/// an unparseable one follows UC-11's shipped precedent (`int.tryParse(...)
-/// ?? 0`, `pm/findings.md` F7, now this flow's own instance of that
-/// pattern); an empty name is legal and saves as `''` (UC02B plan D5); all
-/// three `AccountGroup` values are selectable at all times; delete has no
-/// confirmation dialog (UC02B plan D2/D5 — the diagram draws none).
+/// **Nothing on this screen is disabled, and nothing is refused except one
+/// case** (D7, NFR-4's zero-refusals fit criterion, with the sole counted
+/// exception FEAT08 D3/D4 adds): every save and the delete control are
+/// enabled even with every field empty — an empty amount saves as 0 and an
+/// unparseable one follows UC-11's shipped precedent (`int.tryParse(...) ??
+/// 0`, `pm/findings.md` F7, now this flow's own instance of that pattern);
+/// an empty name is legal and saves as `''` (UC02B plan D5); all three
+/// `AccountGroup` values are selectable at all times; delete has no
+/// confirmation dialog (UC02B plan D2/D5 — the diagram draws none). The one
+/// exception: a name that case-insensitively collides with another
+/// non-deleted account's name hard-blocks the save (FEAT08 D3) — the owner's
+/// own 2026-08-24 answer, "Hard block for real," replacing FEAT06 D3's
+/// warn-and-proceed.
 ///
 /// Firing a write never renders what it returns; nothing comes back on this
 /// screen (`riverpod.md`, the read/write asymmetry) — every result arrives
@@ -102,11 +107,11 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     super.dispose();
   }
 
-  /// FEAT06 D3: a warning, never a gate — checked against the currently
-  /// loaded [accountBalancesProvider] list (already shipped, already
-  /// filters `WHERE NOT deleted`; no new DAO method or query), case-
-  /// insensitive, excluding the account's own id when editing. Adjust mode
-  /// never calls this — that flow never touches `name`.
+  /// FEAT08 D3: a real gate now, checked against the currently loaded
+  /// [accountBalancesProvider] list (already shipped, already filters
+  /// `WHERE NOT deleted`; no new DAO method or query), case-insensitive,
+  /// excluding the account's own id when editing. Adjust mode never calls
+  /// this — that flow never touches `name`.
   bool _nameCollides(String name) {
     final rows = ref.read(accountBalancesProvider).value ?? const [];
     final lowerName = name.toLowerCase();
@@ -117,17 +122,17 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     return false;
   }
 
-  /// FEAT06 D3: single-button acknowledge-and-proceed dialog, identical
-  /// shape to `SettingsScreen`'s currency-relabel notice — no cancel, the
-  /// write and the close-on-save (D2) both still happen unconditionally
-  /// after this resolves.
-  Future<void> _showDuplicateNameNotice() {
+  /// FEAT08 D3: single-button dialog for a blocked save, replacing FEAT06's
+  /// acknowledge-and-proceed notice. The name collision is a real refusal
+  /// now — this dialog only informs; it does not proceed on dismissal, the
+  /// caller already returned before showing it.
+  Future<void> _showBlockedNotice() {
     final loc = AppLocalizations.of(context)!;
     return showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(loc.duplicateAccountNameTitle),
-        content: Text(loc.duplicateAccountNameDialogContent),
+        title: Text(loc.duplicateAccountNameBlockedTitle),
+        content: Text(loc.duplicateAccountNameBlockedContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -159,8 +164,12 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     if (_isEditFlow) {
       // UC02B D5: an empty name is legal and saves as ''.
       final name = _nameController.text;
+      // FEAT08 D3: a colliding name is a real refusal — the sole exception
+      // to NFR-4's zero-refusals rule (docs/fr-nfr.md, decisions.md). No
+      // write, no pop; the screen stays open with the name still typed in.
       if (_nameCollides(name)) {
-        await _showDuplicateNameNotice();
+        await _showBlockedNotice();
+        return;
       }
       unawaited(
         ref
@@ -178,8 +187,10 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     }
     final openingAmount = int.tryParse(_openingAmountController.text) ?? 0;
     final name = _nameController.text;
+    // FEAT08 D3: same hard block on create.
     if (_nameCollides(name)) {
-      await _showDuplicateNameNotice();
+      await _showBlockedNotice();
+      return;
     }
     unawaited(
       ref

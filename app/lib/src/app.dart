@@ -112,12 +112,13 @@ class _AppShellState extends State<AppShell> {
     return Scaffold(
       body: IndexedStack(
         index: _index,
-        children: const [
-          BalanceSheetScreen(),
-          AccountsScreen(),
-          RecordTransactionScreen(),
-          TransactionListScreen(),
-          BudgetOverviewScreen(),
+        children: [
+          const BalanceSheetScreen(),
+          const AccountsScreen(),
+          // FEAT08 D2: a successful save switches back to Home (index 0).
+          RecordTransactionScreen(onSaved: () => _select(0)),
+          const TransactionListScreen(),
+          const BudgetOverviewScreen(),
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

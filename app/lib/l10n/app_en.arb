@@ -48,8 +48,8 @@
   "targetAmountLabel": "What it should actually be",
   "targetAmountHint": "Target amount (minus allowed)",
   "deleteAccountButton": "Delete account",
-  "duplicateAccountNameTitle": "Name already used",
-  "duplicateAccountNameDialogContent": "Another account already has this name. It will still be saved.",
+  "duplicateAccountNameBlockedTitle": "Name already used",
+  "duplicateAccountNameBlockedContent": "Another account already has this name. Choose a different name to save.",
 
   "budgetOverviewTitle": "Budget this month",
   "setBudgetTooltip": "Set budget",
@@ -129,5 +129,13 @@
   "themeModeLight": "Light",
   "themeModeDark": "Dark",
   "currencyRelabelDialogContent": "Existing amounts are re-labelled, not converted. The same recorded numbers will show with the new currency.",
-  "okButton": "OK"
+  "okButton": "OK",
+
+  "balanceTrendChartTitle": "Balance trend (30 days)",
+  "incomeExpenseChartTitle": "Income vs expense this month",
+  "categorySpendingChartTitle": "Spending by category this month",
+  "incomeLegendLabel": "Income",
+  "expenseLegendLabel": "Expense",
+  "uncategorizedLabel": "Uncategorized",
+  "chartNoDataYet": "No data yet."
 }

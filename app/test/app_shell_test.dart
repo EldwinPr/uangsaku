@@ -109,6 +109,41 @@ void main() {
     },
   );
 
+  testWidgets(
+    'FEAT08 D2: a successful save on Record switches back to Home (index 0)',
+    (tester) async {
+      final accountId = await insertAccount(
+        'Wallet',
+        AccountGroup.HOLDING,
+        100000,
+      );
+
+      await pumpShell(tester);
+
+      await tester.tap(find.byTooltip('Record'));
+      await tester.pumpAndSettle();
+      expect(find.text('Record money movement').hitTestable(), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).first, '15000');
+      // `find.byType(FloatingActionButton)` is ambiguous here — the shell's
+      // own docked "Record" FAB stays mounted underneath (`IndexedStack`).
+      // The Save tooltip picks out the form's FAB specifically.
+      await tester.tap(find.byTooltip('Save'));
+      await tester.pumpAndSettle();
+
+      // Home is visible again — the shell switched tabs, not popped a route.
+      expect(find.byType(BalanceSheetScreen).hitTestable(), findsOneWidget);
+      expect(find.text('Record money movement').hitTestable(), findsNothing);
+
+      final rows = await database.select(database.transactions).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.amount, 15000);
+      expect(rows.single.fromAccountId, accountId);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
   testWidgets('the docked FAB opens Record', (tester) async {
     await pumpShell(tester);
 

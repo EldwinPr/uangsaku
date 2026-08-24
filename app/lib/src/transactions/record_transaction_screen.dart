@@ -53,7 +53,13 @@ List<Account> personDebtChoices(List<Account> accounts) {
 /// Loading and empty picker states render placeholders, never errors; an
 /// empty pool leaves the side null rather than disabling anything.
 class RecordTransactionScreen extends ConsumerStatefulWidget {
-  const RecordTransactionScreen({super.key});
+  const RecordTransactionScreen({super.key, required this.onSaved});
+
+  /// FEAT08 D2: fired right after a successful save, replacing the
+  /// form-clear-and-stay FEAT06 shipped. `AppShell` (the only caller) passes
+  /// a callback that switches its `IndexedStack` back to Home — leaving this
+  /// tab, not popping a route that was never pushed.
+  final VoidCallback onSaved;
 
   @override
   ConsumerState<RecordTransactionScreen> createState() =>
@@ -230,6 +236,10 @@ class _RecordTransactionScreenState
     final loc = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(loc.recordedMessage)));
+    // FEAT08 D2: switches back to Home after a successful save — the same
+    // `ScaffoldMessenger`/`Scaffold` roots the whole `IndexedStack`, so the
+    // SnackBar above still surfaces on whichever screen is visible after.
+    widget.onSaved();
   }
 
   @override

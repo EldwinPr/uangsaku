@@ -92,6 +92,75 @@ void main() {
     },
   );
 
+  testWidgets(
+    'FEAT08 D1: an income row renders green, an expense row in colorScheme.error, a transfer row in the default color',
+    (tester) async {
+      await database
+          .into(database.accounts)
+          .insert(
+            AccountsCompanion.insert(
+              name: 'Cash',
+              group: AccountGroup.HOLDING,
+              openingAmount: 100000,
+            ),
+          );
+      await database
+          .into(database.accounts)
+          .insert(
+            AccountsCompanion.insert(
+              name: 'Savings',
+              group: AccountGroup.HOLDING,
+              openingAmount: 0,
+            ),
+          );
+      final cash = (await database.select(database.accounts).get()).first;
+      final savings = (await database.select(database.accounts).get()).last;
+
+      await dao.insert(
+        kind: TransactionKind.income,
+        amount: 5000,
+        occurredOn: DateTime(2026, 8, 1),
+        toAccountId: cash.accountId,
+      );
+      await dao.insert(
+        kind: TransactionKind.expense,
+        amount: 3000,
+        occurredOn: DateTime(2026, 8, 2),
+        fromAccountId: cash.accountId,
+      );
+      await dao.insert(
+        kind: TransactionKind.transfer,
+        amount: 1000,
+        occurredOn: DateTime(2026, 8, 3),
+        fromAccountId: cash.accountId,
+        toAccountId: savings.accountId,
+      );
+
+      await pumpScreen(tester);
+
+      final context = tester.element(find.byType(TransactionListScreen));
+      final colorScheme = Theme.of(context).colorScheme;
+      final defaultColor =
+          DefaultTextStyle.of(context).style.color ??
+          Theme.of(context).textTheme.bodyLarge?.color;
+
+      final incomeText = tester.widget<Text>(find.text('Income · 5000'));
+      expect(incomeText.style?.color, Colors.green.shade700);
+
+      final expenseText = tester.widget<Text>(find.text('Expense · 3000'));
+      expect(expenseText.style?.color, colorScheme.error);
+
+      final transferText = tester.widget<Text>(find.text('Transfer · 1000'));
+      expect(transferText.style?.color, isNot(Colors.green.shade700));
+      expect(transferText.style?.color, isNot(colorScheme.error));
+      // Unstyled: no color override, same as `defaultColor` would resolve to.
+      expect(transferText.style?.color, isNull);
+      expect(defaultColor, isNotNull);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
   testWidgets('UC-09 D3: an empty ledger renders an empty list, not an error', (
     tester,
   ) async {

@@ -45,8 +45,8 @@
   "targetAmountLabel": "Yang seharusnya",
   "targetAmountHint": "Jumlah target (boleh minus)",
   "deleteAccountButton": "Hapus akun",
-  "duplicateAccountNameTitle": "Nama sudah dipakai",
-  "duplicateAccountNameDialogContent": "Akun lain sudah memakai nama ini. Tetap akan disimpan.",
+  "duplicateAccountNameBlockedTitle": "Nama sudah dipakai",
+  "duplicateAccountNameBlockedContent": "Akun lain sudah memakai nama ini. Pilih nama lain untuk menyimpan.",
 
   "budgetOverviewTitle": "Anggaran bulan ini",
   "setBudgetTooltip": "Atur anggaran",
@@ -123,5 +123,13 @@
   "themeModeLight": "Terang",
   "themeModeDark": "Gelap",
   "currencyRelabelDialogContent": "Jumlah yang sudah tercatat hanya diberi label ulang, bukan dikonversi. Angka yang sama akan tampil dengan mata uang yang baru.",
-  "okButton": "OK"
+  "okButton": "OK",
+
+  "balanceTrendChartTitle": "Tren saldo (30 hari)",
+  "incomeExpenseChartTitle": "Pemasukan vs pengeluaran bulan ini",
+  "categorySpendingChartTitle": "Pengeluaran per kategori bulan ini",
+  "incomeLegendLabel": "Pemasukan",
+  "expenseLegendLabel": "Pengeluaran",
+  "uncategorizedLabel": "Tanpa kategori",
+  "chartNoDataYet": "Belum ada data."
 }

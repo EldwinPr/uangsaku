@@ -134,11 +134,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteAccountButton => 'Delete account';
 
   @override
-  String get duplicateAccountNameTitle => 'Name already used';
+  String get duplicateAccountNameBlockedTitle => 'Name already used';
 
   @override
-  String get duplicateAccountNameDialogContent =>
-      'Another account already has this name. It will still be saved.';
+  String get duplicateAccountNameBlockedContent =>
+      'Another account already has this name. Choose a different name to save.';
 
   @override
   String get budgetOverviewTitle => 'Budget this month';
@@ -359,4 +359,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get okButton => 'OK';
+
+  @override
+  String get balanceTrendChartTitle => 'Balance trend (30 days)';
+
+  @override
+  String get incomeExpenseChartTitle => 'Income vs expense this month';
+
+  @override
+  String get categorySpendingChartTitle => 'Spending by category this month';
+
+  @override
+  String get incomeLegendLabel => 'Income';
+
+  @override
+  String get expenseLegendLabel => 'Expense';
+
+  @override
+  String get uncategorizedLabel => 'Uncategorized';
+
+  @override
+  String get chartNoDataYet => 'No data yet.';
 }

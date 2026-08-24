@@ -338,17 +338,17 @@ abstract class AppLocalizations {
   /// **'Delete account'**
   String get deleteAccountButton;
 
-  /// No description provided for @duplicateAccountNameTitle.
+  /// No description provided for @duplicateAccountNameBlockedTitle.
   ///
   /// In en, this message translates to:
   /// **'Name already used'**
-  String get duplicateAccountNameTitle;
+  String get duplicateAccountNameBlockedTitle;
 
-  /// No description provided for @duplicateAccountNameDialogContent.
+  /// No description provided for @duplicateAccountNameBlockedContent.
   ///
   /// In en, this message translates to:
-  /// **'Another account already has this name. It will still be saved.'**
-  String get duplicateAccountNameDialogContent;
+  /// **'Another account already has this name. Choose a different name to save.'**
+  String get duplicateAccountNameBlockedContent;
 
   /// No description provided for @budgetOverviewTitle.
   ///
@@ -775,6 +775,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'OK'**
   String get okButton;
+
+  /// No description provided for @balanceTrendChartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance trend (30 days)'**
+  String get balanceTrendChartTitle;
+
+  /// No description provided for @incomeExpenseChartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Income vs expense this month'**
+  String get incomeExpenseChartTitle;
+
+  /// No description provided for @categorySpendingChartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Spending by category this month'**
+  String get categorySpendingChartTitle;
+
+  /// No description provided for @incomeLegendLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Income'**
+  String get incomeLegendLabel;
+
+  /// No description provided for @expenseLegendLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense'**
+  String get expenseLegendLabel;
+
+  /// No description provided for @uncategorizedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Uncategorized'**
+  String get uncategorizedLabel;
+
+  /// No description provided for @chartNoDataYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No data yet.'**
+  String get chartNoDataYet;
 }
 
 class _AppLocalizationsDelegate

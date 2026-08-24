@@ -153,3 +153,31 @@ final debtProgressProvider = StreamProvider.autoDispose
       final database = ref.watch(appDatabaseProvider);
       return AccountDao(database).watchDebtProgress(accountId);
     });
+
+/// Home's balance-trend chart (FEAT07 D3): wraps exactly one drift stream —
+/// `AccountDao.watchBalanceTrend()`'s — same shape and reasoning as
+/// [financialPositionProvider].
+final balanceTrendProvider =
+    StreamProvider.autoDispose<List<BalanceTrendPoint>>((ref) {
+      final database = ref.watch(appDatabaseProvider);
+      return AccountDao(database).watchBalanceTrend();
+    });
+
+/// Home's income-vs-expense chart (FEAT07 D4): wraps exactly one drift
+/// stream — `AccountDao.watchIncomeExpense()`'s — same shape and reasoning
+/// as [financialPositionProvider].
+final incomeExpenseProvider = StreamProvider.autoDispose<IncomeExpenseSummary>((
+  ref,
+) {
+  final database = ref.watch(appDatabaseProvider);
+  return AccountDao(database).watchIncomeExpense();
+});
+
+/// Home's spending-by-category chart (FEAT07 D5): wraps exactly one drift
+/// stream — `AccountDao.watchCategorySpending()`'s — same shape and
+/// reasoning as [financialPositionProvider].
+final categorySpendingProvider =
+    StreamProvider.autoDispose<List<CategorySpending>>((ref) {
+      final database = ref.watch(appDatabaseProvider);
+      return AccountDao(database).watchCategorySpending();
+    });

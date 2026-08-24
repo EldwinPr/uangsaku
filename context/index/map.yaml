@@ -324,6 +324,46 @@ code:
   # issue. 151 tests green, no schema change. Closes the owner's manual-testing
   # feedback round - all four items (FEAT03-FEAT06) DONE.
 
+  # FEAT07-home-overview-charts, DONE 2026-08-24. No UC - infrastructure. First of two
+  # items from the owner's SECOND manual-testing feedback round (a chart would be
+  # helpful / the app still looks empty). New fl_chart dependency. Three new tracked
+  # classes on class-accounts.drawio, all owned by AccountDao (ISSUE-005 D1's licensed
+  # direction - AccountDao already reached Transactions directly for watchPosition();
+  # this issue extends the same licence to Categories too, no cross-module provider
+  # reads introduced): BalanceTrendPoint (watchBalanceTrend, WITH RECURSIVE day-series
+  # CTE, running net position as of each of the last 30 days), IncomeExpenseSummary
+  # (watchIncomeExpense, this calendar month, mirrors BudgetDao's in-month convention),
+  # CategorySpending (watchCategorySpending, this month's to_account_id IS NULL rows
+  # LEFT JOINed to Categories so a null category groups into its own "Uncategorized"
+  # bucket instead of being dropped). Three new hand-written StreamProvider.autoDispose
+  # providers in accounts_providers.dart. BalanceSheetScreen (Home) keeps its four
+  # figures and gains three chart Cards below them (line/bar/donut via fl_chart), each
+  # degrading to a chartNoDataYet message rather than a blank/crash on zero rows or
+  # zero total. 165 tests green (was 155), no schema change.
+  FEAT07:
+    dao_methods_added: app/lib/src/accounts/account_dao.dart   # watchBalanceTrend/watchIncomeExpense/watchCategorySpending
+    providers_added:   app/lib/src/accounts/accounts_providers.dart
+    screen:             app/lib/src/accounts/balance_sheet_screen.dart   # three chart Cards appended
+    tests:
+      - app/test/accounts/chart_queries_test.dart
+      - app/test/accounts/balance_sheet_screen_test.dart
+
+  # FEAT08-transaction-ux-and-name-block, DONE 2026-08-24. No UC - infrastructure.
+  # Second of two items from the owner's second manual-testing feedback round.
+  # TransactionListScreen's _TransactionTile colors its title by kind: income green
+  # (Colors.green, brightness-aware), expense colorScheme.error, the other five kinds
+  # (transfer/lend/borrow/repayment/adjustment) unstyled - each touches two sides at
+  # once, so "in"/"out" isn't a fact about the row without a viewpoint account.
+  # RecordTransactionScreen gained a required onSaved callback fired right after a
+  # successful save; AppShell wires it to switch its IndexedStack back to Home (index
+  # 0), replacing FEAT06's stay-and-clear. **Account-name collision is now a real
+  # refusal, the sole counted exception to NFR-4** (docs/fr-nfr.md, decisions.md
+  # 2026-08-24): AccountFormScreen's create/edit saves do not write and do not pop on a
+  # case-insensitive name collision - the owner was asked directly and answered "Hard
+  # block for real," replacing FEAT06 D3's warn-and-proceed notice. 165 tests green
+  # (shared count with FEAT07 above - both landed in the same working tree), no schema
+  # change. Closes the owner's second manual-testing feedback round.
+
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
 # each other in BOTH directions (balances need Transactions; the record screen needs

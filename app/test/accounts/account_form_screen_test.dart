@@ -353,7 +353,7 @@ void main() {
   );
 
   testWidgets(
-    'FEAT06 D3: a colliding account name (case-insensitive) shows the one-button warning and still saves',
+    'FEAT08 D3: a colliding account name (case-insensitive) hard-blocks create — no write, dialog shown',
     (tester) async {
       await database
           .into(database.accounts)
@@ -375,21 +375,21 @@ void main() {
 
       expect(find.byType(AlertDialog), findsOneWidget);
 
-      // Acknowledge-and-proceed: the one button both closes the dialog and
-      // lets the write and close-on-save still happen (D3, not a gate).
+      // Dismissing the dialog does not make the write happen — this is the
+      // one refusal NFR-4 carries as its sole exception (FEAT08 D3/D4).
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
       final rows = await database.select(database.accounts).get();
-      expect(rows, hasLength(2));
-      expect(rows.map((r) => r.name), containsAll(['Wallet', 'wallet']));
+      expect(rows, hasLength(1));
+      expect(rows.single.name, 'Wallet');
 
       await unmountAndFlushTimers(tester);
     },
   );
 
   testWidgets(
-    'FEAT06 D3: a non-colliding account name never shows the warning',
+    'FEAT08 D3: a non-colliding account name never shows the notice and writes normally',
     (tester) async {
       await database
           .into(database.accounts)
@@ -411,6 +411,49 @@ void main() {
       expect(find.byType(AlertDialog), findsNothing);
       final rows = await database.select(database.accounts).get();
       expect(rows, hasLength(2));
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT08 D3: a colliding account name hard-blocks edit too — no write, no pop, dialog shown',
+    (tester) async {
+      await database
+          .into(database.accounts)
+          .insert(
+            AccountsCompanion.insert(
+              name: 'Wallet',
+              group: AccountGroup.HOLDING,
+              openingAmount: 100000,
+            ),
+          );
+      final accountId = await database
+          .into(database.accounts)
+          .insert(
+            AccountsCompanion.insert(
+              name: 'Savings',
+              group: AccountGroup.HOLDING,
+              openingAmount: 0,
+            ),
+          );
+
+      await pumpEditScreen(tester, accountId);
+
+      await tester.enterText(find.byType(TextField).first, 'wallet');
+      await tester.tap(saveButton());
+      await tester.pump();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      // The screen is still here (no pop) and the rename never wrote.
+      expect(find.byType(AccountFormScreen), findsOneWidget);
+      final row = await (database.select(
+        database.accounts,
+      )..where((r) => r.accountId.equals(accountId))).getSingle();
+      expect(row.name, 'Savings');
 
       await unmountAndFlushTimers(tester);
     },

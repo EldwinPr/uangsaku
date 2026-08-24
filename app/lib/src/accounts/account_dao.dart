@@ -5,6 +5,71 @@ import '../budgeting/clock.dart';
 import '../database/app_database.dart';
 import '../transactions/transactions_table.dart';
 
+/// One day's running net balance, `class-accounts.drawio`: *query result ·
+/// FEAT07 · one day's net balance*.
+///
+/// [netBalance] is the same expression [FinancialPosition.net] computes
+/// (every non-deleted account's opening amount plus every transaction's
+/// signed movement), bounded to `occurred_on` no later than [date] — the
+/// running position *as of* that day, not that day's movement alone
+/// (FEAT07 plan D3). Both fields plain, `int` minor units — never a double
+/// (NFR-2). Plain Dart, immutable, no Flutter import.
+class BalanceTrendPoint {
+  const BalanceTrendPoint({required this.date, required this.netBalance});
+
+  final DateTime date;
+
+  /// Minor units of `Settings.currency`, derived at read time — never a
+  /// double (NFR-2).
+  final int netBalance;
+}
+
+/// This month's income and expense, `class-accounts.drawio`: *query result
+/// · FEAT07 · this month's income / expense*.
+///
+/// [income] sums `Transactions.amount` WHERE `from_account_id IS NULL`;
+/// [expense] sums WHERE `to_account_id IS NULL` — the same predicates
+/// FR-1/UC-12 already use, never a `kind` filter (FEAT07 plan D4, D5 of
+/// [watchPosition]'s own precedent). Both non-negative `int` minor units —
+/// never a double (NFR-2). Plain Dart, immutable, no Flutter import.
+class IncomeExpenseSummary {
+  const IncomeExpenseSummary({required this.income, required this.expense});
+
+  /// Minor units of `Settings.currency` (NFR-2).
+  final int income;
+
+  /// Minor units of `Settings.currency` (NFR-2).
+  final int expense;
+}
+
+/// This month's spend for one category, `class-accounts.drawio`: *query
+/// result · FEAT07 · this month's spend per category*.
+///
+/// [categoryId]/[name] are both `null` for the uncategorized bucket — a
+/// `category_id IS NULL` expense row, grouped rather than dropped (FEAT07
+/// plan D5). The `Uncategorized` label is applied by the screen from the
+/// `uncategorizedLabel` ARB key, never stored here — the same pattern
+/// `BudgetConsumption`'s null-group "Others" bucket already established.
+/// [amount] is an `int` minor-unit magnitude — never a double (NFR-2).
+/// Plain Dart, immutable, no Flutter import.
+class CategorySpending {
+  const CategorySpending({
+    required this.categoryId,
+    required this.name,
+    required this.amount,
+  });
+
+  /// `null` for the uncategorized bucket.
+  final int? categoryId;
+
+  /// `null` for the uncategorized bucket — the screen applies the label
+  /// (FEAT07 plan D5).
+  final String? name;
+
+  /// Minor units of `Settings.currency` (NFR-2).
+  final int amount;
+}
+
 /// `FinancialPosition` — UC-01's four figures, one query result
 /// (`class-accounts.drawio`: *query result · UC-01's four figures*).
 ///
@@ -289,6 +354,165 @@ class AccountDao {
             settled: row.read<bool>('settled'),
           ),
         );
+  }
+
+  /// FEAT07 D3: `watchBalanceTrend({days})` — one point per calendar day for
+  /// the trailing [days] days including today (default 30), each holding
+  /// the running net position *as of* that day: the same expression
+  /// [watchPosition]'s `net` computes (every non-deleted account's opening
+  /// amount plus every transaction's signed movement), bounded to
+  /// `occurred_on` no later than that day.
+  ///
+  /// SQLite has no built-in date-series function, so the day series is a
+  /// `WITH RECURSIVE` CTE counting back from today (`_clock.today()`, never
+  /// `DateTime.now()` — the injected-clock discipline `BudgetDao`
+  /// established); each day's balance is a correlated subquery over
+  /// `Transactions`, the identical sides-based, no-`kind`-filter expression
+  /// [watchPosition] uses (D5's precedent there). `day_epoch + 86399`
+  /// covers the whole day inclusive, the same inclusive-bound convention
+  /// `BudgetDao`'s month queries use.
+  Stream<List<BalanceTrendPoint>> watchBalanceTrend({int days = 30}) {
+    final today = _clock.today();
+    return _db
+        .customSelect(
+          '''
+          WITH RECURSIVE day_series(n, day_epoch) AS (
+            SELECT 0, ?
+            UNION ALL
+            SELECT n + 1, day_epoch - 86400 FROM day_series WHERE n < ?
+          )
+          SELECT
+            day_epoch,
+            (SELECT COALESCE(SUM(a.opening_amount), 0) FROM accounts a
+              WHERE NOT a.deleted)
+              + COALESCE((SELECT SUM(t.amount) FROM transactions t
+                          WHERE t.to_account_id IN
+                            (SELECT account_id FROM accounts WHERE NOT deleted)
+                            AND t.occurred_on <= day_series.day_epoch + 86399), 0)
+              - COALESCE((SELECT SUM(t.amount) FROM transactions t
+                          WHERE t.from_account_id IN
+                            (SELECT account_id FROM accounts WHERE NOT deleted)
+                            AND t.occurred_on <= day_series.day_epoch + 86399), 0)
+              AS net_balance
+          FROM day_series
+          ORDER BY day_epoch ASC
+          ''',
+          variables: [Variable.withDateTime(today), Variable.withInt(days - 1)],
+          readsFrom: {_db.accounts, _db.transactions},
+        )
+        .watch()
+        .map(
+          (rows) => [
+            for (final row in rows)
+              BalanceTrendPoint(
+                date: row.read<DateTime>('day_epoch'),
+                netBalance: row.read<int>('net_balance'),
+              ),
+          ],
+        );
+  }
+
+  /// FEAT07 D4: `watchIncomeExpense()` — this calendar month's income and
+  /// expense, the same in-month convention `BudgetDao.watchConsumption()`
+  /// establishes (current month, `[startsOn, endsOn]` inclusive). `income`
+  /// sums `Transactions.amount` WHERE `from_account_id IS NULL`; `expense`
+  /// sums WHERE `to_account_id IS NULL` — the same predicates FR-1/UC-12
+  /// already use to mean "money entered from outside" / "spending", never a
+  /// `kind` filter (D5's precedent). Both are non-negative magnitudes.
+  Stream<IncomeExpenseSummary> watchIncomeExpense() {
+    final startsOn = _currentMonthStart();
+    final endsOn = _currentMonthEnd();
+    return _db
+        .customSelect(
+          '''
+          SELECT
+            COALESCE((SELECT SUM(t.amount) FROM transactions t
+                      WHERE t.from_account_id IS NULL
+                        AND t.occurred_on >= ? AND t.occurred_on <= ?), 0)
+              AS income,
+            COALESCE((SELECT SUM(t.amount) FROM transactions t
+                      WHERE t.to_account_id IS NULL
+                        AND t.occurred_on >= ? AND t.occurred_on <= ?), 0)
+              AS expense
+          ''',
+          variables: [
+            Variable.withDateTime(startsOn),
+            Variable.withDateTime(endsOn),
+            Variable.withDateTime(startsOn),
+            Variable.withDateTime(endsOn),
+          ],
+          readsFrom: {_db.transactions},
+        )
+        .watchSingle()
+        .map(
+          (row) => IncomeExpenseSummary(
+            income: row.read<int>('income'),
+            expense: row.read<int>('expense'),
+          ),
+        );
+  }
+
+  /// FEAT07 D5: `watchCategorySpending()` — this calendar month's spending
+  /// (`to_account_id IS NULL`, the same predicate [watchIncomeExpense] uses
+  /// for `expense`) grouped by `category_id`, joined to `Categories.name`.
+  /// A `category_id IS NULL` row groups into its own bucket rather than
+  /// being dropped — SQLite's `GROUP BY` already treats `NULL` as one
+  /// group, and a `LEFT JOIN` (not `INNER`) keeps that row in the result
+  /// with `name: null` instead of discarding it, so every expense is
+  /// accounted for in the chart. The screen applies the `uncategorizedLabel`
+  /// ARB string to the `null` bucket, never stored here — the same pattern
+  /// `BudgetConsumption`'s null-group "Others" bucket already established.
+  /// Subcategory is not broken out (D5).
+  Stream<List<CategorySpending>> watchCategorySpending() {
+    final startsOn = _currentMonthStart();
+    final endsOn = _currentMonthEnd();
+    return _db
+        .customSelect(
+          '''
+          SELECT
+            t.category_id   AS category_id,
+            categories.name AS category_name,
+            SUM(t.amount)   AS amount
+          FROM transactions t
+          LEFT JOIN categories ON categories.category_id = t.category_id
+          WHERE t.to_account_id IS NULL
+            AND t.occurred_on >= ? AND t.occurred_on <= ?
+          GROUP BY t.category_id
+          ORDER BY t.category_id IS NULL, t.category_id
+          ''',
+          variables: [
+            Variable.withDateTime(startsOn),
+            Variable.withDateTime(endsOn),
+          ],
+          readsFrom: {_db.transactions, _db.categories},
+        )
+        .watch()
+        .map(
+          (rows) => [
+            for (final row in rows)
+              CategorySpending(
+                categoryId: row.readNullable<int>('category_id'),
+                name: row.readNullable<String>('category_name'),
+                amount: row.read<int>('amount'),
+              ),
+          ],
+        );
+  }
+
+  /// The first day, at midnight, of the current calendar month
+  /// (`_clock.today()`) — the same in-month convention `BudgetDao
+  /// ._monthStart` establishes, fixed to the current month only (FEAT07
+  /// plan D4, Out of scope: no adjustable period).
+  DateTime _currentMonthStart() {
+    final today = _clock.today();
+    return DateTime(today.year, today.month, 1);
+  }
+
+  /// The last day, at midnight, of the current calendar month — inclusive,
+  /// matching `BudgetDao._monthEnd`'s convention.
+  DateTime _currentMonthEnd() {
+    final start = _currentMonthStart();
+    return DateTime(start.year, start.month + 1, 0);
   }
 
   /// Message 5 on `seq-uc10-debt-progress.drawio`: `setSettled(accountId)` —
