@@ -378,13 +378,20 @@ code:
   # dropdown each gained a description line below the selected value, tinted to
   # match. AccountsScreen's per-account list explicitly stays ListTile rows - the
   # owner ruled cards out there specifically. 172 tests green, no schema change.
+  # Post-close fix, same day: the shipped GridView (fixed childAspectRatio) overflowed
+  # up to 32px on longer id labels / larger fonts - replaced with two IntrinsicHeight
+  # rows of two Expanded cards (content-sized, cannot overflow). Also added
+  # money_format.dart (formatMinorUnits) - locale-aware NumberFormat grouping/decimal
+  # separators, applied to the four figure cards only. 183 tests green (was 172).
   FEAT09:
     style_helpers_added:
       - app/lib/src/accounts/group_style.dart
       - app/lib/src/transactions/kind_style.dart
+      - app/lib/src/accounts/money_format.dart
     tests:
       - app/test/accounts/group_style_test.dart
       - app/test/transactions/kind_style_test.dart
+      - app/test/accounts/money_format_test.dart
 
   # FEAT10-help-and-navigation, DONE 2026-08-24. No UC - infrastructure. Second of two
   # items from the owner's THIRD manual-testing feedback round. New HelpScreen (static

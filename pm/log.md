@@ -15,7 +15,7 @@ before starting work.
 ## Current state — 2026-08-24
 
 **Phase.** **The planned backlog and all THREE of the owner's manual-testing feedback
-rounds are DONE.** The app compiles and its test suite is green (**179 tests**). Ten
+rounds are DONE.** The app compiles and its test suite is green (**183 tests**). Ten
 screens/tabs built end to end, all reachable except one deliberately unrouted flow
 (UC-03's adjust mode, never asked for). `home` is `AppShell`: a five-tab bottom nav
 (Home, Accounts, Record as a colored circular docked FAB, Transactions, Budget) with
@@ -1350,3 +1350,36 @@ passed / 0 warnings / 0 failures.
 **[TODO]** Nothing queued. All three rounds of the owner's manual-testing feedback
 (`FEAT03`-`FEAT06`, `FEAT07`-`FEAT08`, `FEAT09`-`FEAT10`) are DONE. The tracker has no
 runnable work.
+
+## 2026-08-24 — FEAT09 post-close fix: figure-card overflow, missing thousands/decimal separators
+
+**[STATUS]** Same-day fix on `FEAT09`'s just-shipped work, reported by the owner
+directly: *"the cards are overflowing up to 32 px. i forgot also add . and ,"*.
+
+**Overflow.** `BalanceSheetScreen`'s four figure cards were a `GridView.count` with a
+fixed `childAspectRatio: 1.6` — a fixed aspect ratio caps a card's height regardless of
+how much content it actually holds, and either a longer label (`id`'s figure labels run
+noticeably longer than `en`'s) or a larger system font size pushed past it, overflowing
+by roughly the height of one extra text line. Replaced with two `IntrinsicHeight` rows
+of two `Expanded` cards — each row sizes itself to its tallest card's real content, so
+there is no fixed height left to overflow, independent of label length or font scale.
+
+**Missing separators.** Amounts on those same four cards were still the raw
+`'$minorUnits'` string every screen in this app has always shown (`plan.md`'s original
+Out-of-scope line, *Currency display*, deferred this project-wide since UC-01). New
+`app/lib/src/accounts/money_format.dart` (`formatMinorUnits`): a locale-aware
+`NumberFormat.decimalPattern`, grouped, with `Currency.exponent` deciding fraction
+digits (`IDR` none, `USD` two) — `100000` now renders `100.000` under `id`, `100,000`
+under `en`. Deliberately scoped to just the four figure cards the owner was looking at,
+not swept across `AccountsScreen`/`TransactionListScreen`/`BudgetOverviewScreen` — those
+still show raw ints, unchanged, a decision to revisit only if asked.
+
+**[STATUS]** Four commands green: `dart run build_runner build
+--delete-conflicting-outputs`, `dart format --set-exit-if-changed .`, `flutter analyze`
+(No issues found!), `flutter test` — 183 tests, up from 179 (4 new:
+`money_format_test.dart`, locking the exact `.`/`,` behavior per locale/currency
+combination with literal expected strings, not just round-tripped through the same
+function the widget calls). `git diff --stat app/drift_schemas/` empty — no schema
+change. `python audit.py` — 14 passed / 0 warnings / 0 failures.
+
+**[TODO]** Nothing queued.

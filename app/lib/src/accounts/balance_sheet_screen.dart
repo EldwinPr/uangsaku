@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../settings/settings_providers.dart';
+import '../settings/settings_table.dart';
 import '../settings/tab_app_bar_actions.dart';
 import 'account_dao.dart';
 import 'accounts_providers.dart';
 import 'accounts_table.dart';
 import 'group_style.dart';
+import 'money_format.dart';
 
 /// `BalanceSheetScreen` — the primary screen (FR-1), UC-01.
 ///
@@ -18,10 +21,12 @@ import 'group_style.dart';
 /// refusal criterion has nothing to bite on: there is not a single control
 /// on this screen.
 ///
-/// Amounts render as raw minor-unit integers (`${position.spendable}`) —
-/// currency prefix/exponent formatting is deliberately out of UC-01's scope
-/// (`plan.md`, Out of scope: *Currency display*); the decimal point exists
-/// only in the widget layer (`drift.md` §Money).
+/// **Amounts are grouped and exponent-formatted** (`money_format.dart`,
+/// owner feedback 2026-08-24) — `100000` renders as `100.000`/`100,000`
+/// depending on the active language, `Currency.exponent` deciding whether
+/// any fraction digits show. The underlying figures stay raw `int` minor
+/// units all the way from the query (NFR-2); the decimal point/grouping
+/// separator exists only here, in the widget layer (`drift.md` §Money).
 ///
 /// Loading states show zeros / placeholders; an error shows a message rather
 /// than silently rendering zeros as if they were real figures.
@@ -62,6 +67,10 @@ class BalanceSheetScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final loc = AppLocalizations.of(context)!;
     final positionAsync = ref.watch(financialPositionProvider);
+    // Degrades to IDR before the first emission, the same graceful-
+    // degradation shape every other provider on this screen already uses —
+    // IDR is also this app's seeded default currency (`app_database.dart`).
+    final currency = ref.watch(currencyProvider).value ?? Currency.IDR;
 
     return Scaffold(
       appBar: AppBar(
@@ -72,8 +81,8 @@ class BalanceSheetScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           positionAsync.when(
-            data: (position) => _figuresGrid(context, loc, position),
-            loading: () => _figuresGrid(context, loc, _zero),
+            data: (position) => _figuresGrid(context, loc, position, currency),
+            loading: () => _figuresGrid(context, loc, _zero, currency),
             error: (_, _) => Text(loc.figuresLoadError),
           ),
           const SizedBox(height: 8),
@@ -93,53 +102,87 @@ class BalanceSheetScreen extends ConsumerWidget {
   /// map straight onto an `AccountGroup` and borrow that group's color/icon
   /// (`group_style.dart`); `net` has no group counterpart and keeps the
   /// original neutral styling.
+  ///
+  /// **Not a `GridView` with a fixed `childAspectRatio`** (reverted, owner
+  /// feedback 2026-08-24: *"the cards are overflowing up to 32 px"*) — a
+  /// fixed aspect ratio caps each card's height regardless of how much
+  /// content it holds, and a longer label (`id`'s figure labels run
+  /// noticeably longer than `en`'s) or a larger system font size overflows
+  /// it. Two `IntrinsicHeight` rows of two `Expanded` cards instead: each
+  /// row sizes itself to its tallest card's actual content, so there is no
+  /// fixed height to overflow no matter how long the label or how large the
+  /// font.
   Widget _figuresGrid(
     BuildContext context,
     AppLocalizations loc,
     FinancialPosition position,
+    Currency currency,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      childAspectRatio: 1.6,
+    return Column(
       children: [
-        _FigureCard(
-          figureKey: const ValueKey('figure-spendable'),
-          label: loc.figureSpendable,
-          minorUnits: position.spendable,
-          color: accountGroupColor(context, AccountGroup.HOLDING),
-          icon: accountGroupIcon(AccountGroup.HOLDING),
-          tooltip: loc.figureSpendableTooltip,
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _FigureCard(
+                  figureKey: const ValueKey('figure-spendable'),
+                  label: loc.figureSpendable,
+                  minorUnits: position.spendable,
+                  currency: currency,
+                  color: accountGroupColor(context, AccountGroup.HOLDING),
+                  icon: accountGroupIcon(AccountGroup.HOLDING),
+                  tooltip: loc.figureSpendableTooltip,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _FigureCard(
+                  figureKey: const ValueKey('figure-owed-to-me'),
+                  label: loc.figureOwedToMe,
+                  minorUnits: position.owedToMe,
+                  currency: currency,
+                  color: accountGroupColor(context, AccountGroup.RECEIVABLE),
+                  icon: accountGroupIcon(AccountGroup.RECEIVABLE),
+                  tooltip: loc.figureOwedToMeTooltip,
+                ),
+              ),
+            ],
+          ),
         ),
-        _FigureCard(
-          figureKey: const ValueKey('figure-owed-to-me'),
-          label: loc.figureOwedToMe,
-          minorUnits: position.owedToMe,
-          color: accountGroupColor(context, AccountGroup.RECEIVABLE),
-          icon: accountGroupIcon(AccountGroup.RECEIVABLE),
-          tooltip: loc.figureOwedToMeTooltip,
-        ),
-        _FigureCard(
-          figureKey: const ValueKey('figure-owed-by-me'),
-          label: loc.figureOwedByMe,
-          minorUnits: position.owedByMe,
-          color: accountGroupColor(context, AccountGroup.PAYABLE),
-          icon: accountGroupIcon(AccountGroup.PAYABLE),
-          tooltip: loc.figureOwedByMeTooltip,
-        ),
-        _FigureCard(
-          figureKey: const ValueKey('figure-net'),
-          label: loc.figureNet,
-          minorUnits: position.net,
-          color: colorScheme.primary,
-          icon: Icons.account_balance,
-          tooltip: loc.figureNetTooltip,
-          // D2: net keeps the original neutral card styling, no tint.
-          tinted: false,
+        const SizedBox(height: 8),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _FigureCard(
+                  figureKey: const ValueKey('figure-owed-by-me'),
+                  label: loc.figureOwedByMe,
+                  minorUnits: position.owedByMe,
+                  currency: currency,
+                  color: accountGroupColor(context, AccountGroup.PAYABLE),
+                  icon: accountGroupIcon(AccountGroup.PAYABLE),
+                  tooltip: loc.figureOwedByMeTooltip,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _FigureCard(
+                  figureKey: const ValueKey('figure-net'),
+                  label: loc.figureNet,
+                  minorUnits: position.net,
+                  currency: currency,
+                  color: colorScheme.primary,
+                  icon: Icons.account_balance,
+                  tooltip: loc.figureNetTooltip,
+                  // D2: net keeps the original neutral card styling, no tint.
+                  tinted: false,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -151,6 +194,7 @@ class _FigureCard extends StatelessWidget {
     this.figureKey,
     required this.label,
     required this.minorUnits,
+    required this.currency,
     required this.color,
     required this.icon,
     required this.tooltip,
@@ -161,6 +205,11 @@ class _FigureCard extends StatelessWidget {
   final Key? figureKey;
   final String label;
   final int minorUnits;
+
+  /// Decides the grouping/fraction-digit formatting `money_format.dart`
+  /// applies — never re-derived here, always the currency the app is
+  /// actually recording in right now.
+  final Currency currency;
 
   /// FEAT09 D1/D2: borrowed from `group_style.dart` for the three
   /// group-backed figures, `colorScheme.primary` for `net`.
@@ -200,7 +249,7 @@ class _FigureCard extends StatelessWidget {
             Text(label, style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: 4),
             Text(
-              '$minorUnits',
+              formatMinorUnits(context, minorUnits, currency),
               key: figureKey,
               style: Theme.of(context).textTheme.headlineSmall,
             ),

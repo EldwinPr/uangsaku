@@ -9,7 +9,9 @@ import 'package:uangsaku/l10n/app_localizations.dart';
 import 'package:uangsaku/src/accounts/accounts_table.dart';
 import 'package:uangsaku/src/accounts/balance_sheet_screen.dart';
 import 'package:uangsaku/src/accounts/group_style.dart';
+import 'package:uangsaku/src/accounts/money_format.dart';
 import 'package:uangsaku/src/database/app_database.dart';
+import 'package:uangsaku/src/settings/settings_table.dart';
 import 'package:uangsaku/src/transactions/transactions_table.dart';
 
 /// UC-01's screen test (plan, Definition of done — *Widget, FR-1*): the
@@ -75,6 +77,16 @@ void main() {
   String figureText(WidgetTester tester, String key) =>
       tester.widget<Text>(find.byKey(ValueKey(key))).data!;
 
+  /// Money-format-aware expectation: reads the actual resolved locale off
+  /// the same key's `BuildContext` rather than hardcoding a separator style
+  /// (`money_format.dart`'s grouping/decimal characters follow the app's
+  /// locale, en vs id) — avoids coupling this test to whichever locale the
+  /// widget-test harness happens to default to.
+  String expectedFigureText(WidgetTester tester, String key, int minorUnits) {
+    final context = tester.element(find.byKey(ValueKey(key)));
+    return formatMinorUnits(context, minorUnits, Currency.IDR);
+  }
+
   testWidgets('FR-1: the primary screen renders the four figures distinctly', (
     tester,
   ) async {
@@ -87,10 +99,23 @@ void main() {
     await pumpScreen(tester);
 
     // Four distinct figures — spendable is not merged with owed-to-me.
-    expect(figureText(tester, 'figure-spendable'), '100000');
-    expect(figureText(tester, 'figure-owed-to-me'), '50000');
-    expect(figureText(tester, 'figure-owed-by-me'), '0');
-    expect(figureText(tester, 'figure-net'), '150000');
+    // IDR is the app's seeded default currency (`app_database.dart`).
+    expect(
+      figureText(tester, 'figure-spendable'),
+      expectedFigureText(tester, 'figure-spendable', 100000),
+    );
+    expect(
+      figureText(tester, 'figure-owed-to-me'),
+      expectedFigureText(tester, 'figure-owed-to-me', 50000),
+    );
+    expect(
+      figureText(tester, 'figure-owed-by-me'),
+      expectedFigureText(tester, 'figure-owed-by-me', 0),
+    );
+    expect(
+      figureText(tester, 'figure-net'),
+      expectedFigureText(tester, 'figure-net', 150000),
+    );
 
     // FEAT04 D1: the account list moved to AccountsScreen — none of its
     // rows render here anymore.

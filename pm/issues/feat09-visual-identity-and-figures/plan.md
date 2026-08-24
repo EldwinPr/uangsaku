@@ -8,6 +8,17 @@ the `AccountsScreen` list (explicitly ruled out); the account-group picker in
 gain a description line below the selected value. No UC owns this, same class as
 FEAT01-08.
 
+**Post-close fix, 2026-08-24, same day:** the owner reported the shipped figure-card
+`GridView` (`childAspectRatio: 1.6`) overflowing by up to 32px — a fixed aspect ratio
+caps card height regardless of content, and `id`'s longer figure labels (or a larger
+system font) push past it. Replaced with two `IntrinsicHeight` rows of two `Expanded`
+cards, sized to actual content instead of a fixed ratio — cannot overflow regardless of
+label length or font scale. Same message also asked for the amounts' missing thousands/
+decimal separators ("i forgot also add . and ,") — added `money_format.dart`
+(`formatMinorUnits`), a locale-aware `NumberFormat` (grouping + `Currency.exponent`
+fraction digits) applied to the four figure cards only, not swept across the rest of
+the app. See `pm/log.md`'s 2026-08-24 entry for the full account.
+
 **Depends on:** `FEAT08-transaction-ux-and-name-block` — DONE.
 
 ## Decisions

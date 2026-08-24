@@ -717,11 +717,16 @@ issues:
       the mapping TransactionListScreen already shipped in FEAT08) - plain functions,
       no diagram entry; TransactionListScreen's own color switch now calls the shared
       function instead of duplicating it. BalanceSheetScreen's four figures are now a
-      2x2 GridView of colored/tinted cards (existing ValueKeys unchanged; net stays
+      2x2 grid of colored/tinted cards (existing ValueKeys unchanged; net stays
       neutral, no AccountGroup counterpart). AccountFormScreen's group picker and
       RecordTransactionScreen's kind picker both gained a description line below the
       selected value, tinted to match. AccountsScreen's list explicitly stays ListTile
-      rows - owner ruled that out. 172 tests green (was 165), no schema change.
+      rows - owner ruled that out. POST-CLOSE FIX same day: the initial GridView
+      (fixed childAspectRatio) overflowed up to 32px on longer id labels/larger fonts -
+      replaced with two IntrinsicHeight rows of two Expanded cards (content-sized,
+      cannot overflow); added money_format.dart for the missing thousands/decimal
+      separators the owner also flagged, applied to the four figure cards only.
+      183 tests green (was 165), no schema change.
       Discovered `flutter gen-l10n` is a separate required step from `build_runner`
       for ARB changes - documented in coding-conventions/dart-and-flutter.md.
 
