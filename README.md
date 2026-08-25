@@ -240,6 +240,150 @@ checklist itself is unchanged:
 
 Skipping to step 8 is what makes old work unreconstructable. Don't.
 
+## Diagrams
+
+`.drawio` source for every diagram lives in `docs/diagrams/`; `docs/diagrams/renders.lock`
+pins expected render state for the sequence diagrams. Full type-by-type conventions live
+in `context/document-writer-only/*.md`. Images below are the six repo-wide diagrams
+(`docs/diagrams/*.png`, committed as an explicit exception — see `.gitignore`) plus one
+representative sequence diagram; the other fourteen are linked, not all inlined, to keep
+this page short — each lives at `pm/issues/<slug>/seq-uc{NN}-*.png`.
+
+### System-level
+
+**ERD** — `docs/diagrams/erd.drawio` — 7 entities (Account, Transaction, Category,
+Subcategory, Budget_Group, Budget_Period, Settings) across the three domain modules plus
+Settings, no stored balance anywhere (NFR-2).
+
+![ERD](docs/diagrams/erd.png)
+
+**Component overview** — `docs/diagrams/component-overview.drawio` — 4 components
+(Accounts, Transactions, Budgeting, Settings) + AppDatabase, 7 edges, every cross-module
+edge labeled with its real mechanism (SQL join on shared DB, isolate call). Surfaces the
+Accounts↔Transactions cycle the per-module class diagrams can't show.
+
+![Component overview](docs/diagrams/component-overview.png)
+
+### Class diagrams (one per module)
+
+Same chain drawn on all four: `Screen → Riverpod provider → DAO → AppDatabase → drift
+tables`.
+
+**Accounts** (`class-accounts.drawio`, UC-01/02/03/10)
+
+![Class diagram — Accounts](docs/diagrams/class-accounts.png)
+
+**Transactions** (`class-transactions.drawio`, UC-04–09/13 — the one ledger table backing
+all seven `TransactionKind` values)
+
+![Class diagram — Transactions](docs/diagrams/class-transactions.png)
+
+**Budgeting** (`class-budgeting.drawio`, UC-11/12)
+
+![Class diagram — Budgeting](docs/diagrams/class-budgeting.png)
+
+**Settings** (`class-settings.drawio`, UC-14, plus the currency/language/theme/backup
+machinery added by FEAT03/FEAT20)
+
+![Class diagram — Settings](docs/diagrams/class-settings.png)
+
+### Sequence diagrams (one per use case)
+
+The scope boundary for each use case's implementation issue (`CLAUDE.md`'s hard gate: a
+plan's scope *is* its sequence diagram). Authored as Mermaid and converted, per
+`ISSUE-008`. One representative example, UC-01:
+
+![Sequence diagram — UC-01 View financial position](pm/issues/uc01-balance-sheet/seq-uc01-balance-sheet.png)
+
+The full set, each committed beside the `plan.md` whose scope it defines:
+
+| UC | Diagram |
+|---|---|
+| UC-01 View financial position | `pm/issues/uc01-balance-sheet/seq-uc01-balance-sheet.png` |
+| UC-02 Set up a place money lives | `pm/issues/uc02-add-account/seq-uc02-add-account.png` |
+| UC-02B Rename/edit/delete an account | `pm/issues/uc02b-edit-account/seq-uc02b-edit-account.png` |
+| UC-03 Correct what an account holds | `pm/issues/uc03-adjust-account/seq-uc03-adjust-account.png` |
+| UC-04 Record an expense | `pm/issues/uc04-record-money-movement/seq-uc04-record-expense.png` |
+| UC-05 Record income | `pm/issues/uc04-record-money-movement/seq-uc05-record-income.png` |
+| UC-06 Move money (transfer) | `pm/issues/uc04-record-money-movement/seq-uc06-move-money.png` |
+| UC-07 Lend / borrow | `pm/issues/uc04-record-money-movement/seq-uc07-lend-borrow.png` |
+| UC-08 Repayment | `pm/issues/uc04-record-money-movement/seq-uc08-repayment.png` |
+| UC-09 Review and correct what was recorded | `pm/issues/uc09-review-and-correct/seq-uc09-review-and-correct.png` |
+| UC-10 See how much of a debt is paid | `pm/issues/uc10-debt-progress/seq-uc10-debt-progress.png` |
+| UC-11 Set a monthly budget amount | `pm/issues/uc11-set-budget/seq-uc11-set-budget.png` |
+| UC-12 See what is left of this month's budget | `pm/issues/uc12-budget-consumption/seq-uc12-budget-consumption.png` |
+| UC-13 Manage categories and subcategories | `pm/issues/uc13-categories/seq-uc13-categories.png` |
+| UC-14 Choose the app currency | `pm/issues/uc14-choose-currency/seq-uc14-choose-currency.png` |
+
+No state diagrams exist: `Budget_Period` was the only entity with a lifecycle, and
+removing FR-16's lock (`ISSUE-004`) collapsed it to a date comparison that gates
+nothing — `docs/statuses.md` records why and lists no status values for any entity.
+
+`context/index/map.yaml` is the authoritative UC/FEAT → diagram/code index if a
+diagram's exact scope needs checking against what shipped.
+
+## Issues
+
+`pm/tracker.yaml` is the authoritative board — every row below links to a `plan.md`
+under `pm/issues/<slug>/` and a longer as-built summary in the tracker itself. All 39
+issues are **DONE**; nothing is in flight. Two families:
+
+**Phase 1 — documentation** (`ISSUE-NNN`, produced the diagrams above):
+
+| ID | Title |
+|---|---|
+| ISSUE-001 | System ERD |
+| ISSUE-002 | Class diagrams (one per module) |
+| ISSUE-003 | Budget_Period state diagram *(superseded by ISSUE-004 same day, left DONE on the record)* |
+| ISSUE-004 | Remove the budget lock; budgets get full CRUD |
+| ISSUE-005 | System component diagram |
+| ISSUE-006 | `docs/enums.md` — canonical enum vocabulary |
+| ISSUE-007 | Currency — one app-level setting, amounts as integer minor units |
+| ISSUE-008 | `sequence-conventions.md` |
+| ISSUE-009 | `context/coding-conventions/` |
+
+**Phase 2 — implementation** (`UC{NN}-{slug}` traces to a workbook use case;
+`FEAT{NN}` is infrastructure or owner-requested polish with no owning use case):
+
+| ID | Title |
+|---|---|
+| FEAT01-foundation | Flutter scaffold, drift on a background isolate, first migration |
+| UC14-choose-currency | Choose the app currency |
+| UC02-add-account | Set up a place money lives |
+| UC02B-edit-account | Rename, edit and delete an account |
+| UC03-adjust-account | Correct what an account holds |
+| UC01-balance-sheet | View financial position |
+| UC10-debt-progress | See how much of a debt is paid |
+| UC13-categories | Manage categories and subcategories |
+| UC04-record-money-movement | Record money movement — all five recording use cases (expense, income, transfer, lend/borrow, repayment) |
+| UC09-review-and-correct | Review and correct what was recorded |
+| UC11-set-budget | Set a monthly budget amount |
+| UC12-budget-consumption | See what is left of this month's budget |
+| FEAT02-navigation-host | Wire every screen into a reachable app shell |
+| FEAT03-settings-and-i18n | Settings hub — language, theme, currency; full Indonesian translation |
+| FEAT04-nav-redesign | Five-tab bottom nav; Record as a colored circular quick action |
+| FEAT05-category-picker | Category/subcategory pickers become autocomplete-with-inline-create |
+| FEAT06-save-ux-and-uniqueness | Close/confirm on save, a recognizable save icon, account-name uniqueness |
+| FEAT07-home-overview-charts | Three charts on Home — balance trend, income vs expense, spending by category |
+| FEAT08-transaction-ux-and-name-block | Green/red transaction rows, Record closes to Home, account names hard-block |
+| FEAT09-visual-identity-and-figures | Per-type color/icon system, redesigned figure cards, descriptions under pickers |
+| FEAT10-help-and-navigation | In-app Help screen, inline hints on Home, app-bar actions reorganized |
+| FEAT11-person-account-type | A fourth account type (Person) that can owe or be owed, plus inline account creation from Lend/Borrow/Repay |
+| FEAT12-accounts-split-and-nav-rename | Rename the Accounts nav tab to Balance/Saldo; split the page into collapsible Akun/Person sections with sums |
+| FEAT13-person-picker-checkbox-redesign | The Orang/Utang checkbox moves outside the dropdown and gates creation entirely |
+| FEAT14-debt-writeoff-and-adjust-entry | "Ikhlaskan" actually writes off the debt, the Record FAB turns primary, and UC-03's adjust flow finally gets an entry point |
+| FEAT15-budget-pie-chart | A donut chart of budget allocation on top of the Budget page |
+| FEAT16-admin-fee-toggle | A manual admin-fee toggle on Transfer/Lend/Borrow/Repay |
+| FEAT17-positive-magnitude-display | Debt figures show as a positive magnitude; net gets a red tint when negative |
+| FEAT18-account-sections-and-sign-coloring | Four collapsible account-type sections with black/green/red coloring |
+| FEAT19-payable-auto-negate | A PAYABLE account's amount is typed positive, stored negative automatically |
+| FEAT20-database-backup-restore-delete | Share a raw SQLite backup, restore from a picked file, and wipe all data |
+
+FEAT02 onward is entirely owner-driven manual-testing feedback (ten rounds), not
+originally scoped work — each row's tracker entry names the exact request that
+triggered it. `pm/log.md` carries the session-by-session narrative; `pm/findings.md`
+carries what's still open by design (not a bug backlog).
+
 ## Current state
 
 *Updated 2026-08-24.*

@@ -79,9 +79,17 @@ this file stays about mechanics that apply regardless of diagram type:
      being re-exported leaves a wrong picture in the repo where a reader will believe it.
      Re-export every time the `.drawio` changes — including the close checklist's as-built pass.
    - **The ERD, the class diagrams and the component diagram** — the render stays beside its
-     source in `docs/diagrams/`, gitignored as before. These are repo-wide references rather
-     than the property of any one issue; filing them under the issue that happened to produce
-     them would bury a document that everything else cites.
+     source in `docs/diagrams/`. These are repo-wide references rather than the property of any
+     one issue; filing them under the issue that happened to produce them would bury a document
+     that everything else cites.
+
+     *Amended 2026-08-25, owner's call — these six ARE now committed* (an explicit `!` exception
+     per file in `.gitignore`, since the blanket `docs/diagrams/*.png` rule still governs debug
+     crops and anything else dropped in this folder), because README's "Diagrams" section embeds
+     them directly. Re-export and re-commit whenever the `.drawio` source changes — `audit.py`'s
+     `renders.lock` staleness check does not yet cover these six (only the sequence renders), so
+     nothing currently catches a stale one automatically; treat "re-export before closing out a
+     diagram edit" as the guard until that gap is closed.
 
    The line is ownership, not diagram type: a sequence diagram belongs to exactly one issue and
    defines its scope, while the other three describe the system as a whole. When exporting a
