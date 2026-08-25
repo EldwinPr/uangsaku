@@ -27,6 +27,32 @@ Color accountGroupColor(BuildContext context, AccountGroup group) {
   };
 }
 
+/// Sign-aware row/header color for `AccountsScreen` only (FEAT18 D3) — a
+/// separate, narrower-scoped function from [accountGroupColor], which stays
+/// unchanged and keeps every other caller (`BalanceSheetScreen`'s figure
+/// cards, `AccountFormScreen`'s group picker description). `HOLDING` is the
+/// theme-neutral "black" the owner asked for (`colorScheme.onSurface`), not
+/// `accountGroupColor`'s `colorScheme.primary`. `RECEIVABLE`/`PAYABLE` reuse
+/// `accountGroupColor`'s existing green/red exactly. `PERSON` has no fixed
+/// color here — it borrows RECEIVABLE's green when [balance] is non-negative
+/// (owed to me) and PAYABLE's red when negative (owed by me), matching
+/// `AccountDao.watchPosition()`'s own sign-based bucketing made visible as
+/// color.
+Color accountRowColor(BuildContext context, AccountGroup group, int balance) {
+  return switch (group) {
+    AccountGroup.HOLDING => Theme.of(context).colorScheme.onSurface,
+    AccountGroup.RECEIVABLE => accountGroupColor(
+      context,
+      AccountGroup.RECEIVABLE,
+    ),
+    AccountGroup.PAYABLE => accountGroupColor(context, AccountGroup.PAYABLE),
+    AccountGroup.PERSON =>
+      balance >= 0
+          ? accountGroupColor(context, AccountGroup.RECEIVABLE)
+          : accountGroupColor(context, AccountGroup.PAYABLE),
+  };
+}
+
 /// One icon per [AccountGroup] (FEAT09 D1) — paired with [accountGroupColor]
 /// everywhere a group is shown, never used alone.
 IconData accountGroupIcon(AccountGroup group) => switch (group) {

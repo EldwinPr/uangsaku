@@ -168,6 +168,64 @@ void main() {
     },
   );
 
+  testWidgets(
+    'FEAT19 D1/D2: a PAYABLE account typed positive is stored negative',
+    (tester) async {
+      await pumpScreen(tester);
+
+      await tester.enterText(find.byType(TextField).at(0), 'Credit card');
+      await tester.tap(find.text('Owed by me'));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField).at(1), '500000');
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      final row = await database.select(database.accounts).getSingle();
+      expect(row.group, AccountGroup.PAYABLE);
+      expect(row.openingAmount, -500000);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT19 D2: a PAYABLE account typed with a leading minus is still stored negative, not double-negated',
+    (tester) async {
+      await pumpScreen(tester);
+
+      await tester.enterText(find.byType(TextField).at(0), 'Credit card');
+      await tester.tap(find.text('Owed by me'));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField).at(1), '-500000');
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      final row = await database.select(database.accounts).getSingle();
+      expect(row.group, AccountGroup.PAYABLE);
+      expect(row.openingAmount, -500000);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT19 D1: a HOLDING or RECEIVABLE account typed positive is stored unchanged',
+    (tester) async {
+      await pumpScreen(tester);
+
+      await tester.enterText(find.byType(TextField).at(0), 'Wallet');
+      await tester.enterText(find.byType(TextField).at(1), '500000');
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      final row = await database.select(database.accounts).getSingle();
+      expect(row.group, AccountGroup.HOLDING);
+      expect(row.openingAmount, 500000);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
   Future<void> pumpAdjustScreen(WidgetTester tester, int accountId) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -250,6 +308,67 @@ void main() {
 
   testWidgets(
     'UC-03: the adjust flow reaches the database — adjustAccount writes one Transactions row targeting the designated account',
+    (tester) async {
+      final accountId = await database
+          .into(database.accounts)
+          .insert(
+            AccountsCompanion.insert(
+              name: 'Wallet',
+              group: AccountGroup.HOLDING,
+              openingAmount: 100000,
+            ),
+          );
+
+      await pumpAdjustScreen(tester, accountId);
+
+      await tester.enterText(find.byType(TextField), '150000');
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      final row = await database.select(database.transactions).getSingle();
+      expect(row.toAccountId, accountId);
+      expect(row.fromAccountId, isNull);
+      expect(row.amount, 50000);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT19 D2: the adjust flow auto-negates the target amount when the account being adjusted is PAYABLE',
+    (tester) async {
+      final accountId = await database
+          .into(database.accounts)
+          .insert(
+            AccountsCompanion.insert(
+              name: 'Credit card',
+              group: AccountGroup.PAYABLE,
+              openingAmount: -100000,
+            ),
+          );
+
+      await pumpAdjustScreen(tester, accountId);
+
+      await tester.enterText(find.byType(TextField), '300000');
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      // adjustAccount's diff is targetAmount - current; current derived
+      // amount is -100000, so a stored targetAmount of -300000 (the typed
+      // 300000 auto-negated by FEAT19) yields a diff of -200000.
+      // insertAdjustment always writes toAccountId (never fromAccountId) —
+      // the signed diff itself, not the account side, carries the direction.
+      final row = await database.select(database.transactions).getSingle();
+      expect(row.toAccountId, accountId);
+      expect(row.fromAccountId, isNull);
+      expect(row.amount, -200000);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
+
+  testWidgets(
+    'FEAT19 D2: the adjust flow leaves the target amount unchanged for a HOLDING/RECEIVABLE/PERSON account',
     (tester) async {
       final accountId = await database
           .into(database.accounts)

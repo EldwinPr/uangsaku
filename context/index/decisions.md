@@ -1260,3 +1260,56 @@ resolution: keep the literal `-`, but recolor the card to `colorScheme.error`
 (with the same light-tint treatment every other colored figure card already uses) so
 a negative net is still visually flagged, the same way every other card on this
 screen already uses color to carry meaning.
+
+## 2026-08-25 — Four account-type sections with sign-aware color, scoped to
+## AccountsScreen only (FEAT18)
+
+**What the owner actually wanted from FEAT17, clarified after seeing it live.** The
+owner's follow-up — *"i need all the account to have their each section,
+holding/saldo, hutang, piutang, and orang... saldo black, piutang green, hutang red,
+orang depends is it - or +. that was what i wanted for feat 17 with added color"* —
+widens FEAT12's two-section split (all non-`PERSON` groups merged into one "Akun"
+section, plus a `PERSON` section) into four, one per `AccountGroup`, and layers color
+on top of FEAT17's magnitude convention.
+
+**A new, narrower function, not a change to `accountGroupColor()`.** Checked directly
+via `AskUserQuestion` rather than assumed: the owner wants this coloring on the
+account list only, not a re-theme of `BalanceSheetScreen`'s figure cards or
+`AccountFormScreen`'s group picker (both of which keep `HOLDING` as
+`colorScheme.primary`, unchanged). `accountRowColor()` is a second, purpose-built
+function in `group_style.dart`, reusing `accountGroupColor()`'s existing green/red for
+`RECEIVABLE`/`PAYABLE` internally but diverging for `HOLDING` (neutral
+`colorScheme.onSurface`, the owner's literal "black") and `PERSON` (sign-dependent,
+borrowing green/red from `RECEIVABLE`/`PAYABLE` rather than `PERSON`'s own usual
+`colorScheme.tertiary`).
+
+**`PERSON`'s color makes FEAT11's sign-based bucketing visible, not just felt.**
+`AccountDao.watchPosition()` already decides whether a `PERSON` account counts toward
+`owedToMe` or `owedByMe` by the sign of its balance (FEAT11 D2); this issue is the
+first time that same sign check drives anything the owner can literally see on the
+account itself, rather than only which aggregate figure it silently contributes to.
+
+## 2026-08-25 — A `PAYABLE` amount is typed positive, stored negative — UC02 D6
+## reversed for `PAYABLE` only (FEAT19)
+
+**A deliberate, cited reversal, not an oversight.** UC02 plan D6 (2026-08-22) was an
+explicit original ruling: *"the app applies no group-based negation"* — a `PAYABLE`
+account held a negative amount only because the owner typed a negative amount, cited
+against FR-4's *"it just holds a negative amount"* and the sequence diagram showing no
+transformation message between the form and `insert(account)`. This issue is the
+owner revisiting that choice after living with it day to day: *"utang input must not
+be -, automatically -."* The reversal is scoped to `PAYABLE` alone —
+`HOLDING`/`RECEIVABLE`/`PERSON` keep accepting a signed number exactly as D6 originally
+described, since none of them has a single fixed direction the way `PAYABLE` does
+(`HOLDING` can be legitimately negative/overdrawn; `PERSON` genuinely needs both
+signs, FEAT11 D2).
+
+**Applies wherever a `PAYABLE` balance is typed as an absolute amount, not just at
+creation.** Confirmed via `AskUserQuestion`: both `AccountFormScreen`'s opening-amount
+field (create) and its target-amount field (the UC-03 adjust flow) auto-negate when
+the account in question is `PAYABLE` — the adjust flow has to look the stored group
+up (it never shows a group picker itself) rather than trust anything typed on that
+screen, matching how it already looks up the account's current balance for display.
+`.abs()` runs before the negation specifically so a stray leading `-` (old habit)
+doesn't flip the result back positive — the field's behavior is now sign-independent
+input, always-negative output, for `PAYABLE` alone.

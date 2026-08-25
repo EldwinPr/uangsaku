@@ -591,6 +591,42 @@ code:
       - app/test/accounts/accounts_screen_test.dart
       - app/test/accounts/balance_sheet_screen_test.dart
 
+  # FEAT18-account-sections-and-sign-coloring, DONE 2026-08-25. No UC - infrastructure.
+  # Ninth round of the owner's manual-testing feedback, explicitly framed as what was
+  # actually wanted from FEAT17. AccountsScreen's two sections (Akun, Person) widen to
+  # four - Holding, Receivable, Payable, Person, one per AccountGroup, always rendered
+  # even empty, headers reusing the existing accountGroupLabel* ARB keys (Dompet/
+  # Piutang/Utang/Orang - no new keys). New accountRowColor() in group_style.dart
+  # (plain function, not tracked): Holding neutral colorScheme.onSurface, Receivable/
+  # Payable reuse accountGroupColor's existing green/red, Person is sign-dependent
+  # (green if balance >= 0, red if negative) - applied to both each row's balance
+  # text and its section header's sum, scoped to AccountsScreen only.
+  # accountGroupColor() itself and every other call site untouched. Layers on top of
+  # FEAT17's ABS() convention unchanged. 249 tests green (was 239). No schema change.
+  FEAT18:
+    style_helper_added: app/lib/src/accounts/group_style.dart   # accountRowColor()
+    screen_changed: app/lib/src/accounts/accounts_screen.dart   # four sections, sign-colored rows/headers
+    tests:
+      - app/test/accounts/accounts_screen_test.dart
+      - app/test/app_shell_test.dart
+
+  # FEAT19-payable-auto-negate, DONE 2026-08-25. No UC - infrastructure. Ninth round
+  # of the owner's manual-testing feedback: "utang input must not be -, automatically
+  # -." Reverses UC02 plan D6's original "no group-dependent sign transformation"
+  # ruling, scoped to PAYABLE only - HOLDING/RECEIVABLE/PERSON keep accepting a
+  # signed number exactly as before. AccountFormScreen's opening-amount field
+  # (create flow) and target-amount field (adjust flow, UC-03) each independently
+  # negate a typed positive magnitude (-rawAmount.abs(), guarding against
+  # double-negation) only when the account's group is PAYABLE; the adjust flow reads
+  # the account's stored group off the already-watched accountBalancesProvider list.
+  # AccountDao.insertAdjustment()/AccountsNotifier.addAccount/adjustAccount
+  # untouched - still receive a plain signed int, only what the screen computes
+  # before calling them changed. No UI/keyboard/ARB change. No schema change.
+  FEAT19:
+    screen_changed: app/lib/src/accounts/account_form_screen.dart   # PAYABLE amount auto-negation
+    tests:
+      - app/test/accounts/account_form_screen_test.dart
+
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
 # each other in BOTH directions (balances need Transactions; the record screen needs

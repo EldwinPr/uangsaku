@@ -937,3 +937,54 @@ issues:
       233). No DAO/provider/schema change - presentation only, no class-diagram edit
       needed. See decisions.md 2026-08-24.
 
+  - id: FEAT18-account-sections-and-sign-coloring
+    slug: account-sections-and-sign-coloring
+    title: Four collapsible account-type sections with black/green/red coloring
+    status: DONE
+    plan: pm/issues/feat18-account-sections-and-sign-coloring/plan.md
+    depends_on: [FEAT12-accounts-split-and-nav-rename, FEAT17-positive-magnitude-display]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-25. No UC owns this - infrastructure. Ninth round of the
+      owner's manual-testing feedback, explicitly framed as what was actually wanted
+      from FEAT17: "i need all the account to have their each section, holding/saldo,
+      hutang, piutang, and orang. each collapsable... saldo black, piutang green,
+      hutang red, orang depends is it - or +." AccountsScreen's two sections
+      (Akun, Person) split into four (Holding, Receivable, Payable, Person), each
+      always-rendered and collapsible, headers reusing the existing group labels
+      (Dompet/Piutang/Utang/Orang - no new ARB keys). New accountRowColor() helper in
+      group_style.dart (plain function, not a tracked class): Holding neutral
+      (colorScheme.onSurface), Receivable/Payable reuse accountGroupColor's existing
+      green/red, Person is sign-dependent (green if balance >= 0, red if negative) -
+      applied to both each row's balance text and its section header's sum, scoped to
+      AccountsScreen only (accountGroupColor() itself and its other call sites are
+      untouched, confirmed via AskUserQuestion). Layers on top of FEAT17's ABS()
+      convention unchanged - color communicates direction, the number stays a
+      magnitude. No DAO/provider/schema change, no class-diagram edit needed.
+      249 tests green (was 239, merged-tree verified alongside FEAT19). See
+      decisions.md 2026-08-25.
+
+  - id: FEAT19-payable-auto-negate
+    slug: payable-auto-negate
+    title: A PAYABLE account's amount is typed positive, stored negative automatically
+    status: DONE
+    plan: pm/issues/feat19-payable-auto-negate/plan.md
+    depends_on: [UC02-add-account, UC03-adjust-account]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-25. No UC owns this - infrastructure. Ninth round of the
+      owner's manual-testing feedback: "utang input must not be -, automatically -."
+      Reverses UC02 plan D6's original "no group-dependent sign transformation"
+      ruling, scoped to PAYABLE only - HOLDING/RECEIVABLE/PERSON keep accepting a
+      signed number exactly as today. Applies to both AccountFormScreen's
+      opening-amount field (create flow) and its target-amount field (adjust flow,
+      UC-03) - each independently negates a typed positive magnitude
+      (-rawOpening.abs(), guarding against double-negation if a leading "-" is still
+      typed) only when the account's group is PAYABLE; the adjust flow reads the
+      account's stored group off the already-watched accountBalancesProvider list.
+      AccountDao.insertAdjustment()/AccountsNotifier.addAccount/adjustAccount are
+      untouched - still receive a plain signed int, only what the screen computes
+      before calling them changes. No UI/keyboard/ARB change. No schema change.
+      249 tests green (was 239, merged-tree verified alongside FEAT18). See
+      decisions.md 2026-08-25.
+

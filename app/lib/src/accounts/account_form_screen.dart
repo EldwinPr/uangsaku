@@ -148,7 +148,22 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     // D7 / F7: an empty or unparseable amount proceeds as 0 rather than
     // refusing — the same shape UC-11's screen ships.
     if (_isAdjustFlow) {
-      final targetAmount = int.tryParse(_targetAmountController.text) ?? 0;
+      final rawTarget = int.tryParse(_targetAmountController.text) ?? 0;
+      // FEAT19 D2: the target amount is only auto-negated when the account
+      // being adjusted is stored as PAYABLE — this flow never picks a group
+      // itself, so the stored one is looked up the same way
+      // _buildAdjustFlow's currentAmount already is.
+      final rows = ref.read(accountBalancesProvider).value ?? const [];
+      AccountGroup? adjustedGroup;
+      for (final row in rows) {
+        if (row.account.accountId == widget.accountId) {
+          adjustedGroup = row.account.group;
+          break;
+        }
+      }
+      final targetAmount = adjustedGroup == AccountGroup.PAYABLE
+          ? -rawTarget.abs()
+          : rawTarget;
       unawaited(
         ref
             .read(accountsProvider.notifier)
@@ -186,7 +201,15 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
       }
       return;
     }
-    final openingAmount = int.tryParse(_openingAmountController.text) ?? 0;
+    final rawOpening = int.tryParse(_openingAmountController.text) ?? 0;
+    // FEAT19 D1/D2: PAYABLE's opening amount is typed as a positive
+    // magnitude and auto-negated here; every other group keeps accepting a
+    // signed number exactly as before (UC02 plan D6, unreversed for them).
+    // `.abs()` first guards against double-negation if the owner still
+    // types a leading `-` out of habit — the result is always negative.
+    final openingAmount = _group == AccountGroup.PAYABLE
+        ? -rawOpening.abs()
+        : rawOpening;
     final name = _nameController.text;
     // FEAT08 D3: same hard block on create.
     if (_nameCollides(name)) {

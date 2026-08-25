@@ -10,6 +10,7 @@ import 'account_form_screen.dart';
 import 'accounts_providers.dart';
 import 'accounts_table.dart';
 import 'debt_detail_screen.dart';
+import 'group_style.dart';
 import 'money_format.dart';
 
 /// `AccountsScreen` — split out of `BalanceSheetScreen` by FEAT04 D1: the
@@ -75,9 +76,9 @@ class AccountsScreen extends ConsumerWidget {
     );
   }
 
-  /// Two collapsible sections — every non-`PERSON` account, then every
-  /// `PERSON` account — each its own sum next to the header (owner
-  /// feedback, 2026-08-24). Both always render, even empty, the same
+  /// Four collapsible sections, one per [AccountGroup] in declaration order
+  /// (FEAT18 D1, widening FEAT12's two-section split) — each its own sum
+  /// next to the header. All four always render, even empty, the same
   /// "show zero rather than hide the section" shape every other screen in
   /// this app already uses.
   List<Widget> _sections(
@@ -86,30 +87,58 @@ class AccountsScreen extends ConsumerWidget {
     List<AccountBalance> balances,
     Currency currency,
   ) {
-    final accounts = [
+    List<AccountBalance> byGroup(AccountGroup group) => [
       for (final entry in balances)
-        if (entry.account.group != AccountGroup.PERSON) entry,
+        if (entry.account.group == group) entry,
     ];
-    final people = [
-      for (final entry in balances)
-        if (entry.account.group == AccountGroup.PERSON) entry,
-    ];
-    final accountsSum = accounts.fold(0, (sum, entry) => sum + entry.balance);
-    final peopleSum = people.fold(0, (sum, entry) => sum + entry.balance);
+    int sumOf(List<AccountBalance> entries) =>
+        entries.fold(0, (sum, entry) => sum + entry.balance);
+
+    final holding = byGroup(AccountGroup.HOLDING);
+    final receivable = byGroup(AccountGroup.RECEIVABLE);
+    final payable = byGroup(AccountGroup.PAYABLE);
+    final person = byGroup(AccountGroup.PERSON);
+
+    final holdingSum = sumOf(holding);
+    final receivableSum = sumOf(receivable);
+    final payableSum = sumOf(payable);
+    final personSum = sumOf(person);
 
     return [
       _AccountSection(
-        key: const ValueKey('accounts-section'),
-        title: loc.accountsSectionTitle,
-        sumText: formatMinorUnits(context, accountsSum, currency),
-        rows: _accountRows(context, loc, accounts, currency),
+        key: const ValueKey('holding-section'),
+        title: loc.accountGroupLabelHolding,
+        sumText: formatMinorUnits(context, holdingSum, currency),
+        sumColor: accountRowColor(context, AccountGroup.HOLDING, holdingSum),
+        rows: _accountRows(context, loc, holding, currency),
+      ),
+      const SizedBox(height: 8),
+      _AccountSection(
+        key: const ValueKey('receivable-section'),
+        title: loc.accountGroupLabelReceivable,
+        sumText: formatMinorUnits(context, receivableSum, currency),
+        sumColor: accountRowColor(
+          context,
+          AccountGroup.RECEIVABLE,
+          receivableSum,
+        ),
+        rows: _accountRows(context, loc, receivable, currency),
+      ),
+      const SizedBox(height: 8),
+      _AccountSection(
+        key: const ValueKey('payable-section'),
+        title: loc.accountGroupLabelPayable,
+        sumText: formatMinorUnits(context, payableSum, currency),
+        sumColor: accountRowColor(context, AccountGroup.PAYABLE, payableSum),
+        rows: _accountRows(context, loc, payable, currency),
       ),
       const SizedBox(height: 8),
       _AccountSection(
         key: const ValueKey('person-section'),
         title: loc.accountGroupLabelPerson,
-        sumText: formatMinorUnits(context, peopleSum, currency),
-        rows: _accountRows(context, loc, people, currency),
+        sumText: formatMinorUnits(context, personSum, currency),
+        sumColor: accountRowColor(context, AccountGroup.PERSON, personSum),
+        rows: _accountRows(context, loc, person, currency),
       ),
     ];
   }
@@ -154,6 +183,13 @@ class AccountsScreen extends ConsumerWidget {
                       : entry.balance.abs(),
                   currency,
                 ),
+                style: TextStyle(
+                  color: accountRowColor(
+                    context,
+                    entry.account.group,
+                    entry.balance,
+                  ),
+                ),
               ),
               if (entry.account.group == AccountGroup.RECEIVABLE ||
                   entry.account.group == AccountGroup.PAYABLE ||
@@ -182,11 +218,13 @@ class _AccountSection extends StatelessWidget {
     super.key,
     required this.title,
     required this.sumText,
+    required this.sumColor,
     required this.rows,
   });
 
   final String title;
   final String sumText;
+  final Color sumColor;
   final List<Widget> rows;
 
   @override
@@ -203,7 +241,11 @@ class _AccountSection extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
-            Text(sumText, style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              sumText,
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(color: sumColor),
+            ),
           ],
         ),
         children: rows,

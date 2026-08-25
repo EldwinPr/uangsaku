@@ -14,8 +14,8 @@ before starting work.
 
 ## Current state — 2026-08-24
 
-**Phase.** **The planned backlog and all EIGHT of the owner's manual-testing feedback
-rounds are DONE.** The app compiles and its test suite is green (**239 tests**). Ten
+**Phase.** **The planned backlog and all NINE of the owner's manual-testing feedback
+rounds are DONE.** The app compiles and its test suite is green (**249 tests**). Ten
 screens/tabs built end to end — every one of them now reachable, including UC-03's
 adjust mode, which FEAT14 gave its first navigation entry point (an "Adjust balance"
 button on `AccountFormScreen`'s edit flow). `home` is `AppShell`: a five-tab bottom nav (Home, Accounts, Record as a colored
@@ -47,13 +47,18 @@ linked `expense` row tagged with a literal "Admin Fee" category rather than a fi
 subtracted from the main transaction (FEAT16); debt-type balances (the account list,
 the "I owe" figure) always read as a positive magnitude, matching `DebtDetailScreen`'s
 long-standing convention, while `net` keeps its real sign but turns red when negative
-(FEAT17).
+(FEAT17); the Accounts tab splits into four always-visible, collapsible sections —
+Holding/Receivable/Payable/Person — each colored (Holding neutral, Receivable green,
+Payable red, Person following its own balance's sign), and a `PAYABLE` account's
+amount is typed as a plain positive number and silently stored negative, no minus key
+needed (FEAT18/FEAT19).
 
 **Active issue.** None. Nothing is queued. `FEAT03` through `FEAT06` (round one),
 `FEAT07`/`FEAT08` (round two), `FEAT09`/`FEAT10` (round three), `FEAT11` (round four),
 `FEAT12` (a same-day follow-up), `FEAT13`/`FEAT14`/`FEAT15` (rounds five and six),
-`FEAT16` (round seven), and `FEAT17` (round eight) — sixteen feedback issues total —
-all closed the same day, 2026-08-24, alongside
+`FEAT16` (round seven), `FEAT17` (round eight), and `FEAT18`/`FEAT19` (round nine) —
+eighteen feedback issues total — all closed the same day, 2026-08-24 through
+2026-08-25, alongside
 the third schema change (`FEAT03`'s `Settings.locale`/`themeMode`/`seedColor`; every
 issue after that added no schema, including `FEAT11`'s new enum value — confirmed no
 migration was needed since `Accounts.group` carries no `CHECK` constraint). Both
@@ -1781,6 +1786,77 @@ Reviewed the returned diff line by line against the plan (matched exactly — th
 app/drift_schemas/` empty — no schema change. `python audit.py` — 14 passed / 0
 warnings / 0 failures both before dispatch and after the plan/tracker status flip to
 DONE.
+
+**[TODO]** The same two small items flagged earlier remain open, pending the owner:
+(1) `RecordTransactionScreen`'s kind switch not clearing a typed-but-uncreated person
+name; (2) the leftover "Rina" test account in real app data.
+
+---
+
+## 2026-08-25 — FEAT18/FEAT19: ninth feedback round — four colored account
+## sections; auto-negated PAYABLE amounts
+
+**[DECISION]** Owner's follow-up after seeing FEAT17 live, explicitly framed as what
+was originally wanted: *"i need all the account to have their each section,
+holding/saldo, hutang, piutang, and orang. each collapsable, 2. utang input must not
+be -, automatically -. 3. saldo black, piutang green, hutang red, orang depends is it
+- or +. that was what i wanted for feat 17 with added color."* Split into two issues
+by file locality — FEAT18 (`accounts_screen.dart`/`group_style.dart`, the
+sections-and-color request, items 1 and 3) and FEAT19 (`account_form_screen.dart`, the
+auto-negate request, item 2) — dispatched to two `flutter-coder` agents in parallel.
+One `AskUserQuestion` round settled three ambiguities before writing either plan:
+auto-negate applies to both the opening-amount and adjust-target fields (not just
+creation); the four section headers reuse the existing `accountGroupLabel*` ARB
+strings rather than new wording; the new coloring is scoped to `AccountsScreen` only,
+leaving `accountGroupColor()`'s other call sites (Home's figure cards, the
+account-type picker) untouched.
+
+**[STATUS] FEAT18.** `AccountsScreen`'s two sections (Akun, Person) widen to four —
+Holding, Receivable, Payable, Person — every one always rendered, even empty, headers
+now `accountGroupLabelHolding`/`Receivable`/`Payable`/`Person` ("Dompet"/"Piutang"/
+"Utang"/"Orang") instead of the old merged "Akun" title. New `accountRowColor()` in
+`group_style.dart` — a second, narrower function, not a change to the existing
+`accountGroupColor()` — colors both each row's balance text and its section header's
+sum: `HOLDING` neutral (`colorScheme.onSurface`, the owner's literal "black"),
+`RECEIVABLE`/`PAYABLE` reuse `accountGroupColor`'s already-shipped green/red exactly,
+`PERSON` is sign-dependent (green when its balance is non-negative, red when
+negative) — the first time FEAT11's sign-based owed-to-me/owed-by-me bucketing is
+made visible as color on the account itself, not just felt through which
+`BalanceSheetScreen` figure it silently contributes to. Layers on top of FEAT17's
+`ABS()` convention unchanged — color carries direction now, the number stays a plain
+magnitude.
+
+**[STATUS] FEAT19.** Reverses UC02 plan D6's original 2026-08-22 ruling ("the app
+applies no group-based negation") — but only for `PAYABLE`. `AccountFormScreen`'s
+opening-amount field (create) and target-amount field (the UC-03 adjust flow) both
+now compute `-raw.abs()` instead of the raw typed value whenever the account's group
+is `PAYABLE`; the adjust flow has to look the stored group up off
+`accountBalancesProvider` first, since that screen never shows a group picker of its
+own. `.abs()` runs before negating specifically so an old-habit leading `-` doesn't
+flip the result back positive. `HOLDING`/`RECEIVABLE`/`PERSON` are completely
+unaffected — still signed input exactly as before. Neither `AccountDao` nor
+`AccountsNotifier` changed shape; only what the screen computes before calling them
+did.
+
+**[DISCOVERY]** FEAT18's coder caught a real, pre-existing test fragility while
+building the four-section split: the English ARB value for
+`accountGroupLabelHolding` is literally `"Wallet"`, and several already-shipped tests
+across this codebase seed a `HOLDING` account also named `'Wallet'` — harmless before
+this issue (the merged section was titled "Accounts"), newly ambiguous once `HOLDING`
+gets its own section literally titled "Wallet" (`find.text('Wallet')` then matches
+both the row and the section header). Fixed by renaming the seeded test accounts
+(`'Cash'`/`'Bank'`), not the ARB string or the widget — a one-line, well-explained fix
+in the two affected test files, not a scope change.
+
+**[STATUS]** Reviewed both returned diffs line by line against their plans (both
+matched exactly), then re-verified the **merged** tree personally rather than
+trusting either agent's isolated report — same discipline as the FEAT13/14/15 round:
+`dart run build_runner build --delete-conflicting-outputs` clean, `dart format
+--set-exit-if-changed .` — 0 changed, `flutter analyze` — No issues found!, full
+`flutter test` — **249 tests green** (was 239). `git diff --stat
+app/drift_schemas/` empty — no schema change across either issue. `python audit.py`
+— 14 passed / 0 warnings / 0 failures both before dispatch and after the plan/tracker
+status flips to DONE.
 
 **[TODO]** The same two small items flagged earlier remain open, pending the owner:
 (1) `RecordTransactionScreen`'s kind switch not clearing a typed-but-uncreated person

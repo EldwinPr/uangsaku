@@ -220,8 +220,13 @@ void main() {
   testWidgets(
     'tapping an account row on AccountsScreen reaches AccountFormScreen in edit mode with the right accountId',
     (tester) async {
+      // Named 'Cash', not 'Wallet' — since FEAT18 D2 the HOLDING section
+      // header on AccountsScreen is itself labeled "Wallet"
+      // (`accountGroupLabelHolding`, en), so an account literally named
+      // "Wallet" would make `find.text('Wallet')` ambiguous between the
+      // row and the section header.
       final accountId = await insertAccount(
-        'Wallet',
+        'Cash',
         AccountGroup.HOLDING,
         100000,
       );
@@ -231,7 +236,7 @@ void main() {
       await tester.tap(find.text('Balance'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Wallet'));
+      await tester.tap(find.text('Cash'));
       await tester.pumpAndSettle();
 
       final screen = tester.widget<AccountFormScreen>(
