@@ -222,10 +222,10 @@ Generalised from the owner's ruling above, and stated here because it settles a
 whole class of future questions the same way. The app records what it is told
 and helps the owner see the consequences; it does not block, nag, or enforce.
 *(Owner, 2026-08-20: "from now on it's user responsibility no more guardrails or
-whatever".)* **There is exactly one exception**, added 2026-08-24 and named below;
-every other refusal remains forbidden.
+whatever".)* **There are exactly three exceptions**, added 2026-08-24 and 2026-08-25
+and named below; every other refusal remains forbidden.
 
-*Fit criterion:* **no user action in the app is refused, except the one named
+*Fit criterion:* **no user action in the app is refused, except the ones named
 here.** Every other action succeeds, with a warning at most. Any refusal appearing
 anywhere else is a violation of this NFR until it is argued and added here, which
 is the point: the count is the test, so a block cannot be added quietly.
@@ -235,7 +235,7 @@ is refused" and named the FR-16 budget lock as that one. Removing the lock took 
 count from one to zero, which made the test strictly sharper — there was no longer a
 sanctioned exception for a new refusal to be argued as similar to.
 
-**The one counted exception (FEAT08 D3/D4, 2026-08-24): `AccountFormScreen`'s
+**The first counted exception (FEAT08 D3/D4, 2026-08-24): `AccountFormScreen`'s
 create and edit saves hard-block on a case-insensitive account-name collision.**
 No write fires and the screen does not close; the owner was asked directly
 whether a duplicate account name should warn-and-proceed or hard-block, and
@@ -244,6 +244,18 @@ once "the one" sanctioned exception before it was removed — the count goes bac
 to one, for this single field only. Every other screen's zero-refusals discipline
 (delete, save-with-empty-fields, same-account transfer, every other field's
 uniqueness, etc.) is untouched.
+
+**The second and third counted exceptions (FEAT20 D5, 2026-08-25): `SettingsScreen`'s
+Data section — restoring a backup and deleting all data — each show a genuine
+Continue/Cancel confirm dialog, and Cancel really aborts.** Owner, asked directly via
+`AskUserQuestion`: "Yes, a real confirm dialog for both." Unlike every other write in
+this app (soft-deletes, editable rows, a settle button that can be re-triggered), both
+operations are irreversible and destroy real, already-recorded data with no undo —
+categorically different from the account-name collision above, which blocks a save
+that can simply be retried with a different name. `Backup` gets no dialog: sharing a
+copy touches nothing already stored, so NFR-4's default applies to it exactly as it
+does everywhere else. `AccountFormScreen`'s name-collision block is untouched by this
+addition, and every other screen's zero-refusals discipline stays exactly as before.
 
 ---
 

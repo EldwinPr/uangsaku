@@ -932,6 +932,90 @@ abstract class AppLocalizations {
   /// **'OK'**
   String get okButton;
 
+  /// No description provided for @cancelButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelButton;
+
+  /// No description provided for @dataSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get dataSectionTitle;
+
+  /// No description provided for @backupButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup'**
+  String get backupButton;
+
+  /// No description provided for @restoreButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get restoreButton;
+
+  /// No description provided for @deleteAllDataButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all data'**
+  String get deleteAllDataButton;
+
+  /// No description provided for @restoreConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore this backup?'**
+  String get restoreConfirmTitle;
+
+  /// No description provided for @restoreConfirmContent.
+  ///
+  /// In en, this message translates to:
+  /// **'This replaces everything currently recorded with what\'s in the chosen file. This cannot be undone.'**
+  String get restoreConfirmContent;
+
+  /// No description provided for @deleteAllConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all data?'**
+  String get deleteAllConfirmTitle;
+
+  /// No description provided for @deleteAllConfirmContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Every account, transaction, budget and category will be removed. This cannot be undone.'**
+  String get deleteAllConfirmContent;
+
+  /// No description provided for @invalidBackupFileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not a backup file'**
+  String get invalidBackupFileTitle;
+
+  /// No description provided for @invalidBackupFileContent.
+  ///
+  /// In en, this message translates to:
+  /// **'The chosen file doesn\'t look like a uangsaku backup. Pick a different file.'**
+  String get invalidBackupFileContent;
+
+  /// No description provided for @backupSharedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup shared'**
+  String get backupSharedMessage;
+
+  /// No description provided for @restoreCompleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Data restored'**
+  String get restoreCompleteMessage;
+
+  /// No description provided for @deleteAllCompleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'All data deleted'**
+  String get deleteAllCompleteMessage;
+
   /// No description provided for @budgetAllocationChartTitle.
   ///
   /// In en, this message translates to:

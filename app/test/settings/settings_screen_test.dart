@@ -1,13 +1,51 @@
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uangsaku/l10n/app_localizations.dart';
 import 'package:uangsaku/src/accounts/accounts_table.dart';
 import 'package:uangsaku/src/database/app_database.dart';
+import 'package:uangsaku/src/settings/settings_providers.dart';
 import 'package:uangsaku/src/settings/settings_screen.dart';
 import 'package:uangsaku/src/settings/settings_table.dart';
+
+/// FEAT20 D6/DoD: a test double that skips real close/copy/delete file I/O
+/// — the Data section's widget tests are about *which dialog shows and
+/// which method gets called*, not about `DatabaseMaintenanceNotifier`'s own
+/// file behavior (already covered by `database_maintenance_notifier_test.dart`).
+class _RecordingDatabaseMaintenanceNotifier
+    extends DatabaseMaintenanceNotifier {
+  _RecordingDatabaseMaintenanceNotifier({this.pickResult});
+
+  File? pickResult;
+  bool backupCalled = false;
+  bool restoreCalled = false;
+  File? restoredFile;
+  bool deleteAllCalled = false;
+
+  @override
+  Future<void> backup() async {
+    backupCalled = true;
+  }
+
+  @override
+  Future<File?> pickRestoreCandidate() async => pickResult;
+
+  @override
+  Future<void> restore(File source) async {
+    restoreCalled = true;
+    restoredFile = source;
+  }
+
+  @override
+  Future<void> deleteAll() async {
+    deleteAllCalled = true;
+  }
+}
 
 /// FEAT03's screen test: `SettingsScreen` (was `CurrencyScreen`, D3) folds
 /// currency, language, theme mode and theme color into one hub. The
@@ -22,10 +60,16 @@ void main() {
 
   tearDown(() => database.close());
 
-  Future<void> pumpScreen(WidgetTester tester) async {
+  Future<void> pumpScreen(
+    WidgetTester tester, {
+    List<Override> extraOverrides = const [],
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [appDatabaseProvider.overrideWithValue(database)],
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+          ...extraOverrides,
+        ],
         child: const MaterialApp(
           localizationsDelegates: [
             AppLocalizations.delegate,
@@ -238,4 +282,169 @@ void main() {
       await unmountAndFlushTimers(tester);
     },
   );
+
+  group('FEAT20 D6: the Data section', () {
+    late Directory tempDir;
+
+    setUp(() {
+      tempDir = Directory.systemTemp.createTempSync('feat20-screen-test');
+    });
+
+    tearDown(() {
+      if (tempDir.existsSync()) {
+        tempDir.deleteSync(recursive: true);
+      }
+    });
+
+    testWidgets('all three buttons render', (tester) async {
+      final notifier = _RecordingDatabaseMaintenanceNotifier();
+      await pumpScreen(
+        tester,
+        extraOverrides: [
+          databaseMaintenanceProvider.overrideWith(() => notifier),
+        ],
+      );
+
+      expect(find.widgetWithText(OutlinedButton, 'Backup'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Restore'), findsOneWidget);
+      expect(
+        find.widgetWithText(OutlinedButton, 'Delete all data'),
+        findsOneWidget,
+      );
+
+      await unmountAndFlushTimers(tester);
+    });
+
+    testWidgets(
+      'an invalid (non-SQLite-header) picked file shows the acknowledge dialog and never calls restore',
+      (tester) async {
+        // Sync `dart:io` write (`testing.md`: real, OS-callback-driven
+        // asynchronous I/O never resolves under `testWidgets`'s FakeAsync
+        // zone; a synchronous call has no such dependency).
+        final badFile = File('${tempDir.path}/not-a-backup.sqlite')
+          ..writeAsStringSync('not a sqlite file at all');
+        final notifier = _RecordingDatabaseMaintenanceNotifier(
+          pickResult: badFile,
+        );
+        await pumpScreen(
+          tester,
+          extraOverrides: [
+            databaseMaintenanceProvider.overrideWith(() => notifier),
+          ],
+        );
+
+        await tester.tap(find.widgetWithText(OutlinedButton, 'Restore'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(find.text('Not a backup file'), findsOneWidget);
+        await tester.tap(find.text('OK'));
+        await tester.pumpAndSettle();
+
+        expect(notifier.restoreCalled, isFalse);
+
+        await unmountAndFlushTimers(tester);
+      },
+    );
+
+    testWidgets(
+      'a valid picked file shows the Continue/Cancel dialog; Cancel calls neither restore nor changes anything',
+      (tester) async {
+        final goodFile = File('${tempDir.path}/backup.sqlite')
+          ..writeAsBytesSync([
+            ...'SQLite format 3\x00'.codeUnits,
+            ...List.filled(80, 0),
+          ]);
+        final notifier = _RecordingDatabaseMaintenanceNotifier(
+          pickResult: goodFile,
+        );
+        await pumpScreen(
+          tester,
+          extraOverrides: [
+            databaseMaintenanceProvider.overrideWith(() => notifier),
+          ],
+        );
+
+        await tester.tap(find.widgetWithText(OutlinedButton, 'Restore'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(find.text('Restore this backup?'), findsOneWidget);
+
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+
+        expect(notifier.restoreCalled, isFalse);
+
+        await unmountAndFlushTimers(tester);
+      },
+    );
+
+    testWidgets('a valid picked file, Continue calls restore', (tester) async {
+      final goodFile = File('${tempDir.path}/backup.sqlite')
+        ..writeAsBytesSync([
+          ...'SQLite format 3\x00'.codeUnits,
+          ...List.filled(80, 0),
+        ]);
+      final notifier = _RecordingDatabaseMaintenanceNotifier(
+        pickResult: goodFile,
+      );
+      await pumpScreen(
+        tester,
+        extraOverrides: [
+          databaseMaintenanceProvider.overrideWith(() => notifier),
+        ],
+      );
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Restore'));
+      await tester.pumpAndSettle();
+
+      // The confirm dialog's affirmative button repeats the action name.
+      await tester.tap(find.widgetWithText(TextButton, 'Restore'));
+      await tester.pumpAndSettle();
+
+      expect(notifier.restoreCalled, isTrue);
+      expect(notifier.restoredFile?.path, goodFile.path);
+      expect(find.text('Data restored'), findsOneWidget);
+
+      await unmountAndFlushTimers(tester);
+    });
+
+    testWidgets(
+      'Delete shows its own Continue/Cancel dialog; Cancel calls nothing, Continue calls deleteAll',
+      (tester) async {
+        final notifier = _RecordingDatabaseMaintenanceNotifier();
+        await pumpScreen(
+          tester,
+          extraOverrides: [
+            databaseMaintenanceProvider.overrideWith(() => notifier),
+          ],
+        );
+
+        await tester.tap(
+          find.widgetWithText(OutlinedButton, 'Delete all data'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(find.text('Delete all data?'), findsOneWidget);
+
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+        expect(notifier.deleteAllCalled, isFalse);
+
+        await tester.tap(
+          find.widgetWithText(OutlinedButton, 'Delete all data'),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(TextButton, 'Delete all data'));
+        await tester.pumpAndSettle();
+
+        expect(notifier.deleteAllCalled, isTrue);
+        expect(find.text('All data deleted'), findsOneWidget);
+
+        await unmountAndFlushTimers(tester);
+      },
+    );
+  });
 }

@@ -1313,3 +1313,93 @@ screen, matching how it already looks up the account's current balance for displ
 `.abs()` runs before the negation specifically so a stray leading `-` (old habit)
 doesn't flip the result back positive — the field's behavior is now sign-independent
 input, always-negative output, for `PAYABLE` alone.
+
+## 2026-08-25 — Backup, restore and delete-all; restore/delete confirm dialogs are
+## the second and third counted NFR-4 exceptions (FEAT20)
+
+**`DatabaseMaintenanceNotifier`/`databaseMaintenanceProvider`, a new `settings`
+module class alongside `SettingsNotifier`**, plus a new injected `BackupFileSystem`
+(`settings/backup_file_system.dart`) wrapping the three plugin-dependent calls this
+issue needs — `getApplicationDocumentsDirectory()`, `Share`/`SharePlus`, and
+`FilePicker` — mirroring `Clock`'s established DI shape (`budgeting/clock.dart`):
+`flutter test` throws `MissingPluginException` on a real platform-channel call, the
+same testability problem `Clock` solved for `DateTime.now()`. Plain `dart:io` `File`
+copy/delete/exists calls stay direct in the notifier rather than also wrapped.
+
+**No stored balance, no schema change — this issue only changes *when* `AppDatabase`
+opens, never what it declares.** Backup closes the live database, hands its file
+(`<application documents dir>/app_database.sqlite`, the same path `drift_flutter`'s
+`driftDatabase(name: 'app_database')` already resolves internally, confirmed by
+reading its source) to the OS share sheet, then reopens it via
+`ref.invalidate(appDatabaseProvider)`. Restore closes it, deletes any sidecar files,
+copies the picked file over the main path, then reopens. Delete-all closes it, deletes
+the file and its sidecars, then reopens — `beforeOpen`'s `wasCreated` branch
+(`app_database.dart`) reseeds the `Settings` row exactly as a brand-new install
+already does, no new seeding code needed. Every DAO-backed provider already
+`ref.watch`es `appDatabaseProvider`, so the invalidate cascades to every mounted
+screen automatically.
+
+**The second and third counted exceptions to NFR-4's zero-refusals fit criterion
+(`docs/fr-nfr.md`), alongside FEAT08 D3/D4's account-name hard block.** Owner,
+confirmed via `AskUserQuestion`: *"Yes, a real confirm dialog for both"* restore and
+delete-all — this app's first genuine two-button Continue/Cancel dialogs, where
+Cancel really aborts (every dialog before this issue was a single-button
+acknowledge). The argued reason: both operations are irreversible and destroy real,
+already-recorded data with no undo, categorically unlike every other write in this
+app (soft-deletes, editable rows, a re-triggerable settle button) and unlike
+FEAT08's block (which merely blocks a save that can be retried with a different
+name). Backup gets no dialog — it is non-destructive, and the OS share sheet is
+itself the "did you mean this" moment.
+
+**Restore validates the picked file's SQLite header before anything is
+overwritten**, `SettingsScreen._looksLikeSqliteFile` — a screen-local pre-write
+check, mirroring `AccountFormScreen._nameCollides`'s precedent — reading the first
+16 bytes synchronously (`File.openSync`/`readSync`, not `openRead(...).first`):
+this app's `testWidgets` tests run inside `flutter_test`'s FakeAsync zone, where a
+real OS-callback-driven asynchronous read never resolves, only a synchronous one
+does (`testing.md`'s convention now records this alongside the DAO-side of the
+project's existing async-I/O guidance). An invalid file shows a one-button
+acknowledge dialog and aborts before the confirm step — protecting the app from
+becoming unable to open its own database next launch, not a judgment call about the
+data, the same class of necessity as FEAT08's block.
+
+**`ref.invalidate(appDatabaseProvider)` must run before `AppDatabase.close()`, not
+after — a real deadlock caught only by live device testing, not by any isolated
+`ProviderContainer` test.** The first implementation closed the live database, did
+its file work, then invalidated — matching the plan's illustrative code. Tapping
+Backup on a real emulator run hung forever with zero errors on either the Dart or
+platform side (confirmed via `mcp__dart__get_runtime_errors`, logcat, and
+`dumpsys window` showing focus never left `MainActivity` — no share-sheet Activity
+was ever started). Root cause, traced into drift's own source
+(`stream_queries.dart`): `AppDatabase.close()` calls `StreamQueryStore.close()`,
+which awaits every currently active query stream's own `close()` before returning.
+`AppShell`'s `IndexedStack` (FEAT02 D1) keeps every tab's `ref.watch
+(appDatabaseProvider)` dependents subscribed permanently — nothing ever prompts
+those streams to unsubscribe on their own, so `close()` waited on listeners that
+would never release themselves. Reordering to invalidate-then-close fixes it:
+invalidating triggers Riverpod's eager rebuild of every still-listened dependent (a
+fresh `AppDatabase` opens, each screen's `StreamProvider` re-subscribes against it),
+which is what actually releases the outgoing instance's listeners and lets its
+`close()` resolve — verified live, no artificial delay needed between the two
+calls. `DatabaseMaintenanceNotifier._closeCurrentDatabase()` centralizes this
+ordering so `backup()`/`restore()`/`deleteAll()` can't independently regress it, and
+a new `ProviderContainer`-based regression test (`database_maintenance_notifier_
+test.dart`) reproduces the scenario by keeping a `financialPositionProvider`
+listener alive across the call and asserting no timeout — the isolated tests
+written before this fix all read `appDatabaseProvider` once with no active
+listener, which is exactly why none of them caught it.
+
+**A related, secondary finding: `restore()`/`deleteAll()`'s file mutation can
+transiently race a freshly-reopened connection for the file — real on Windows
+(this project's dev host), harmless on Android/iOS (the app's actual targets) and
+on Linux (this project's own CI).** Because invalidating happens *before* the file
+is mutated (necessary for the fix above), a still-listened dependent can reopen a
+new connection at the same path moments before the file itself is deleted or
+overwritten. POSIX tolerates deleting/overwriting a file another process still has
+open (confirmed live on Android and in this project's own Linux CI); Windows does
+not, refusing the operation for as long as that fresh connection stays open. A
+bounded retry (`_retryOnFileLock`, five attempts, 50ms apart) rides out genuinely
+transient locks on any platform; it does not and cannot force success against a
+connection that never closes, which is a real, accepted Windows-only local-dev-test
+quirk, not a production bug — the regression test documents this distinction rather
+than papering over it.

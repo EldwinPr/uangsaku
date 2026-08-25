@@ -85,6 +85,28 @@ debugging time (hours, not the trivial fix that follows once known):**
   await tester.pump(const Duration(seconds: 1));   // a bare tester.pump() is not enough
   ```
 
+**A third, verified `FEAT20`, 2026-08-25: real, OS-callback-driven `dart:io` I/O never
+resolves inside a `testWidgets` body.** `AutomatedTestWidgetsFlutterBinding` runs the whole
+test body — from its first line, including anything a helper it calls does — inside a
+`FakeAsync` zone, which only fakes `Timer`-based scheduling; a microtask-resolved `Future`
+(a mocked/injected async method with no real OS call behind it, like the `BackupFileSystem`
+fakes in `settings_providers.dart`'s tests) still resolves fine, but a *real* asynchronous
+file read or write (`File.openRead(...).first`, `await file.writeAsBytes(...)`) hangs
+forever — `pumpAndSettle()` never returns, and there is no timeout by default. Two fixes,
+pick whichever fits:
+- Wrap the real I/O in `tester.runAsync(() async { ... })`, which temporarily switches out
+  of the `FakeAsync` zone — works, but every `tester.tap`/`pump` call touching the resulting
+  state has to move inside the same `runAsync` block, or the dialog/rebuild it triggers is
+  invisible outside it.
+- Simpler where it applies: use the **synchronous** `dart:io` API instead
+  (`File.openSync()`/`RandomAccessFile.readSync()`, `writeAsBytesSync`,
+  `Directory.createTempSync`) — a synchronous call blocks the isolate briefly but has no
+  `Timer`/OS-callback dependency at all, so it is unaffected by the fake clock and needs no
+  `runAsync` wrapper anywhere. `SettingsScreen._looksLikeSqliteFile` (FEAT20 D4) uses this
+  fix; its widget tests write their fixture files with `writeAsBytesSync`/`writeAsStringSync`
+  for the same reason. `NativeDatabase.memory()`/plain `test()` bodies (not `testWidgets`) are
+  unaffected either way — they never run inside `FakeAsync`.
+
 ## Running
 
 ```bash

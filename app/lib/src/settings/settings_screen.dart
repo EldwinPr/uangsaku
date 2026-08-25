@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,14 +12,21 @@ import 'settings_table.dart';
 /// language, theme mode and theme color (FEAT03 D3). Was `CurrencyScreen`
 /// before this issue; the currency section's behavior is unchanged.
 ///
-/// Four sections, each watching its own provider and firing its own write
+/// Five sections, each watching its own provider and firing its own write
 /// through `ref.read(settingsProvider.notifier)…` — never rendering what the
-/// write returns (`riverpod.md`, the read/write asymmetry).
+/// write returns (`riverpod.md`, the read/write asymmetry). The fifth,
+/// `_DataSection` (FEAT20), fires through `databaseMaintenanceProvider`
+/// instead.
 ///
 /// **Every control stays enabled at all times** (FEAT03 D3, NFR-4's
 /// zero-refusals fit criterion) — nothing on this screen is ever disabled,
 /// greyed or hidden, including the currently-selected option in each
-/// section.
+/// section. `_DataSection`'s restore and delete controls are the second and
+/// third *named* exceptions to NFR-4's zero-refusals fit criterion (D5,
+/// `docs/fr-nfr.md`): their Continue/Cancel confirm dialogs are a genuine
+/// refusal path (Cancel aborts) because both operations destroy real,
+/// already-recorded data with no undo — categorically unlike every other
+/// write in this app.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -36,6 +46,8 @@ class SettingsScreen extends ConsumerWidget {
           _ThemeModeSection(),
           SizedBox(height: 24),
           _ThemeColorSection(),
+          SizedBox(height: 24),
+          _DataSection(),
         ],
       ),
     );
@@ -284,6 +296,188 @@ class _SwatchButton extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onSurface,
               )
             : null,
+      ),
+    );
+  }
+}
+
+/// `_DataSection` — backup, restore and delete-all (FEAT20 D6,
+/// `class-settings.drawio`). Backup fires immediately, no dialog (D5): it is
+/// non-destructive, and the OS share sheet is itself the "did you mean
+/// this" moment. Restore and delete each require the app's first genuine
+/// Continue/Cancel confirm dialog — the second and third named exceptions to
+/// NFR-4's zero-refusals fit criterion (`docs/fr-nfr.md`), because both
+/// destroy real, already-recorded data with no undo.
+class _DataSection extends ConsumerWidget {
+  const _DataSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final loc = AppLocalizations.of(context)!;
+
+    return _Section(
+      title: loc.dataSectionTitle,
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: [
+          OutlinedButton.icon(
+            onPressed: () => _backup(context, ref),
+            icon: const Icon(Icons.ios_share),
+            label: Text(loc.backupButton),
+          ),
+          OutlinedButton.icon(
+            onPressed: () => _restore(context, ref),
+            icon: const Icon(Icons.restore),
+            label: Text(loc.restoreButton),
+          ),
+          OutlinedButton.icon(
+            onPressed: () => _deleteAll(context, ref),
+            icon: const Icon(Icons.delete_forever),
+            label: Text(loc.deleteAllDataButton),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// D6: no dialog, no `await` in the caller — fire and forget, matching
+  /// every other write in this app (`riverpod.md`, the read/write
+  /// asymmetry). `ScaffoldMessenger`/the localized string are captured
+  /// before the write so this never touches `context` after an `await`.
+  void _backup(BuildContext context, WidgetRef ref) {
+    final loc = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    unawaited(
+      ref.read(databaseMaintenanceProvider.notifier).backup().then((_) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(loc.backupSharedMessage)),
+        );
+      }),
+    );
+  }
+
+  Future<void> _restore(BuildContext context, WidgetRef ref) async {
+    final loc = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final notifier = ref.read(databaseMaintenanceProvider.notifier);
+
+    final file = await notifier.pickRestoreCandidate();
+    if (file == null) return; // D6: cancelled picker, do nothing.
+
+    if (!context.mounted) return;
+    if (!await _looksLikeSqliteFile(file)) {
+      if (!context.mounted) return;
+      await _showAcknowledgeDialog(
+        context,
+        title: loc.invalidBackupFileTitle,
+        content: loc.invalidBackupFileContent,
+      );
+      return;
+    }
+
+    if (!context.mounted) return;
+    final confirmed = await _showConfirmDialog(
+      context,
+      title: loc.restoreConfirmTitle,
+      content: loc.restoreConfirmContent,
+      confirmLabel: loc.restoreButton,
+    );
+    if (confirmed != true) return; // D5: Cancel genuinely aborts.
+
+    await notifier.restore(file);
+    messenger.showSnackBar(SnackBar(content: Text(loc.restoreCompleteMessage)));
+  }
+
+  Future<void> _deleteAll(BuildContext context, WidgetRef ref) async {
+    final loc = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final notifier = ref.read(databaseMaintenanceProvider.notifier);
+
+    final confirmed = await _showConfirmDialog(
+      context,
+      title: loc.deleteAllConfirmTitle,
+      content: loc.deleteAllConfirmContent,
+      confirmLabel: loc.deleteAllDataButton,
+    );
+    if (confirmed != true) return; // D5: Cancel genuinely aborts.
+
+    await notifier.deleteAll();
+    messenger.showSnackBar(
+      SnackBar(content: Text(loc.deleteAllCompleteMessage)),
+    );
+  }
+
+  /// D4: reads the picked file's first 16 bytes and compares against the
+  /// standard SQLite header magic string. Screen-local pre-write validation,
+  /// mirroring `AccountFormScreen._nameCollides`'s established precedent.
+  ///
+  /// Synchronous `dart:io` (`openSync`/`readSync`), not `openRead(...).first`
+  /// — a real, OS-callback-driven asynchronous read never resolves under
+  /// `testWidgets`'s FakeAsync zone (only microtask-resolved `Future`s do);
+  /// a synchronous read has no such dependency and behaves identically on a
+  /// real device.
+  Future<bool> _looksLikeSqliteFile(File file) async {
+    final raf = file.openSync();
+    try {
+      final header = raf.readSync(16);
+      return String.fromCharCodes(header) == 'SQLite format 3\x00';
+    } finally {
+      raf.closeSync();
+    }
+  }
+
+  /// D4: single-button acknowledge dialog for an invalid picked file,
+  /// mirroring `AccountFormScreen._showBlockedNotice`'s established
+  /// precedent — informs only, does not proceed.
+  Future<void> _showAcknowledgeDialog(
+    BuildContext context, {
+    required String title,
+    required String content,
+  }) {
+    final loc = AppLocalizations.of(context)!;
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(loc.okButton),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// D5: this app's first genuine two-button confirm dialog — unlike every
+  /// acknowledge dialog above, Cancel here really aborts. The affirmative
+  /// button repeats the action's own name (`confirmLabel`) rather than a
+  /// generic "Continue", matching this app's other action-labelled buttons.
+  /// Returns `true` only when the affirmative action was tapped.
+  Future<bool?> _showConfirmDialog(
+    BuildContext context, {
+    required String title,
+    required String content,
+    required String confirmLabel,
+  }) {
+    final loc = AppLocalizations.of(context)!;
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(loc.cancelButton),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(confirmLabel),
+          ),
+        ],
       ),
     );
   }

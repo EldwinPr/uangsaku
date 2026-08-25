@@ -268,3 +268,39 @@ ERD's cardinalities are right, or that a diagram renders sensibly.
 Do not read a green audit as a green design. The mandatory export-and-look step remains the
 only check on render quality, and §3's double-icon defect is what happens when that step is
 delegated and its result taken on trust.
+
+## 13. A provider-level unit test with no active listener cannot catch a listener-lifecycle bug
+
+FEAT20's `DatabaseMaintenanceNotifier.backup()`/`restore()`/`deleteAll()` all close
+and reopen the app's single `keepAlive` `AppDatabase` provider mid-session — the
+first issue in this project to ever do that; every earlier use of `AppDatabase`
+either read it once or watched it for the app's whole lifetime, never closed it
+deliberately while other things were still watching it. Three isolated
+`ProviderContainer` tests (`c.read(appDatabaseProvider)` once, no listener) all
+passed. The real app hung forever on the first tap: `AppShell`'s `IndexedStack`
+(FEAT02 D1) keeps every tab's `ref.watch(appDatabaseProvider)` dependents
+subscribed permanently, and drift's `AppDatabase.close()` waits for every one of
+those active query streams to unsubscribe before it resolves — nothing was ever
+watching in the isolated tests, so nothing there could reveal that `close()` needs
+something else to happen first (invalidating the provider, so Riverpod's eager
+rebuild of still-listened dependents releases the outgoing instance's listeners).
+
+**A `ProviderContainer` test that never keeps a subscription open cannot catch a
+bug whose root cause is subscription lifecycle.** If a fix's correctness depends on
+*when* something unsubscribes — not just what value it reads — the test has to keep
+a real `c.listen()` open across the call, mirroring what a mounted screen actually
+does, not merely `c.read()` once and move on. This was found only by testing live
+on a running emulator (`mcp__dart__get_runtime_errors`, logcat, and `dumpsys
+window` all showed nothing — the deadlock produced zero errors on either the Dart
+or platform side, only silence), not by anything the four verification commands or
+the originally-planned test suite could have surfaced.
+
+Related, once the fix reordered `invalidate()` before `close()`: a still-listened
+dependent can now reopen a fresh connection at the same file path *before* a
+file-mutating operation (`restore`/`deleteAll`) gets to touch it. POSIX (Android,
+iOS, and this project's own Linux CI) tolerates deleting/overwriting a file another
+process still has open; Windows (this project's dev host) holds an exclusive lock
+for as long as that connection stays open. A bounded retry rides out genuinely
+transient locks on any platform — it does not and should not try to force success
+against a connection that never closes, which is an accepted Windows-only local-dev
+quirk, not a production bug on the app's actual targets.

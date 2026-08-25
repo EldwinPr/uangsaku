@@ -453,6 +453,51 @@ class AppLocalizationsId extends AppLocalizations {
   String get okButton => 'OK';
 
   @override
+  String get cancelButton => 'Batal';
+
+  @override
+  String get dataSectionTitle => 'Data';
+
+  @override
+  String get backupButton => 'Cadangkan';
+
+  @override
+  String get restoreButton => 'Pulihkan';
+
+  @override
+  String get deleteAllDataButton => 'Hapus semua data';
+
+  @override
+  String get restoreConfirmTitle => 'Pulihkan cadangan ini?';
+
+  @override
+  String get restoreConfirmContent =>
+      'Semua yang tercatat saat ini akan digantikan dengan isi berkas yang dipilih. Tindakan ini tidak bisa dibatalkan.';
+
+  @override
+  String get deleteAllConfirmTitle => 'Hapus semua data?';
+
+  @override
+  String get deleteAllConfirmContent =>
+      'Semua akun, transaksi, anggaran, dan kategori akan dihapus. Tindakan ini tidak bisa dibatalkan.';
+
+  @override
+  String get invalidBackupFileTitle => 'Bukan berkas cadangan';
+
+  @override
+  String get invalidBackupFileContent =>
+      'Berkas yang dipilih tidak terlihat seperti cadangan uangsaku. Pilih berkas lain.';
+
+  @override
+  String get backupSharedMessage => 'Cadangan dibagikan';
+
+  @override
+  String get restoreCompleteMessage => 'Data dipulihkan';
+
+  @override
+  String get deleteAllCompleteMessage => 'Semua data terhapus';
+
+  @override
   String get budgetAllocationChartTitle => 'Alokasi anggaran';
 
   @override

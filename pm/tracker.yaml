@@ -988,3 +988,47 @@ issues:
       249 tests green (was 239, merged-tree verified alongside FEAT18). See
       decisions.md 2026-08-25.
 
+  - id: FEAT20-database-backup-restore-delete
+    slug: database-backup-restore-delete
+    title: Share a raw SQLite backup, restore from a picked file, and wipe all data
+    status: DONE
+    plan: pm/issues/feat20-database-backup-restore-delete/plan.md
+    depends_on: [FEAT01-foundation, FEAT03-settings-and-i18n]
+    traces_to: []
+    summary: >-
+      DONE 2026-08-25. No UC owns this - infrastructure. Tenth round of the
+      owner's manual-testing feedback: "sqlite backup and restore, and delete
+      existing data." Bigger than recent polish items - new dependencies
+      (share_plus/file_picker/path_provider), a new injectable BackupFileSystem
+      class mirroring Clock's DI shape for testability against MissingPluginException
+      on host tests, and a second/third argued exception to NFR-4. New
+      DatabaseMaintenanceNotifier/databaseMaintenanceProvider in
+      settings_providers.dart: backup() shares the sqlite file via the OS share
+      sheet; restore(file) overwrites the file (with sidecar cleanup) - reusing
+      AppDatabase's existing guided-migration system to bring an older backup
+      forward, no new migration code; deleteAll() deletes the file - the
+      already-shipped beforeOpen wasCreated branch reseeds a fresh install exactly.
+      SettingsScreen gains a Data section: Backup fires immediately (non-destructive,
+      no dialog); Restore validates the picked file's SQLite magic header before a
+      genuine Continue/Cancel confirm dialog; Delete all data gets the same confirm
+      dialog directly - both confirmed via AskUserQuestion as the app's second/third
+      counted NFR-4 exceptions (docs/fr-nfr.md and decisions.md amended, following
+      FEAT08 D3/D4's exact structure). class-settings.drawio gained
+      DatabaseMaintenanceNotifier (Riverpod band) and BackupFileSystem (DAO band,
+      Clock's placement precedent) plus three edges, render visually verified before
+      dispatch. No schema change - this issue only changes when AppDatabase opens,
+      never what it declares.
+      REAL BUG CAUGHT LIVE, NOT BY ANY ISOLATED TEST: the plan's illustrative
+      close()-then-invalidate() order deadlocks forever in the real app, since
+      AppShell's IndexedStack keeps every tab's provider subscriptions alive and
+      drift's close() waits on them. Fixed by reordering to invalidate-then-close
+      (DatabaseMaintenanceNotifier._closeCurrentDatabase()) - verified live on a
+      running emulator for all three operations (share sheet opens, restore's
+      confirm dialog and SnackBar fire correctly, Home/Settings reset to fresh-
+      install defaults after delete). A new regression test keeps a live
+      financialPositionProvider listener subscribed across the call to reproduce
+      the scenario none of the originally-planned isolated ProviderContainer tests
+      could catch. See decisions.md 2026-08-25 and the plan's as-built correction
+      for the full root-cause trace and a related, accepted Windows-only file-lock
+      nuance (harmless on Android/iOS/Linux CI). 258 tests green (was 249).
+

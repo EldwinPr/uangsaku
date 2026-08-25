@@ -627,6 +627,32 @@ code:
     tests:
       - app/test/accounts/account_form_screen_test.dart
 
+  # FEAT20-database-backup-restore-delete, DONE 2026-08-25. No UC - infrastructure.
+  # Tenth round of the owner's manual-testing feedback: "sqlite backup and restore,
+  # and delete existing data." New DatabaseMaintenanceNotifier/
+  # databaseMaintenanceProvider (settings_providers.dart): backup() shares the raw
+  # sqlite file via the OS share sheet; restore(file) overwrites it, reusing
+  # AppDatabase's existing guided-migration system; deleteAll() removes it, reseeded
+  # fresh by the already-shipped beforeOpen wasCreated branch. New injectable
+  # BackupFileSystem (backup_file_system.dart) wraps the three plugin-dependent
+  # calls (share_plus/file_picker/path_provider), mirroring Clock's DI shape.
+  # SettingsScreen gains a Data section with the app's first genuine Continue/
+  # Cancel confirm dialogs (restore, delete) - the second/third counted NFR-4
+  # exceptions. REAL DEADLOCK CAUGHT LIVE, not by any isolated test: closing
+  # AppDatabase before invalidating the provider hangs forever, since AppShell's
+  # IndexedStack keeps every tab's provider subscriptions alive and drift's
+  # close() waits on them - fixed by reordering
+  # (DatabaseMaintenanceNotifier._closeCurrentDatabase()), verified live on a
+  # running emulator for all three operations end to end. See decisions.md
+  # 2026-08-25. 258 tests green (was 249), no schema change.
+  FEAT20:
+    provider_added: app/lib/src/settings/settings_providers.dart   # DatabaseMaintenanceNotifier
+    gateway_class_added: app/lib/src/settings/backup_file_system.dart   # BackupFileSystem, tracked on class-settings.drawio (Clock's precedent)
+    screen_changed: app/lib/src/settings/settings_screen.dart   # + Data section
+    tests:
+      - app/test/settings/database_maintenance_notifier_test.dart
+      - app/test/settings/settings_screen_test.dart
+
 # ISSUE-005. One system-level diagram, all three modules. Shows what the per-module
 # class diagrams cannot: the cross-module reads. Accounts and Transactions depend on
 # each other in BOTH directions (balances need Transactions; the record screen needs

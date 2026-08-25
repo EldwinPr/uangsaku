@@ -14,8 +14,8 @@ before starting work.
 
 ## Current state — 2026-08-24
 
-**Phase.** **The planned backlog and all NINE of the owner's manual-testing feedback
-rounds are DONE.** The app compiles and its test suite is green (**249 tests**). Ten
+**Phase.** **The planned backlog and all TEN of the owner's manual-testing feedback
+rounds are DONE.** The app compiles and its test suite is green (**258 tests**). Ten
 screens/tabs built end to end — every one of them now reachable, including UC-03's
 adjust mode, which FEAT14 gave its first navigation entry point (an "Adjust balance"
 button on `AccountFormScreen`'s edit flow). `home` is `AppShell`: a five-tab bottom nav (Home, Accounts, Record as a colored
@@ -51,14 +51,18 @@ long-standing convention, while `net` keeps its real sign but turns red when neg
 Holding/Receivable/Payable/Person — each colored (Holding neutral, Receivable green,
 Payable red, Person following its own balance's sign), and a `PAYABLE` account's
 amount is typed as a plain positive number and silently stored negative, no minus key
-needed (FEAT18/FEAT19).
+needed (FEAT18/FEAT19); `SettingsScreen` gained a Data section — backup shares the
+raw `.sqlite` file, restore overwrites it from a picked file, delete wipes
+everything back to a fresh install, restore/delete both behind this app's first
+genuine Continue/Cancel confirm dialogs (FEAT20, the second/third counted NFR-4
+exceptions, alongside FEAT08's account-name block).
 
 **Active issue.** None. Nothing is queued. `FEAT03` through `FEAT06` (round one),
 `FEAT07`/`FEAT08` (round two), `FEAT09`/`FEAT10` (round three), `FEAT11` (round four),
 `FEAT12` (a same-day follow-up), `FEAT13`/`FEAT14`/`FEAT15` (rounds five and six),
-`FEAT16` (round seven), `FEAT17` (round eight), and `FEAT18`/`FEAT19` (round nine) —
-eighteen feedback issues total — all closed the same day, 2026-08-24 through
-2026-08-25, alongside
+`FEAT16` (round seven), `FEAT17` (round eight), `FEAT18`/`FEAT19` (round nine), and
+`FEAT20` (round ten) — nineteen feedback issues total — all closed the same day,
+2026-08-24 through 2026-08-25, alongside
 the third schema change (`FEAT03`'s `Settings.locale`/`themeMode`/`seedColor`; every
 issue after that added no schema, including `FEAT11`'s new enum value — confirmed no
 migration was needed since `Accounts.group` carries no `CHECK` constraint). Both
@@ -1857,6 +1861,80 @@ trusting either agent's isolated report — same discipline as the FEAT13/14/15 
 app/drift_schemas/` empty — no schema change across either issue. `python audit.py`
 — 14 passed / 0 warnings / 0 failures both before dispatch and after the plan/tracker
 status flips to DONE.
+
+**[TODO]** The same two small items flagged earlier remain open, pending the owner:
+(1) `RecordTransactionScreen`'s kind switch not clearing a typed-but-uncreated person
+name; (2) the leftover "Rina" test account in real app data.
+
+---
+
+## 2026-08-25 — FEAT20: tenth feedback round — SQLite backup/restore/delete, and a
+## real deadlock caught only by live device testing
+
+**[DECISION]** Owner: *"sqlite backup and restore, and delete existing data."*
+Bigger than the recent one-liners — new dependencies, a new injectable class, and a
+new counted exception to NFR-4 — so it got a full plan rather than a quick dispatch.
+Two `AskUserQuestion` rounds (the first malformed with a one-option question,
+re-asked correctly) settled: backup shares the raw `.sqlite` file via the OS share
+sheet; restore picks a file via the system picker; delete wipes everything back to
+a fresh install (Settings included); restore and delete both get a genuine
+Continue/Cancel confirm dialog — the app's first, and the second/third counted
+exceptions to NFR-4's zero-refusals rule, alongside FEAT08's account-name block
+(`docs/fr-nfr.md`, `decisions.md`).
+
+**[STATUS]** New `DatabaseMaintenanceNotifier`/`databaseMaintenanceProvider`
+(`settings_providers.dart`): `backup()` shares the sqlite file; `restore(file)`
+overwrites it (reusing `AppDatabase`'s existing guided-migration system to bring an
+older backup forward, no new migration code); `deleteAll()` removes it, reseeded
+fresh by the already-shipped `beforeOpen` `wasCreated` branch. New injectable
+`BackupFileSystem` (`backup_file_system.dart`) wraps the three plugin-dependent
+calls (`share_plus`/`file_picker`/`path_provider`), mirroring `Clock`'s DI shape —
+tracked on `class-settings.drawio`'s DAO band, same placement precedent. New
+`SettingsScreen` Data section: Backup fires immediately (no dialog, non-destructive);
+Restore validates the picked file's SQLite magic header before the confirm dialog;
+Delete gets the same dialog directly.
+
+**[DISCOVERY]** A real, reproducible deadlock — caught only by live device testing,
+not by any of the isolated `ProviderContainer` tests the coder wrote. The plan's
+illustrative `close()`-then-`invalidate()` order hangs `AppDatabase.close()`
+forever in the real app: `AppShell`'s `IndexedStack` (FEAT02 D1) keeps every tab's
+provider subscriptions alive permanently, and drift's `close()`
+(`StreamQueryStore.close()`, traced into drift's own source) waits for every one of
+those active query streams to unsubscribe before it resolves — nothing ever prompts
+them to while the provider they depend on hasn't been invalidated yet. Diagnosed on
+a fresh emulator run via `mcp__dart__get_runtime_errors` (nothing), logcat (silent),
+`dumpsys window` (focus never left `MainActivity` — no share-sheet Activity was ever
+started), and finally temporary debug prints confirming `backup()` hung exactly at
+`await ... .close()`. Fixed by reordering to invalidate-first
+(`DatabaseMaintenanceNotifier._closeCurrentDatabase()`) — verified live, no
+artificial delay needed. A secondary, related finding: because invalidating happens
+before the file mutation, a still-listened dependent can transiently race a fresh
+connection for the file — real on Windows (this project's dev host) since Windows
+holds an exclusive lock for as long as that connection stays open, harmless on
+Android/iOS (the app's real targets) and on this project's own Linux CI, where
+POSIX tolerates deleting/overwriting a file another process still has open. A
+bounded retry (`_retryOnFileLock`) rides out genuinely transient locks on any
+platform without pretending to solve the Windows-only sustained-lock case. See
+`decisions.md` 2026-08-25 for the full trace and the plan's own as-built correction.
+
+**[STATUS]** All three operations verified live end to end on a fresh `flutter run`
+build (a genuinely fresh process each time, not hot reload/restart, to rule out
+stale background-isolate artifacts): Backup opens Android's real share sheet with
+`app_database.sqlite`; Restore's confirm dialog fires, "Data dipulihkan" SnackBar
+confirms, and a round-trip through a real picked file (pushed to the emulator's
+Downloads, selected via the system file picker) correctly restored seeded data;
+Delete's confirm dialog fires and Home/Settings both reset to fresh-install
+defaults (all figures zero, theme back to default) immediately after. A new
+regression test keeps a live `financialPositionProvider` listener subscribed across
+the call and asserts no timeout, reproducing the exact scenario none of the
+originally-written isolated tests could catch.
+
+**[STATUS]** Full merged-tree verification after the fix: `dart run build_runner
+build --delete-conflicting-outputs` clean, `dart format --set-exit-if-changed .` —
+0 changed, `flutter analyze` — No issues found!, full `flutter test` — **258 tests
+green** (was 249). `git diff --stat app/drift_schemas/` empty — no schema change.
+`python audit.py` — 14 passed / 0 warnings / 0 failures both before dispatch and
+after the plan/tracker status flip to DONE.
 
 **[TODO]** The same two small items flagged earlier remain open, pending the owner:
 (1) `RecordTransactionScreen`'s kind switch not clearing a typed-but-uncreated person

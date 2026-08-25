@@ -453,6 +453,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get okButton => 'OK';
 
   @override
+  String get cancelButton => 'Cancel';
+
+  @override
+  String get dataSectionTitle => 'Data';
+
+  @override
+  String get backupButton => 'Backup';
+
+  @override
+  String get restoreButton => 'Restore';
+
+  @override
+  String get deleteAllDataButton => 'Delete all data';
+
+  @override
+  String get restoreConfirmTitle => 'Restore this backup?';
+
+  @override
+  String get restoreConfirmContent =>
+      'This replaces everything currently recorded with what\'s in the chosen file. This cannot be undone.';
+
+  @override
+  String get deleteAllConfirmTitle => 'Delete all data?';
+
+  @override
+  String get deleteAllConfirmContent =>
+      'Every account, transaction, budget and category will be removed. This cannot be undone.';
+
+  @override
+  String get invalidBackupFileTitle => 'Not a backup file';
+
+  @override
+  String get invalidBackupFileContent =>
+      'The chosen file doesn\'t look like a uangsaku backup. Pick a different file.';
+
+  @override
+  String get backupSharedMessage => 'Backup shared';
+
+  @override
+  String get restoreCompleteMessage => 'Data restored';
+
+  @override
+  String get deleteAllCompleteMessage => 'All data deleted';
+
+  @override
   String get budgetAllocationChartTitle => 'Budget allocation';
 
   @override
