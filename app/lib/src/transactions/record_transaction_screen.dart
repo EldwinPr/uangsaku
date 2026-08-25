@@ -540,6 +540,7 @@ class _RecordTransactionScreenState
         return [
           _PersonAccountField(
             key: const Key('person-debt-field'),
+            resetKey: _flow,
             label: loc.personDebtLabel,
             options: [
               for (final account in personDebtChoices(accounts))
@@ -582,6 +583,7 @@ class _RecordTransactionScreenState
           // persistent checkbox gating creation, always writing PERSON.
           _PersonAccountField(
             key: const Key('person-debt-field'),
+            resetKey: _flow,
             label: loc.debtPersonLabel,
             options: [
               for (final account in debtsPool)
@@ -970,12 +972,24 @@ class _PersonAccountField extends StatefulWidget {
     required this.onCreate,
     required this.createLabel,
     required this.checkboxLabel,
+    required this.resetKey,
   });
 
   final String label;
   final List<({int id, String name})> options;
   final int? selectedId;
   final ValueChanged<int?> onSelected;
+
+  /// Post-close fix (2026-08-25): switching `RecordTransactionScreen`'s kind
+  /// dropdown without ever confirming a typed name left it sitting in this
+  /// field's text — `selectedId` was `null` both before and after (nothing
+  /// was ever selected or created), so `didUpdateWidget`'s existing
+  /// `selectedId != oldWidget.selectedId` check saw no change and never
+  /// resynced the field's text. The caller passes its `_Flow` value here so
+  /// a flow switch alone — independent of whether `selectedId` itself
+  /// changed — is enough to force the text back in sync with
+  /// `_labelFor(selectedId)` (blank when nothing is selected).
+  final Object resetKey;
 
   /// Only ever fired while the checkbox is checked (D2) — always creates
   /// `AccountGroup.PERSON` (D3), so no per-flow group parameter is needed
@@ -1019,7 +1033,8 @@ class _PersonAccountFieldState extends State<_PersonAccountField> {
   @override
   void didUpdateWidget(covariant _PersonAccountField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.selectedId != oldWidget.selectedId) {
+    if (widget.selectedId != oldWidget.selectedId ||
+        widget.resetKey != oldWidget.resetKey) {
       _controller.text = _labelFor(widget.selectedId);
     }
     final pending = _pendingCreateName;

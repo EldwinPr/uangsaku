@@ -679,4 +679,34 @@ void main() {
       await unmountAndFlushTimers(tester);
     },
   );
+
+  testWidgets(
+    'Post-close fix (2026-08-25): switching the kind dropdown clears a '
+    'typed-but-never-confirmed name out of the person field',
+    (tester) async {
+      await seedAccounts();
+      await pumpScreen(tester);
+      await switchTo(tester, 'Lend');
+
+      final personField = find.byKey(const Key('person-debt-field'));
+      await tester.enterText(
+        find.descendant(of: personField, matching: find.byType(TextField)),
+        'Someone I never confirmed',
+      );
+      await tester.pumpAndSettle();
+
+      // Never tapped a suggestion or a "Create '...'" entry — selectedId
+      // stays null, exactly the scenario `didUpdateWidget`'s old
+      // selectedId-only check couldn't see.
+      await switchTo(tester, 'Borrow');
+
+      final textField = find.descendant(
+        of: personField,
+        matching: find.byType(TextField),
+      );
+      expect(tester.widget<TextField>(textField).controller!.text, isEmpty);
+
+      await unmountAndFlushTimers(tester);
+    },
+  );
 }

@@ -458,6 +458,15 @@ code:
   # even the shortest label). Verified live on a running emulator, not just by
   # reading the diff. 198 tests green (was 197).
 
+  # Post-close fix, 2026-08-25 (a deferred TODO, closed alongside FEAT20):
+  # RecordTransactionScreen's _PersonAccountField kept stale typed text across a
+  # kind switch - selectedId stayed null both before and after an unconfirmed
+  # typed name, so didUpdateWidget's old selectedId-only resync check never fired.
+  # Fixed with a new resetKey parameter (the caller's _Flow value), also checked
+  # in didUpdateWidget, forcing the text back in sync with _labelFor(selectedId)
+  # on any flow switch regardless of whether selectedId itself changed. One new
+  # regression test. 259 tests green (was 258).
+
   # FEAT12-accounts-split-and-nav-rename, DONE 2026-08-24. No UC - infrastructure.
   # Fifth round of the owner's manual-testing feedback. navAccounts (bottom nav)
   # renamed "Akun"/"Accounts" -> "Saldo"/"Balance"; accountsSectionTitle (the page's

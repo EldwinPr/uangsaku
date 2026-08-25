@@ -15,7 +15,8 @@ before starting work.
 ## Current state — 2026-08-24
 
 **Phase.** **The planned backlog and all TEN of the owner's manual-testing feedback
-rounds are DONE.** The app compiles and its test suite is green (**258 tests**). Ten
+rounds are DONE**, plus a post-close fix closing out the last two open TODOs. The
+app compiles and its test suite is green (**259 tests**). Ten
 screens/tabs built end to end — every one of them now reachable, including UC-03's
 adjust mode, which FEAT14 gave its first navigation entry point (an "Adjust balance"
 button on `AccountFormScreen`'s edit flow). `home` is `AppShell`: a five-tab bottom nav (Home, Accounts, Record as a colored
@@ -1939,3 +1940,40 @@ after the plan/tracker status flip to DONE.
 **[TODO]** The same two small items flagged earlier remain open, pending the owner:
 (1) `RecordTransactionScreen`'s kind switch not clearing a typed-but-uncreated person
 name; (2) the leftover "Rina" test account in real app data.
+
+---
+
+## 2026-08-25 — Post-close fix (FEAT11): person field doesn't clear on a kind
+## switch; the leftover "Rina" test account was already gone
+
+**[STATUS]** Both small items carried as open TODOs since FEAT11/FEAT12's close are
+now resolved, closing out the running note.
+
+**(1) `RecordTransactionScreen`'s person field kept stale typed text across a kind
+switch.** Root cause: `_PersonAccountField`'s internal `TextEditingController` only
+resynced in `didUpdateWidget` when `selectedId` itself changed — a name typed but
+never confirmed (no suggestion tapped, no "Create" tapped) never sets `selectedId`
+at all, so it stayed `null` before and after a flow switch, and nothing ever told
+the field to clear. Fixed with a new `resetKey` parameter (the caller passes its
+`_Flow` value) that `didUpdateWidget` also checks — a flow switch alone, independent
+of whether `selectedId` changed, now forces the text back in sync with
+`_labelFor(selectedId)` (blank when nothing is selected). One new regression test.
+Recorded as a post-close fix under `FEAT11` (the issue that introduced
+`_PersonAccountField`), matching the precedent FEAT09's GridView-overflow and
+FEAT11's own SegmentedButton-overflow post-close fixes already set, rather than
+minting a new FEAT number for a fix this small.
+
+**(2) The leftover "Rina" test account never needed cleaning up** — FEAT20's live
+verification session (deleting all data to confirm `deleteAll()`'s live behavior)
+already wiped the emulator's entire database as a side effect, and the app was
+never relaunched afterward to recreate the file. Confirmed by pulling the app's
+private data directory via `adb shell run-as` — `app_flutter/app_database.sqlite`
+no longer exists on the device.
+
+**[STATUS]** `dart run build_runner build --delete-conflicting-outputs` clean,
+`dart format --set-exit-if-changed .` — 0 changed, `flutter analyze` — No issues
+found!, full `flutter test` — **259 tests green** (was 258). `git diff --stat
+app/drift_schemas/` empty — presentation-only fix, no schema change. `python
+audit.py` — 14 passed / 0 warnings / 0 failures.
+
+**[TODO]** None outstanding.
